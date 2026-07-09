@@ -1,6 +1,6 @@
 'use client'
 
-import { createSignal } from '@barefootjs/client'
+import { createMemo, createSignal } from '@barefootjs/client'
 import { parseInput } from '../src/lib/parse'
 import type { Pair } from '../src/lib/types'
 
@@ -28,6 +28,15 @@ function emptyRow(): Row {
 export function WordTable(props: WordTableProps) {
   const [rows, setRows] = createSignal<Row[]>([emptyRow(), emptyRow(), emptyRow()])
   const [pasteError, setPasteError] = createSignal<string | null>(null)
+
+  // breakIndices (from App) is a pair index — blank rows excluded — but
+  // rows() includes blank rows, so each row's position and its pair index
+  // can diverge. Map each row to its pair index (-1 if blank) so the page-
+  // break line lands on the correct row regardless of blank rows above it.
+  const pairIndexByRow = createMemo(() => {
+    let pairIndex = -1
+    return rows().map((row) => (row.front.trim() !== '' || row.back.trim() !== '' ? ++pairIndex : -1))
+  })
 
   const emit = (rs: Row[]) => {
     const pairs = rs
@@ -92,7 +101,10 @@ export function WordTable(props: WordTableProps) {
         </thead>
         <tbody>
           {rows().map((row, i) => (
-            <tr key={row.id} className={props.breakIndices.includes(i) ? 'wt-row wt-page-break' : 'wt-row'}>
+            <tr
+              key={row.id}
+              className={props.breakIndices.includes(pairIndexByRow()[i]) ? 'wt-row wt-page-break' : 'wt-row'}
+            >
               <td>
                 <input
                   type="text"
