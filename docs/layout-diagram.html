@@ -1,0 +1,470 @@
+<meta charset="utf-8">
+<title>単語プリント — レイアウト図解</title>
+<style>
+  :root{
+    --bg:#E7EAE6;
+    --card-bg:#FFFFFF;
+    --text:#22262A;
+    --text-soft:#5C6266;
+    --text-faint:#8A9094;
+    --border:#D2D5CE;
+
+    /* 「紙の上のインク」トークン。実物の紙は明暗テーマが変わっても白いままなので固定 */
+    --sheet:#FFFEFB;
+    --paper-ink:#22262A;
+    --paper-ink-soft:#6B7176;
+    --cut:#B23A2E;
+    --fold:#2E5D8C;
+    --word-fill:#F3DDB0;
+    --trans-fill:#D7E4EE;
+
+    --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Meiryo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono","Courier New",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14171A;
+      --card-bg:#1D2124;
+      --text:#EDEFEE;
+      --text-soft:#AEB4B6;
+      --text-faint:#767C7F;
+      --border:#2B2F32;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14171A;
+    --card-bg:#1D2124;
+    --text:#EDEFEE;
+    --text-soft:#AEB4B6;
+    --text-faint:#767C7F;
+    --border:#2B2F32;
+  }
+  :root[data-theme="light"]{
+    --bg:#E7EAE6;
+    --card-bg:#FFFFFF;
+    --text:#22262A;
+    --text-soft:#5C6266;
+    --text-faint:#8A9094;
+    --border:#D2D5CE;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-ui);
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:880px;
+    margin:0 auto;
+    padding:48px 24px 80px;
+    display:flex;
+    flex-direction:column;
+    gap:40px;
+  }
+  header{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--cut);
+  }
+  h1{
+    margin:0;
+    font-size:clamp(24px,4vw,32px);
+    line-height:1.3;
+    text-wrap:balance;
+  }
+  header p{
+    margin:0;
+    color:var(--text-soft);
+    font-size:15px;
+    line-height:1.7;
+    max-width:62ch;
+  }
+
+  section.block{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:24px clamp(16px,4vw,32px) 28px;
+  }
+  section.block h2{
+    margin:0;
+    font-size:18px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  section.block h2 .num{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--text-faint);
+  }
+  section.block .caption{
+    margin:0;
+    color:var(--text-soft);
+    font-size:14px;
+    line-height:1.7;
+    max-width:66ch;
+  }
+
+  .svg-wrap{
+    width:100%;
+    overflow-x:auto;
+    display:flex;
+    justify-content:center;
+    background:
+      linear-gradient(var(--border) 1px, transparent 1px) 0 0/24px 24px,
+      linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0/24px 24px;
+    background-color:color-mix(in srgb, var(--bg) 55%, var(--card-bg));
+    border-radius:10px;
+    padding:16px;
+  }
+  .svg-wrap svg{
+    width:100%;
+    max-width:520px;
+    height:auto;
+    display:block;
+  }
+  #fold-block .svg-wrap svg{
+    max-width:640px;
+  }
+
+  .legend{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 20px;
+  }
+  .legend li{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--text-soft);
+  }
+  .swatch-line{
+    width:22px;
+    height:0;
+    border-top:3px solid;
+  }
+  .swatch-line.dashed{
+    border-top-style:dashed;
+  }
+  .swatch-box{
+    width:16px;
+    height:16px;
+    border-radius:4px;
+    border:1px solid var(--border);
+  }
+
+  .recap{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:4px;
+  }
+  .recap span{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-soft);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:5px 12px;
+  }
+
+  .table-wrap{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+  }
+  table.word-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  table.word-table th,
+  table.word-table td{
+    padding:10px 16px;
+    text-align:left;
+    border-bottom:1px solid var(--border);
+  }
+  table.word-table th{
+    font-size:12px;
+    letter-spacing:.04em;
+    color:var(--text-soft);
+    background:var(--bg);
+    font-weight:600;
+  }
+  table.word-table th:first-child,
+  table.word-table td:first-child{
+    border-right:1px dashed var(--border);
+  }
+  table.word-table tr.page-end td{
+    border-bottom:3px solid var(--cut);
+  }
+  table.word-table tr.placeholder td{
+    color:var(--text-faint);
+    font-style:italic;
+  }
+  .tsv-tip{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--text-soft);
+  }
+  .tsv-tip kbd{
+    font-family:var(--font-mono);
+    font-size:12px;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:2px 6px;
+  }
+
+  footer{
+    font-size:13px;
+    color:var(--text-faint);
+    line-height:1.7;
+    border-top:1px solid var(--border);
+    padding-top:20px;
+  }
+</style>
+
+<div class="page">
+  <header>
+    <span class="eyebrow">Word Print — Layout Diagram</span>
+    <h1>1枚の紙が、蛇腹の単語帳になるまで</h1>
+    <p>
+      印刷される A4 1ページと、切り離して折ったあとの完成イメージを図にしました。
+      赤線が「切る」、青い破線が「折る」です。帯の本数・パネルの高さは実際にはアプリの設定で自由に変えられます（この図は4本の例）。
+    </p>
+  </header>
+
+  <section class="block" id="sheet-block">
+    <h2><span class="num">1</span> 印刷される1ページ（A4）</h2>
+    <p class="caption">
+      黒一色・最小限のインクで印刷します。用紙マージンは0（フチなし）で、帯は紙の端いっぱいまで使います。
+      縦の切り取り線で4本の帯に切り分け、各帯は上から順に「表面 → 裏面 → 表面 → 裏面…」と並びます。ペアの途中で帯や紙が切り替わることはありません。
+      罫線は紙全面には引かず、端の小さな目印（トンボ）だけにしてインクを節約します。定規を目印同士に合わせて折る／切ります。
+    </p>
+    <div class="svg-wrap"><svg id="sheet-svg" viewBox="0 0 640 920" role="img" aria-label="A4ページのレイアウト図"></svg></div>
+    <ul class="legend">
+      <li><span class="swatch-line" style="border-color:var(--cut)"></span>切り取りの目印（上下の端）</li>
+      <li><span class="swatch-line dashed" style="border-color:var(--fold)"></span>折りの目印（帯ごとの左右の端）</li>
+    </ul>
+    <div class="recap">
+      <span>帯の数：4（可変）</span>
+      <span>パネル高さ：可変</span>
+      <span>用紙マージン0（フチなし）</span>
+      <span>黒一色・端の目印のみ</span>
+      <span>ページ番号表示あり</span>
+    </div>
+  </section>
+
+  <section class="block" id="fold-block">
+    <h2><span class="num">2</span> 帯を切り離して蛇腹に折ると…</h2>
+    <p class="caption">
+      1本の帯を折り線どおりに山折り・谷折りと交互にジグザグへ折りたたむと、アコーディオン状に立つ単語帳になります。
+      手前を向く面（表面）と奥を向く面（裏面）が交互に現れ、パタパタと1コマずつめくって答え合わせができます。
+    </p>
+    <div class="svg-wrap"><svg id="fold-svg" viewBox="0 0 760 380" role="img" aria-label="蛇腹（アコーディオン）に折った単語帳の立体図"></svg></div>
+    <ul class="legend">
+      <li><span class="swatch-box"></span>手前を向く面（実線）＝単語</li>
+      <li><span class="swatch-box" style="border-style:dashed;opacity:.7"></span>奥を向く面（破線）＝訳</li>
+    </ul>
+  </section>
+
+  <section class="block" id="web-input-block">
+    <h2><span class="num">3</span> Web版の入力欄イメージ</h2>
+    <p class="caption">
+      入力欄は「表面」「裏面」の2列テーブル。スプレッドシートで2列選択してコピーし、そのまま貼り付けられます。
+      現在のレイアウト設定（帯の数・パネル高さ）から自動計算し、ページの境目には太い区切り線を引きます（行は使いません）。
+    </p>
+    <div class="table-wrap">
+      <table class="word-table">
+        <thead><tr><th>表面</th><th>裏面</th></tr></thead>
+        <tbody id="word-table-body"></tbody>
+      </table>
+    </div>
+    <ul class="legend">
+      <li><span class="swatch-line" style="border-color:var(--cut)"></span>太い区切り線 ＝ ここまでが1ページ目</li>
+    </ul>
+    <p class="tsv-tip">スプレッドシートで2列を選択 → <kbd>Cmd/Ctrl+C</kbd> → 表の左上セルをクリックして <kbd>Cmd/Ctrl+V</kbd> するだけで一括入力できます。</p>
+  </section>
+
+  <footer>
+    単語数が帯の残りパネルに収まらない場合は、そのペアごと次の帯・次のページへ送られます。印刷ページの右下に「P. 1 / 3」のようなページ番号が入るので、どこで紙が分かれるか一目で分かります。
+    Web版の入力テーブルでも同じ区切りが「ここまでが1ページ目」として表示されるので、印刷結果とズレなく確認できます。
+  </footer>
+</div>
+
+<script>
+(function(){
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var PAIRS = [["Apple","りんご"],["Banana","ばなな"],["Circle","円"],["Dentist","歯医者"]];
+  var ENTRIES = [];
+  PAIRS.forEach(function(p){
+    ENTRIES.push({text:p[0], kind:"word"});
+    ENTRIES.push({text:p[1], kind:"trans"});
+  });
+
+  function el(name, attrs, text){
+    var n = document.createElementNS(SVGNS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  /* ---------- Diagram 1: printed sheet ---------- */
+  var sheet = document.getElementById("sheet-svg");
+
+  var PAGE_X = 40, PAGE_Y = 80, PAGE_W = 560, PAGE_H = 792;
+  var INSET = 6; /* 用紙マージン0（フチなし）を想定。帯は紙の端いっぱいまで */
+  var USABLE_X0 = PAGE_X + INSET, USABLE_X1 = PAGE_X + PAGE_W - INSET;
+  var USABLE_Y0 = PAGE_Y + INSET, USABLE_Y1 = PAGE_Y + PAGE_H - INSET;
+  var BANDS = 4;
+  var BAND_W = (USABLE_X1 - USABLE_X0) / BANDS;
+  var PANEL_H = 62;
+  var ROWS = Math.round((USABLE_Y1 - USABLE_Y0) / PANEL_H);
+
+  sheet.appendChild(el("rect", {x:PAGE_X, y:PAGE_Y, width:PAGE_W, height:PAGE_H, rx:3, fill:"var(--sheet)", stroke:"var(--border)", "stroke-width":1.5}));
+
+  /* fold ticks: a short mark at every band edge (so every strip keeps its own
+     reference marks once cut apart), not a line across the whole page — saves ink */
+  var bandEdgesX = [];
+  for (var be = 0; be <= BANDS; be++) bandEdgesX.push(USABLE_X0 + be * BAND_W);
+  var TICK = 9;
+  for (var k = 1; k < ROWS; k++){
+    var y = USABLE_Y0 + k * PANEL_H;
+    bandEdgesX.forEach(function(x){
+      sheet.appendChild(el("line", {x1:x - TICK/2, y1:y, x2:x + TICK/2, y2:y, stroke:"var(--fold)", "stroke-width":1.5, "stroke-linecap":"round"}));
+    });
+  }
+
+  /* cut ticks + scissors + band labels: a short mark at top and bottom margin only */
+  for (var b = 1; b < BANDS; b++){
+    var x = USABLE_X0 + b * BAND_W;
+    sheet.appendChild(el("line", {x1:x, y1:PAGE_Y, x2:x, y2:PAGE_Y + TICK, stroke:"var(--cut)", "stroke-width":2.5, "stroke-linecap":"round"}));
+    sheet.appendChild(el("line", {x1:x, y1:PAGE_Y + PAGE_H - TICK, x2:x, y2:PAGE_Y + PAGE_H, stroke:"var(--cut)", "stroke-width":2.5, "stroke-linecap":"round"}));
+    sheet.appendChild(el("text", {x:x, y:PAGE_Y - 12, "text-anchor":"middle", "font-size":18, fill:"var(--cut)"}, "✂"));
+  }
+  for (var bi = 0; bi < BANDS; bi++){
+    var cx = USABLE_X0 + bi * BAND_W + BAND_W / 2;
+    sheet.appendChild(el("text", {x:cx, y:PAGE_Y - 12, "text-anchor":"middle", "font-family":"var(--font-mono)", "font-size":13, fill:"var(--text-faint)"}, "帯" + (bi + 1)));
+  }
+
+  /* band 1: fill with example entries */
+  var band0X = USABLE_X0;
+  for (var r = 0; r < ROWS; r++){
+    var top = USABLE_Y0 + r * PANEL_H;
+    if (r < ENTRIES.length){
+      var entry = ENTRIES[r];
+      /* モノクロ・枠線なし：実際に印刷されるのは文字と端の目印だけ */
+      sheet.appendChild(el("text", {
+        x: band0X + BAND_W / 2, y: top + PANEL_H / 2,
+        "text-anchor":"middle", "dominant-baseline":"central",
+        "font-size":21, fill:"var(--paper-ink)"
+      }, entry.text));
+    } else if (r === ENTRIES.length){
+      sheet.appendChild(el("text", {
+        x: band0X + BAND_W / 2, y: top + PANEL_H / 2,
+        "text-anchor":"middle", "dominant-baseline":"central",
+        "font-size":26, fill:"var(--text-faint)"
+      }, "…"));
+    }
+  }
+
+  /* page number badge */
+  var badgeW = 116, badgeH = 30;
+  var badgeX = PAGE_X + PAGE_W - badgeW, badgeY = PAGE_Y + PAGE_H + 10;
+  sheet.appendChild(el("rect", {x:badgeX, y:badgeY, width:badgeW, height:badgeH, rx:6, fill:"var(--card-bg)", stroke:"var(--border)"}));
+  sheet.appendChild(el("text", {x:badgeX + badgeW/2, y:badgeY + badgeH/2, "text-anchor":"middle", "dominant-baseline":"central", "font-family":"var(--font-mono)", "font-size":13, fill:"var(--paper-ink-soft)"}, "P. 1 / 3"));
+
+  /* ---------- Diagram 2: standing accordion (isometric side view) ---------- */
+  var fold = document.getElementById("fold-svg");
+  var N = ENTRIES.length;              /* 8 panels */
+  var X0 = 58, Y0 = 300, S = 80, DEPTH = 44, PH = 150;
+
+  function cxj(j){ return X0 + j * S; }
+  function yb(j){ return Y0 - ((j % 2 === 1) ? DEPTH : 0); }   /* back creases sit higher */
+  function yt(j){ return yb(j) - PH; }
+
+  /* ground line under the front (lower) creases */
+  fold.appendChild(el("line", {x1:X0 - 22, y1:Y0 + 8, x2:cxj(N) + 22, y2:Y0 + 8, stroke:"var(--border)", "stroke-width":2, "stroke-linecap":"round"}));
+
+  function drawPanel(j){
+    var pts = [
+      [cxj(j),     yb(j)],
+      [cxj(j),     yt(j)],
+      [cxj(j + 1), yt(j + 1)],
+      [cxj(j + 1), yb(j + 1)]
+    ];
+    var d = "M " + pts.map(function(p){ return p[0] + " " + p[1]; }).join(" L ") + " Z";
+    var isFront = (j % 2 === 0);         /* even = 表面, facing the viewer */
+    fold.appendChild(el("path", {
+      d: d,
+      fill: isFront ? "var(--sheet)" : "color-mix(in srgb, var(--sheet) 62%, var(--bg))",
+      stroke: "var(--paper-ink)",
+      "stroke-width": isFront ? 2 : 1.4,
+      "stroke-dasharray": isFront ? "" : "5 3",
+      "stroke-linejoin": "round",
+      opacity: isFront ? 1 : 0.92
+    }));
+    /* text runs vertically: rotated 90° counter-clockwise, as it would read on
+       the physical strip standing up */
+    var midx = cxj(j) + S / 2;
+    var midy = (yb(j) + yb(j + 1)) / 2 - PH / 2;
+    var g = el("g", {transform:"translate(" + midx + "," + midy + ") rotate(-90)"});
+    g.appendChild(el("text", {x:0, y:0, "text-anchor":"middle", "dominant-baseline":"central", "font-size":18, fill: isFront ? "var(--paper-ink)" : "var(--paper-ink-soft)"}, ENTRIES[j].text));
+    fold.appendChild(g);
+  }
+
+  /* back panels first, then front panels so fronts overlap on top */
+  for (var j = 1; j < N; j += 2) drawPanel(j);
+  for (var j2 = 0; j2 < N; j2 += 2) drawPanel(j2);
+
+  /* reading-direction arrow + label along the top */
+  var ax0 = cxj(0), ax1 = cxj(N);
+  fold.appendChild(el("path", {
+    d: "M " + (ax0 + 6) + " 60 L " + (ax1 - 30) + " 60",
+    fill:"none", stroke:"var(--text-faint)", "stroke-width":1.5
+  }));
+  fold.appendChild(el("path", {
+    d: "M " + (ax1 - 40) + " 55 L " + (ax1 - 28) + " 60 L " + (ax1 - 40) + " 65",
+    fill:"none", stroke:"var(--text-faint)", "stroke-width":1.5, "stroke-linejoin":"round", "stroke-linecap":"round"
+  }));
+  fold.appendChild(el("text", {x:(ax0 + ax1) / 2, y:48, "text-anchor":"middle", "font-size":12, fill:"var(--text-faint)"}, "パタパタと1コマずつめくる →"));
+
+  /* ---------- Diagram 3: web input table mockup ---------- */
+  function tr(html, cls){
+    var r = document.createElement("tr");
+    if (cls) r.className = cls;
+    r.innerHTML = html;
+    return r;
+  }
+  var body = document.getElementById("word-table-body");
+  PAIRS.forEach(function(p, i){
+    /* the last pair that still fits on page 1 gets a thick bottom border (no extra row) */
+    var cls = (i === PAIRS.length - 1) ? "page-end" : "";
+    body.appendChild(tr("<td>" + p[0] + "</td><td>" + p[1] + "</td>", cls));
+  });
+  body.appendChild(tr("<td>…</td><td>…</td>", "placeholder"));
+  body.appendChild(tr("<td>…</td><td>…</td>", "placeholder"));
+})();
+</script>
