@@ -22,6 +22,14 @@ export const renderer = jsxRenderer(({ children, title, locale }) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{title ?? t.title}</title>
         <meta name="description" content={t.metaDescription} />
+        <meta property="og:title" content={title ?? t.title} />
+        <meta property="og:description" content={t.metaDescription} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://sora.piconic.ai/" />
+        <meta property="og:site_name" content="Sora" />
+        <meta property="og:image" content="https://sora.piconic.ai/og.png" />
+        <meta property="og:locale" content={loc === 'ja' ? 'ja_JP' : 'en_US'} />
+        <meta name="twitter:card" content="summary_large_image" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         {/* Link all three sheets so the browser fetches them in
             parallel — chaining via styles.css @import would defer
