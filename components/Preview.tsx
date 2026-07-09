@@ -76,7 +76,7 @@ function renderSheetHtml(page: PageLayout, settings: Settings, pageNumber: numbe
 
 function renderPagesHtml(layout: LayoutResult, settings: Settings, scale: number): string {
   if (layout.pages.length === 0) {
-    return `<p class="preview-empty">プレビューがここに表示されます。表面/裏面を入力してください。</p>`
+    return `<p class="preview-empty">Sora へようこそ。表面/裏面を入力すると、そらで覚える単語帳になります。</p>`
   }
   const scaledWidth = A4.widthMm * PX_PER_MM * scale
   const scaledHeight = A4.heightMm * PX_PER_MM * scale
