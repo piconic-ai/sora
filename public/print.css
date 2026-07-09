@@ -107,8 +107,17 @@
   body > *:not(.print-root) {
     display: none !important;
   }
-  .print-root > *:not(.preview) {
+  /* Anything not meant for paper (input table, settings, buttons,
+     warnings) opts in via .no-print, rather than relying on DOM
+     position — the preview can be nested arbitrarily deep inside the
+     app's layout wrappers. */
+  .no-print {
     display: none !important;
+  }
+  .print-root,
+  .app {
+    all: unset;
+    display: block;
   }
   .preview {
     all: unset;
