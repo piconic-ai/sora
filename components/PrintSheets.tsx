@@ -35,7 +35,6 @@ function renderSheetHtml(page: PageLayout, settings: Settings, pageNumber: numbe
   const usableY1 = A4.heightMm - settings.marginMm
   const bandWidth = (usableX1 - usableX0) / bands
 
-  const bandEdgesX = Array.from({ length: bands + 1 }, (_, i) => usableX0 + i * bandWidth)
   const foldRows = Array.from({ length: panelsPerBand - 1 }, (_, i) => usableY0 + (i + 1) * panelH)
   const cutBands = Array.from({ length: bands - 1 }, (_, i) => usableX0 + (i + 1) * bandWidth)
 
@@ -55,11 +54,14 @@ function renderSheetHtml(page: PageLayout, settings: Settings, pageNumber: numbe
     )
     .join('')
 
+  // The sheet is accordion-folded across its full width BEFORE being cut
+  // into strips, so fold guides are only needed at the paper's outer
+  // edges — a ruler spans the two. No marks at interior band boundaries.
   const foldTicksHtml = foldRows
-    .map((y) =>
-      bandEdgesX
-        .map((x) => `<line x1="${x - TICK_MM / 2}" y1="${y}" x2="${x + TICK_MM / 2}" y2="${y}" class="fold" />`)
-        .join(''),
+    .map(
+      (y) =>
+        `<line x1="${usableX0}" y1="${y}" x2="${usableX0 + TICK_MM}" y2="${y}" class="fold" />` +
+        `<line x1="${usableX1 - TICK_MM}" y1="${y}" x2="${usableX1}" y2="${y}" class="fold" />`,
     )
     .join('')
 
