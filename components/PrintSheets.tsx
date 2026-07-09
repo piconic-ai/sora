@@ -35,7 +35,15 @@ function renderSheetHtml(page: PageLayout, settings: Settings): string {
   const usableY1 = A4.heightMm - settings.marginMm
   const bandWidth = (usableX1 - usableX0) / bands
 
-  const foldRows = Array.from({ length: panelsPerBand - 1 }, (_, i) => usableY0 + (i + 1) * panelH)
+  // Panels don't divide the page height exactly; split the leftover
+  // evenly between the top and bottom so both margins match (the two
+  // flaps fold behind the first/last panel when the strip is finished).
+  const usableH = usableY1 - usableY0
+  const gridTop = usableY0 + (usableH - panelsPerBand * panelH) / 2
+
+  // Fold lines at every panel boundary, including the grid's outer top
+  // and bottom edges — those fold the margin flaps back.
+  const foldRows = Array.from({ length: panelsPerBand + 1 }, (_, i) => gridTop + i * panelH)
   const cutBands = Array.from({ length: bands - 1 }, (_, i) => usableX0 + (i + 1) * bandWidth)
 
   const bandsHtml = page.bands
@@ -73,7 +81,7 @@ function renderSheetHtml(page: PageLayout, settings: Settings): string {
     )
     .join('')
 
-  return `<div class="sheet" style="--bands:${bands}; --panel-h:${panelH}mm; --font-pt:${settings.fontSizePt}pt; --sheet-margin:${settings.marginMm}mm;">
+  return `<div class="sheet" style="--bands:${bands}; --panel-h:${panelH}mm; --font-pt:${settings.fontSizePt}pt; --sheet-margin:${settings.marginMm}mm; --grid-top:${gridTop - usableY0}mm;">
     <div class="bands">${bandsHtml}</div>
     <svg class="marks" viewBox="0 0 ${A4.widthMm} ${A4.heightMm}" preserveAspectRatio="none">${foldTicksHtml}${cutTicksHtml}</svg>
   </div>`
