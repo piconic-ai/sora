@@ -50,6 +50,11 @@ export function App(props: AppProps) {
         </button>
       </div>
       <PrintSheets layout={layout()} settings={DEFAULTS} />
+      <footer className="app-footer no-print">
+        <a href="https://piconic.ai" target="_blank" rel="noopener">
+          {t.madeBy}
+        </a>
+      </footer>
     </div>
   )
 }

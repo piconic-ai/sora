@@ -11,6 +11,7 @@ export interface Messages {
   print: string
   hint: string
   pasteError: string
+  madeBy: string
 }
 
 export function pickLocale(acceptLanguage: string | null | undefined): Locale {
@@ -31,6 +32,7 @@ export const messages: Record<Locale, Messages> = {
     print: '印刷',
     hint: '表面と裏面を入力すると、切って折るだけの単語帳になります。',
     pasteError: '貼り付けた行数が奇数のため、ペアを作れませんでした',
+    madeBy: 'piconic がつくりました',
   },
   en: {
     title: 'Sora — Learn by heart',
@@ -43,6 +45,7 @@ export const messages: Record<Locale, Messages> = {
     print: 'Print',
     hint: 'Enter fronts and backs to make a cut-and-fold flashcard booklet.',
     pasteError: "Odd number of lines — couldn't form pairs",
+    madeBy: 'Made by piconic',
   },
 }
 

@@ -157,3 +157,18 @@
   background: #ccc;
   cursor: not-allowed;
 }
+
+.app-footer {
+  margin-top: 40px;
+  font-size: 12px;
+}
+
+.app-footer a {
+  color: #bbb;
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  color: #888;
+  text-decoration: underline;
+}
