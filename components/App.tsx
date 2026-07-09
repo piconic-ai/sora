@@ -23,6 +23,10 @@ export function App() {
 
   return (
     <div className="app">
+      <header className="app-header no-print">
+        <h1>Sora</h1>
+        <p className="app-tagline">そらで覚える</p>
+      </header>
       <div className="app-input no-print">
         <SettingsPanel settings={settings()} onChange={setSettings} />
         <WordTable breakIndices={breakIndices()} onChange={setPairs} />

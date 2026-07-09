@@ -18,6 +18,23 @@
   gap: 16px;
 }
 
+.app-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.app-header h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.app-tagline {
+  color: #666;
+  font-size: 13px;
+  margin: 0;
+}
+
 .app-input {
   display: flex;
   flex-direction: column;

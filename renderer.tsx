@@ -11,11 +11,15 @@ declare module 'hono' {
 const componentsBase = '/components'
 
 export const renderer = jsxRenderer(({ children, title }) => (
-  <html lang="en">
+  <html lang="ja">
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>{title ?? 'BarefootJS app'}</title>
+      <title>{title ?? 'Sora — そらで覚える'}</title>
+      <meta
+        name="description"
+        content="単語（表面）と訳（裏面）を入力するだけで、切って蛇腹に折る単語帳の印刷レイアウトを作れます。ログイン不要・保存不要。"
+      />
       <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       {/* Link all three sheets so the browser fetches them in
           parallel — chaining via styles.css @import would defer
@@ -32,10 +36,10 @@ export const renderer = jsxRenderer(({ children, title }) => (
     <body>
       {children}
       {/* Emits a <script> for every manifest entry unconditionally (not
-          usage-tracked) — required because Sheet is only ever mounted
-          client-side inside Preview's dynamic `.map()` and is never
-          present in the initial SSR when the input is empty, so a
-          usage-tracking script collector would never load it. */}
+          usage-tracked) — a usage-tracking collector can miss components
+          that are only ever mounted client-side (e.g. inside a signal-
+          driven `.map()` that starts empty), since they're never present
+          in the initial SSR output. */}
       <BfScripts base={componentsBase} manifest={manifest} />
     </body>
   </html>
