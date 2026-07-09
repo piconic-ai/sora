@@ -1,0 +1,201 @@
+/* Sora — アプリ画面のレイアウト（ミニマリスト）。scaffold既定の styles.css
+   (main { display:grid; place-items:center }) はサンプルCounter用のセンタリング
+   レイアウトなので、.print-root ではブロックレイアウトに戻す。 */
+
+.print-root {
+  display: block;
+  min-height: auto;
+  place-items: initial;
+  padding: 56px 24px 96px;
+  text-align: left;
+  max-width: 560px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', Meiryo,
+    sans-serif;
+  font-size: 15px;
+  color: #111;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.app-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.app-tagline {
+  color: #888;
+  font-size: 12px;
+  margin: 0;
+}
+
+.app-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input-error {
+  color: #b23a2e;
+  font-size: 13px;
+  margin: 0;
+}
+
+.word-table-wrap {
+  overflow-x: auto;
+}
+
+.word-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 480px;
+  font-size: 15px;
+}
+
+.word-table th,
+.word-table td {
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.word-table thead th {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+}
+
+.word-table input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 2px;
+  font-size: 15px;
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #e5e5e5;
+  outline: none;
+}
+
+.word-table input:focus {
+  border-bottom-color: #111;
+}
+
+.word-table .wt-page-break td {
+  border-bottom: 2px solid #111;
+  padding-bottom: 10px;
+}
+
+.word-table .wt-row .wt-delete {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.word-table .wt-row:hover .wt-delete {
+  opacity: 0.5;
+}
+
+.word-table .wt-delete:hover {
+  opacity: 1;
+}
+
+.word-table .wt-add {
+  margin-top: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: #888;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.word-table .wt-add:hover {
+  color: #111;
+}
+
+.summary,
+.hint {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+
+.print-button {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #111;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.print-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.howto {
+  margin-top: 4px;
+}
+
+.howto summary {
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  list-style: none;
+}
+
+.howto summary::-webkit-details-marker {
+  display: none;
+}
+
+.howto summary:hover {
+  color: #111;
+}
+
+.howto video {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  margin-top: 8px;
+  outline: 1px solid #eee;
+}
+
+.app-footer {
+  margin-top: 40px;
+  font-size: 12px;
+}
+
+.app-footer a {
+  color: #bbb;
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  color: #888;
+  text-decoration: underline;
+}

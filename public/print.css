@@ -1,0 +1,109 @@
+/* Sora — 印刷用レイアウトと画面プレビューで共有するCSS。
+   .sheet 以下は screen/print で完全に同一の実寸(mm)DOMを使う。 */
+
+:root {
+  --font-print: 'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', Meiryo, sans-serif;
+}
+
+.sheet {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  background: #fff;
+  color: #000;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: var(--sheet-margin, 0mm);
+  font-family: var(--font-print);
+}
+
+.sheet .bands {
+  display: grid;
+  grid-template-columns: repeat(var(--bands), 1fr);
+  height: 100%;
+  padding-top: var(--grid-top, 0mm);
+  box-sizing: border-box;
+}
+
+.sheet .band {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet .panel {
+  height: var(--panel-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: var(--font-pt);
+  padding: 0 1mm;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.sheet .panel.empty {
+  visibility: hidden;
+}
+
+.sheet .marks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.sheet .marks line {
+  stroke: #000;
+  stroke-width: 0.3mm;
+}
+
+.sheet .marks text {
+  fill: #000;
+  font-size: 3mm;
+}
+
+/* ---- 画面上では印刷用シートを隠す ---- */
+@media screen {
+  .print-sheets {
+    display: none;
+  }
+}
+
+/* ---- 印刷 ---- */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  body > *:not(.print-root) {
+    display: none !important;
+  }
+  /* Anything not meant for paper (input table, buttons) opts in via
+     .no-print, rather than relying on DOM position — the print sheets
+     can be nested arbitrarily deep inside the app's layout wrappers. */
+  .no-print {
+    display: none !important;
+  }
+  .print-root,
+  .app {
+    all: unset;
+    display: block;
+  }
+  .print-sheets {
+    all: unset;
+    display: block;
+  }
+  .sheet {
+    box-shadow: none;
+    outline: none;
+    break-after: page;
+    page-break-after: always;
+  }
+  .sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}

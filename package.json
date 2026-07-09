@@ -1,0 +1,32 @@
+{
+  "name": "sora",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n build,uno,server -c blue,magenta,green \"bf build --watch\" \"unocss --watch\" \"wrangler dev --live-reload\"",
+    "build": "bf build --minify && unocss",
+    "deploy": "bf build --minify && unocss && wrangler deploy",
+    "watch": "concurrently -k -n build,uno -c blue,magenta \"bf build --watch\" \"unocss --watch\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@barefootjs/client": "^0.18.4",
+    "@barefootjs/hono": "^0.18.4",
+    "@barefootjs/jsx": "^0.18.4",
+    "@barefootjs/shared": "^0.18.4",
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@unocss/cli": "^66.0.0",
+    "@unocss/preset-wind4": "^66.0.0",
+    "unocss": "^66.0.0",
+    "@barefootjs/cli": "^0.18.4",
+    "@cloudflare/workers-types": "^4.20260702.1",
+    "@barefootjs/test": "^0.18.4",
+    "concurrently": "^9.0.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "vitest": "^4.0.0"
+  }
+}
