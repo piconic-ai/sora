@@ -24,20 +24,69 @@
   gap: 8px;
 }
 
-.raw-input {
-  width: 100%;
-  min-height: 160px;
-  padding: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  resize: vertical;
-}
-
 .input-error {
   color: #b23a2e;
   font-size: 14px;
   margin: 0;
+}
+
+.word-table-wrap {
+  overflow-x: auto;
+}
+
+.word-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 480px;
+  font-size: 14px;
+}
+
+.word-table th,
+.word-table td {
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.word-table thead th {
+  border-bottom: 1px solid #ccc;
+  font-weight: 600;
+}
+
+.word-table input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.word-table .wt-page-break td {
+  border-bottom: 3px solid #000;
+  padding-bottom: 8px;
+}
+
+.word-table .wt-delete {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+
+.word-table .wt-delete:hover {
+  color: #b23a2e;
+}
+
+.word-table .wt-add {
+  margin-top: 8px;
+  padding: 4px 10px;
+  font-size: 14px;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
 }
