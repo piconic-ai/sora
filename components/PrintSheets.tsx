@@ -24,7 +24,7 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-function renderSheetHtml(page: PageLayout, settings: Settings, pageNumber: number, totalPages: number): string {
+function renderSheetHtml(page: PageLayout, settings: Settings): string {
   const bands = settings.bands
   const panelH = settings.panelHeightMm
   const panelsPerBand = page.bands[0]?.panels.length ?? 0
@@ -76,13 +76,12 @@ function renderSheetHtml(page: PageLayout, settings: Settings, pageNumber: numbe
   return `<div class="sheet" style="--bands:${bands}; --panel-h:${panelH}mm; --font-pt:${settings.fontSizePt}pt; --sheet-margin:${settings.marginMm}mm;">
     <div class="bands">${bandsHtml}</div>
     <svg class="marks" viewBox="0 0 ${A4.widthMm} ${A4.heightMm}" preserveAspectRatio="none">${foldTicksHtml}${cutTicksHtml}</svg>
-    <div class="page-no">P. ${pageNumber} / ${totalPages}</div>
   </div>`
 }
 
 function renderPagesHtml(layout: LayoutResult, settings: Settings): string {
   if (layout.pages.length === 0) return ''
-  return layout.pages.map((page, i) => renderSheetHtml(page, settings, i + 1, layout.totalPages)).join('')
+  return layout.pages.map((page) => renderSheetHtml(page, settings)).join('')
 }
 
 export function PrintSheets(props: PrintSheetsProps) {
