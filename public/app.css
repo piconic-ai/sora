@@ -1,0 +1,43 @@
+/* Sora — アプリ画面のレイアウト。scaffold既定の styles.css (main { display:grid; place-items:center })
+   はサンプルCounter用のセンタリングレイアウトなので、.print-root ではブロックレイアウトに戻す。 */
+
+.print-root {
+  display: block;
+  min-height: auto;
+  place-items: initial;
+  padding: 24px;
+  text-align: left;
+  max-width: 960px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.raw-input {
+  width: 100%;
+  min-height: 160px;
+  padding: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.input-error {
+  color: #b23a2e;
+  font-size: 14px;
+  margin: 0;
+}
