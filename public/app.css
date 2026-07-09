@@ -158,6 +158,33 @@
   cursor: not-allowed;
 }
 
+.howto {
+  margin-top: 4px;
+}
+
+.howto summary {
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  list-style: none;
+}
+
+.howto summary::-webkit-details-marker {
+  display: none;
+}
+
+.howto summary:hover {
+  color: #111;
+}
+
+.howto video {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  margin-top: 8px;
+  outline: 1px solid #eee;
+}
+
 .app-footer {
   margin-top: 40px;
   font-size: 12px;
