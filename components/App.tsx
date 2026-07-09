@@ -48,6 +48,10 @@ export function App(props: AppProps) {
         >
           {t.print}
         </button>
+        <details className="howto no-print">
+          <summary>{t.howTo}</summary>
+          <video src="/howto.webm" controls muted loop />
+        </details>
       </div>
       <PrintSheets layout={layout()} settings={DEFAULTS} />
       <footer className="app-footer no-print">
