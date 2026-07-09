@@ -21,6 +21,8 @@
   display: grid;
   grid-template-columns: repeat(var(--bands), 1fr);
   height: 100%;
+  padding-top: var(--grid-top, 0mm);
+  box-sizing: border-box;
 }
 
 .sheet .band {
