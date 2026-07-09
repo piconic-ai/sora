@@ -1,18 +1,20 @@
 import { Hono } from 'hono'
 import { renderer } from './renderer'
 import { App } from '@/components/App'
+import { pickLocale, messages } from './src/lib/i18n'
 
 const app = new Hono()
 
 app.use('*', renderer)
 
-app.get('/', (c) =>
-  c.render(
+app.get('/', (c) => {
+  const locale = pickLocale(c.req.header('accept-language'))
+  return c.render(
     <main className="print-root">
-      <App />
+      <App locale={locale} />
     </main>,
-    { title: 'Sora — そらで覚える' },
-  ),
-)
+    { title: messages[locale].title, locale },
+  )
+})
 
 export default app

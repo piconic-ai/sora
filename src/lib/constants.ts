@@ -8,9 +8,3 @@ export const DEFAULTS: Settings = {
   fontSizePt: 14,
   marginMm: 0,
 }
-
-export const LIMITS = {
-  bands: [1, 12] as const,
-  panelHeightMm: [8, 100] as const,
-  fontSizePt: [6, 48] as const,
-}

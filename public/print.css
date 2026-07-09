@@ -71,29 +71,10 @@
   font-family: ui-monospace, monospace;
 }
 
-/* ---- 画面プレビューだけの装飾（縮小・影・枠） ---- */
+/* ---- 画面上では印刷用シートを隠す ---- */
 @media screen {
-  .preview {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-  .preview .sheet-scale {
-    overflow: hidden;
-  }
-  .preview .sheet-scale .sheet {
-    transform-origin: top left;
-    transform: scale(var(--preview-scale, 1));
-  }
-  .preview .sheet {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15), inset 0 0 0 1px #ccc;
-  }
-  .preview-empty {
-    color: #666;
+  .print-sheets {
+    display: none;
   }
 }
 
@@ -107,10 +88,9 @@
   body > *:not(.print-root) {
     display: none !important;
   }
-  /* Anything not meant for paper (input table, settings, buttons,
-     warnings) opts in via .no-print, rather than relying on DOM
-     position — the preview can be nested arbitrarily deep inside the
-     app's layout wrappers. */
+  /* Anything not meant for paper (input table, buttons) opts in via
+     .no-print, rather than relying on DOM position — the print sheets
+     can be nested arbitrarily deep inside the app's layout wrappers. */
   .no-print {
     display: none !important;
   }
@@ -119,16 +99,9 @@
     all: unset;
     display: block;
   }
-  .preview {
+  .print-sheets {
     all: unset;
-  }
-  .preview .sheet-scale {
-    width: auto !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-  .preview .sheet-scale .sheet {
-    transform: none !important;
+    display: block;
   }
   .sheet {
     box-shadow: none;

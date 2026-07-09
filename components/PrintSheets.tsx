@@ -1,15 +1,15 @@
 'use client'
 
-import { createEffect, createSignal } from '@barefootjs/client'
+import { createEffect } from '@barefootjs/client'
 import type { LayoutResult, PageLayout, Settings } from '../src/lib/types'
 import { A4 } from '../src/lib/constants'
+import { fitFontSizePt } from '../src/lib/fit'
 
-interface PreviewProps {
+interface PrintSheetsProps {
   layout: LayoutResult
   settings: Settings
 }
 
-const PX_PER_MM = 96 / 25.4
 const TICK_MM = 2
 
 // Sheets are rendered by hand-building an HTML string and assigning it via
@@ -43,10 +43,14 @@ function renderSheetHtml(page: PageLayout, settings: Settings, pageNumber: numbe
     .map(
       (band) =>
         `<div class="band">${band.panels
-          .map(
-            (panel) =>
-              `<div class="${panel.kind === 'empty' ? 'panel empty' : 'panel'}">${escapeHtml(panel.text)}</div>`,
-          )
+          .map((panel) => {
+            const fitted = panel.text
+              ? fitFontSizePt(panel.text, bandWidth, settings.fontSizePt)
+              : settings.fontSizePt
+            const style = fitted !== settings.fontSizePt ? ` style="font-size:${fitted}pt"` : ''
+            const cls = panel.kind === 'empty' ? 'panel empty' : 'panel'
+            return `<div class="${cls}"${style}>${escapeHtml(panel.text)}</div>`
+          })
           .join('')}</div>`,
     )
     .join('')
@@ -74,36 +78,17 @@ function renderSheetHtml(page: PageLayout, settings: Settings, pageNumber: numbe
   </div>`
 }
 
-function renderPagesHtml(layout: LayoutResult, settings: Settings, scale: number): string {
-  if (layout.pages.length === 0) {
-    return `<p class="preview-empty">Sora へようこそ。表面/裏面を入力すると、そらで覚える単語帳になります。</p>`
-  }
-  const scaledWidth = A4.widthMm * PX_PER_MM * scale
-  const scaledHeight = A4.heightMm * PX_PER_MM * scale
-  return layout.pages
-    .map(
-      (page, i) =>
-        `<div class="sheet-scale" style="--preview-scale:${scale}; width:${scaledWidth}px; height:${scaledHeight}px;">${renderSheetHtml(page, settings, i + 1, layout.totalPages)}</div>`,
-    )
-    .join('')
+function renderPagesHtml(layout: LayoutResult, settings: Settings): string {
+  if (layout.pages.length === 0) return ''
+  return layout.pages.map((page, i) => renderSheetHtml(page, settings, i + 1, layout.totalPages)).join('')
 }
 
-export function Preview(props: PreviewProps) {
-  const [scale, setScale] = createSignal(1)
-
+export function PrintSheets(props: PrintSheetsProps) {
   const measure = (el: HTMLElement) => {
-    const recomputeScale = () => {
-      const sheetPx = A4.widthMm * PX_PER_MM
-      const next = Math.min(1, el.clientWidth / sheetPx)
-      setScale(next > 0 ? next : 1)
-    }
-    recomputeScale()
-    window.addEventListener('resize', recomputeScale)
-
     createEffect(() => {
-      el.innerHTML = renderPagesHtml(props.layout, props.settings, scale())
+      el.innerHTML = renderPagesHtml(props.layout, props.settings)
     })
   }
 
-  return <div className="preview" ref={measure} />
+  return <div className="print-sheets" ref={measure} />
 }
