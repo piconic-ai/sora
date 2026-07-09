@@ -2,6 +2,8 @@
 
 import { createMemo, createSignal } from '@barefootjs/client'
 import { parseInput } from '../src/lib/parse'
+import { messages } from '../src/lib/i18n'
+import type { Locale } from '../src/lib/i18n'
 import type { Pair } from '../src/lib/types'
 
 interface Row {
@@ -17,6 +19,7 @@ interface WordTableProps {
   // pageBreakAfterPairIndex.
   breakIndices: number[]
   onChange: (pairs: Pair[]) => void
+  locale: string
 }
 
 let nextRowId = 1
@@ -28,6 +31,8 @@ function emptyRow(): Row {
 export function WordTable(props: WordTableProps) {
   const [rows, setRows] = createSignal<Row[]>([emptyRow(), emptyRow(), emptyRow()])
   const [pasteError, setPasteError] = createSignal<string | null>(null)
+
+  const t = messages[(props.locale as Locale) ?? 'ja']
 
   // breakIndices (from App) is a pair index — blank rows excluded — but
   // rows() includes blank rows, so each row's position and its pair index
@@ -74,7 +79,7 @@ export function WordTable(props: WordTableProps) {
     if (!/[\t\n,]/.test(text)) return // single value — let the browser paste normally
     e.preventDefault()
     const { pairs, error } = parseInput(text)
-    setPasteError(error)
+    setPasteError(error ? t.pasteError : null)
     if (pairs.length === 0) return
     setRows((rs) => {
       const rowIndex = rs.findIndex((r) => r.id === rowId)
@@ -94,8 +99,8 @@ export function WordTable(props: WordTableProps) {
       <table className="word-table">
         <thead>
           <tr>
-            <th>表面</th>
-            <th>裏面</th>
+            <th>{t.front}</th>
+            <th>{t.back}</th>
             <th />
           </tr>
         </thead>
@@ -121,7 +126,7 @@ export function WordTable(props: WordTableProps) {
                 />
               </td>
               <td>
-                <button type="button" className="wt-delete" onClick={() => deleteRow(row.id)} aria-label="行を削除">
+                <button type="button" className="wt-delete" onClick={() => deleteRow(row.id)} aria-label={t.deleteRow}>
                   ×
                 </button>
               </td>
@@ -132,7 +137,7 @@ export function WordTable(props: WordTableProps) {
           <tr>
             <td colspan={3}>
               <button type="button" className="wt-add" onClick={addRow}>
-                + 行を追加
+                {t.addRow}
               </button>
             </td>
           </tr>
