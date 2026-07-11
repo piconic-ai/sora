@@ -11,8 +11,16 @@ export interface Messages {
   print: string
   hint: string
   pasteError: string
-  madeBy: string
   howTo: string
+  // Info popover (FB5) — the "Sora" bit of the lead sentence is hard-coded
+  // as <strong>Sora</strong> in App.tsx, so infoLead is just the remainder
+  // of that sentence. The "Built with …" and contact-link lines differ in
+  // word order between ja/en, so those are branched in JSX instead of
+  // being modeled as messages here.
+  infoLabel: string
+  infoLead: string
+  infoNote: string
+  infoContactIntro: string
 }
 
 export function pickLocale(acceptLanguage: string | null | undefined): Locale {
@@ -43,8 +51,11 @@ export const messages: Record<Locale, Messages> = {
     print: '印刷',
     hint: '表面と裏面を入力すると、切って折るだけの単語帳になります。',
     pasteError: '貼り付けた行数が奇数のため、ペアを作れませんでした',
-    madeBy: 'piconic がつくりました',
     howTo: '作り方',
+    infoLabel: '情報',
+    infoLead: 'は、単語（表面）と訳（裏面）を入力するだけで、切って蛇腹に折る単語帳の印刷レイアウトをつくります。',
+    infoNote: '「そら」は「そらで覚える（諳んじる）」から。',
+    infoContactIntro: 'ご質問・ご感想は kobaken まで：',
   },
   en: {
     title: 'Sora — Learn by heart',
@@ -55,8 +66,11 @@ export const messages: Record<Locale, Messages> = {
     print: 'Print',
     hint: 'Enter fronts and backs to make a cut-and-fold flashcard booklet.',
     pasteError: "Odd number of lines — couldn't form pairs",
-    madeBy: 'Made by piconic',
     howTo: 'How to make it',
+    infoLabel: 'About',
+    infoLead: ' turns your word pairs into a print-and-fold accordion flashcard booklet.',
+    infoNote: '"Sora" comes from the Japanese "そらで覚える" — to learn something by heart.',
+    infoContactIntro: 'Questions or feedback? Reach out to kobaken:',
   },
 }
 
