@@ -91,6 +91,126 @@
   border-color: #111;
 }
 
+.info-privacy {
+  color: #888;
+}
+
+.history-button,
+.new-button {
+  margin-left: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1.4;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.history-button:hover,
+.new-button:hover {
+  color: #111;
+  border-color: #ccc;
+}
+
+.history-button:focus-visible,
+.new-button:focus-visible {
+  outline: none;
+  border-color: #111;
+}
+
+/* Native Popover API — see the .info-popover comment above for why
+   top/right are set and bottom/left pinned to auto. Wider and taller than
+   .info-popover (up to 50 history entries) with internal scrolling instead
+   of growing past the viewport. */
+.history-popover {
+  position: fixed;
+  top: 64px;
+  right: 24px;
+  bottom: auto;
+  left: auto;
+  margin: 0;
+  padding: 16px 18px;
+  width: min(360px, calc(100vw - 48px));
+  max-height: min(480px, calc(100vh - 96px));
+  overflow-y: auto;
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.6;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+
+.history-empty {
+  color: #888;
+  margin: 0 0 4px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.history-item:last-of-type {
+  border-bottom: none;
+}
+
+.history-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.history-item-actions button {
+  padding: 3px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.history-item-actions button:hover {
+  color: #111;
+  border-color: #ccc;
+}
+
+.history-clear-all {
+  margin-top: 12px;
+  width: 100%;
+  padding: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #b23a2e;
+  background: transparent;
+  border: 1px solid #f0d9d6;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.history-clear-all:hover {
+  background: #fdf2f1;
+}
+
 /* Native Popover API (popover/popovertarget) handles open/close, ESC, and
    light-dismiss — this is purely presentational. The UA stylesheet gives
    [popover] elements `inset: 0; margin: auto; border: solid; ...`, so

@@ -1,13 +1,15 @@
 'use client'
 
-import { createEffect, createMemo, createSignal } from '@barefootjs/client'
+import { createEffect, createMemo, createSignal, onMount } from '@barefootjs/client'
 import { PrintSheets } from './PrintSheets'
 import { WordTable } from './WordTable'
 import { computeLayout } from '../src/lib/layout'
 import { DEFAULTS } from '../src/lib/constants'
-import { messages, pageMeterCaption } from '../src/lib/i18n'
+import { historyItemTitle, messages, pageMeterCaption } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
+import { clearAllLists, deleteList, listSaved, saveList } from '../src/lib/storage/lists'
+import type { SavedList } from '../src/lib/storage/schema'
 import type { Pair } from '../src/lib/types'
 
 interface AppProps {
@@ -22,10 +24,28 @@ interface AppProps {
 // left dynamic and drops out of the client template.
 const popoverTarget: Record<string, string> = { popover: 'auto' }
 const popoverTrigger: Record<string, string> = { popovertarget: 'sora-info' }
+const historyPopoverTarget: Record<string, string> = { popover: 'auto' }
+const historyTrigger: Record<string, string> = { popovertarget: 'sora-history' }
 
 export function App(props: AppProps) {
   const [pairs, setPairs] = createSignal<Pair[]>([])
   const [locale, setLocale] = createSignal<Locale>((props.locale as Locale) ?? 'ja')
+
+  // History (autosaved lists) feature. `loadRequest` is an imperative
+  // "load this / clear to this" instruction forwarded to WordTable — see
+  // WordTableProps.loadRequest for why it carries a monotonic `nonce`
+  // rather than being applied from the payload alone. `loadNonce` is a
+  // plain module-scoped-per-instance counter (not a signal): nothing ever
+  // reads it reactively, it only needs to keep incrementing across calls.
+  const [loadRequest, setLoadRequest] = createSignal<{ pairs: Pair[]; nonce: number } | null>(null)
+  const [history, setHistory] = createSignal<SavedList[]>([])
+  let loadNonce = 0
+
+  const refreshHistory = async () => setHistory(await listSaved())
+
+  onMount(() => {
+    void refreshHistory()
+  })
 
   const layout = createMemo(() => computeLayout(pairs(), DEFAULTS))
   const pageFill = createMemo(() => computePageFill(pairs().length, layout().capacity.pairsPerPage))
@@ -65,6 +85,26 @@ export function App(props: AppProps) {
           <option value="ja">日本語</option>
           <option value="en">English</option>
         </select>
+        <button
+          type="button"
+          className="history-button"
+          aria-label={t().history}
+          onClick={() => void refreshHistory()}
+          {...historyTrigger}
+        >
+          {t().history}
+        </button>
+        <button
+          type="button"
+          className="new-button"
+          onClick={() => {
+            void saveList(pairs())
+            setLoadRequest({ pairs: [], nonce: ++loadNonce })
+            void refreshHistory()
+          }}
+        >
+          {t().newList}
+        </button>
         <button type="button" className="info-button" aria-label={t().infoLabel} {...popoverTrigger}>
           <span aria-hidden="true">ⓘ</span>
         </button>
@@ -75,6 +115,7 @@ export function App(props: AppProps) {
           {t().infoLead}
         </p>
         <p className="info-note">{t().infoNote}</p>
+        <p className="info-privacy">{t().infoPrivacyNote}</p>
         <p className="info-built">
           {locale() === 'ja' ? (
             <span>
@@ -102,8 +143,55 @@ export function App(props: AppProps) {
           </span>
         </p>
       </div>
+      <div
+        id="sora-history"
+        role="dialog"
+        aria-label={t().history}
+        className="history-popover no-print"
+        {...historyPopoverTarget}
+      >
+        {history().length === 0 ? (
+          <p className="history-empty">{t().historyEmpty}</p>
+        ) : (
+          history().map((item) => (
+            <div className="history-item" key={item.id}>
+              <span className="history-item-title">{historyItemTitle(locale(), item.pairs, item.createdAt)}</span>
+              <div className="history-item-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoadRequest({ pairs: item.pairs, nonce: ++loadNonce })
+                    document.getElementById('sora-history')?.hidePopover?.()
+                  }}
+                >
+                  {t().loadList}
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await deleteList(item.id)
+                    await refreshHistory()
+                  }}
+                >
+                  {t().deleteList}
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+        <button
+          type="button"
+          className="history-clear-all"
+          onClick={async () => {
+            await clearAllLists()
+            await refreshHistory()
+          }}
+        >
+          {t().clearAllLists}
+        </button>
+      </div>
       <div className="app-input no-print">
-        <WordTable breakIndices={breakIndices()} onChange={setPairs} locale={locale()} />
+        <WordTable breakIndices={breakIndices()} onChange={setPairs} locale={locale()} loadRequest={loadRequest()} />
         {pairs().length === 0 ? (
           <p className="hint">{t().hint}</p>
         ) : (
@@ -121,7 +209,11 @@ export function App(props: AppProps) {
           type="button"
           className="print-button"
           disabled={layout().pages.length === 0}
-          onClick={() => window.print()}
+          onClick={() => {
+            void saveList(pairs())
+            window.print()
+            void refreshHistory()
+          }}
         >
           {t().print}
         </button>
