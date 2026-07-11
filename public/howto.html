@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>そらで覚える — 作り方（15秒）</title>
+<style>
+/* ============================================================
+   そらで覚える — HTMLアニメーション版ハウツー動画
+   16:9 / 15秒ループ / 画面内テキストなし
+   マスタータイムライン: 全アニメーション 15s infinite で同期
+   1s = 6.667% / Beat1 0-3s, Beat2 3-6s, Beat3 6-9s,
+   Beat4 9-12s, Beat5 12-15s
+   ============================================================ */
+:root {
+  --T: 15s;
+  --paper: #ffffff;
+  --ink: #98a0ab;
+  --skin: #f2c6a3;
+  --skin-line: rgba(196, 128, 84, .22);
+  --sleeve: #f7f1e4;
+  --fold-line: #eddadb;
+  --cut-dash: #d5dde9;
+  --coral: #f0a9b4;
+  --sage: #cfe0d5;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: #f2ece2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+.spacer { display: flex; flex-direction: column; align-items: center; }
+.player { transform-origin: top center; }
+
+/* ---------- フレーム（16:9 / 960x540） ---------- */
+.frame {
+  position: relative;
+  width: 960px;
+  height: 540px;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(120, 90, 60, .18);
+  /* 白木のデスク（全ビート共通） */
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(205,185,160,0) 0 236px,
+      rgba(205,185,160,.13) 236px 238px,
+      rgba(255,255,255,.35) 238px 240px),
+    linear-gradient(160deg, #fbf7f1 0%, #f7f0e6 55%, #f2e9dc 100%);
+}
+/* やわらかい自然光＋周辺減光 */
+.light, .vignette {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.light {
+  z-index: 40;
+  background:
+    linear-gradient(115deg, rgba(255,252,244,.55), rgba(255,252,244,0) 45%),
+    radial-gradient(1200px 700px at 16% -12%, rgba(255,255,255,.45), transparent 60%);
+}
+.vignette {
+  z-index: 41;
+  background: radial-gradient(135% 120% at 50% 44%, transparent 62%, rgba(140,110,90,.12) 100%);
+}
+
+.scene { position: absolute; inset: 0; opacity: 0; }
+.cam { position: absolute; inset: 0; }
+
+/* ぼかし文字（読めない単語のプレースホルダ） */
+.b {
+  position: absolute;
+  height: 7px;
+  border-radius: 5px;
+  background: var(--ink);
+  opacity: .72;
+  filter: blur(1.3px);
+}
+
+/* ============ ビート1：ノートPCでフラッシュカードアプリに入力 ============ */
+.s1 { animation: s1fade var(--T) linear infinite; }
+.s1 .cam { animation: s1cam var(--T) linear infinite; }
+@keyframes s1fade {
+  0% { opacity: 1; } 19% { opacity: 1; } 21% { opacity: 0; }
+  97.4% { opacity: 0; } 100% { opacity: 1; }
+}
+@keyframes s1cam {
+  0% { transform: scale(1.07) translateY(8px); animation-timing-function: ease-out; }
+  20%, 100% { transform: scale(1) translateY(0); }
+}
+.lap {
+  position: absolute; left: 230px; top: 40px;
+  width: 500px; height: 460px;
+  perspective: 1000px;
+  transform: rotate(-2.5deg);
+}
+.lap-screen {
+  position: absolute; left: 15px; top: 10px; width: 470px; height: 255px;
+  transform-origin: 50% 100%;
+  transform: rotateX(36deg);
+  background: linear-gradient(#e9e5de, #dedad2);
+  border-radius: 14px 14px 6px 6px;
+  padding: 10px 10px 6px;
+  box-shadow: 0 -6px 18px rgba(150,120,90,.12);
+}
+.display {
+  position: relative; width: 100%; height: 100%;
+  background: #fff; border-radius: 8px; overflow: hidden;
+}
+/* アプリUI（ソフトフォーカスで文字は読めない） */
+.appui { position: absolute; inset: 0; filter: blur(1.6px); }
+.appbar {
+  position: absolute; left: 0; right: 0; top: 0; height: 28px;
+  background: #eef1f6;
+}
+.appbar i {
+  position: absolute; top: 10px; width: 8px; height: 8px; border-radius: 50%;
+  background: #d5dbe4;
+}
+.appbar i:nth-child(1) { left: 12px; } .appbar i:nth-child(2) { left: 26px; }
+.appbar i:nth-child(3) { left: 40px; }
+.tdiv { position: absolute; left: 226px; top: 36px; bottom: 8px; width: 1px; background: #e6eaf0; }
+.thead { position: absolute; top: 38px; height: 8px; border-radius: 4px; background: #b9c2cf; }
+.sheen {
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg, rgba(255,255,255,.45), rgba(255,255,255,0) 55%);
+}
+.caret {
+  position: absolute; width: 2px; height: 13px; background: #7d8794;
+  animation: blink .85s steps(1) infinite;
+}
+@keyframes blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+/* 入力に合わせてぼかし単語が現れる */
+.rb1 { animation: rb1 var(--T) linear infinite; transform-origin: left center; }
+.rb2 { animation: rb2 var(--T) linear infinite; transform-origin: left center; }
+.rb3 { animation: rb3 var(--T) linear infinite; transform-origin: left center; }
+.rb4 { animation: rb4 var(--T) linear infinite; transform-origin: left center; }
+@keyframes rb1 { 0%, 6.7% { transform: scaleX(0); } 8% { transform: scaleX(1); } 100% { transform: scaleX(1); } }
+@keyframes rb2 { 0%, 10% { transform: scaleX(0); } 11.3% { transform: scaleX(1); } 100% { transform: scaleX(1); } }
+@keyframes rb3 { 0%, 13.3% { transform: scaleX(0); } 14.6% { transform: scaleX(1); } 100% { transform: scaleX(1); } }
+@keyframes rb4 { 0%, 16% { transform: scaleX(0); } 17.3% { transform: scaleX(1); } 100% { transform: scaleX(1); } }
+.lap-deck {
+  position: absolute; left: 0; top: 268px; width: 500px; height: 190px;
+  border-radius: 16px;
+  background: linear-gradient(#eeeae3, #e4dfd6);
+  box-shadow: 0 10px 22px rgba(150,120,90,.14);
+}
+.keys {
+  position: absolute; left: 22px; top: 16px; width: 456px; height: 108px;
+  border-radius: 6px;
+  background-color: #f7f5f0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 34px, #e8e4dc 34px 40px),
+    repeating-linear-gradient(0deg, transparent 0 21px, #e8e4dc 21px 27px);
+}
+.spacebar {
+  position: absolute; left: 155px; top: 134px; width: 190px; height: 24px;
+  border-radius: 6px; background: #f7f5f0;
+}
+/* タイピングの手 */
+.hand-type { position: absolute; width: 150px; height: 230px; }
+.ht-l { left: 300px; top: 330px; transform: rotate(7deg); }
+.ht-r { left: 512px; top: 328px; transform: rotate(-7deg); }
+.fA { animation: tap .38s ease-in-out infinite alternate; }
+.fB { animation: tap .38s ease-in-out .13s infinite alternate; }
+.fC { animation: tap .38s ease-in-out .26s infinite alternate; }
+@keyframes tap { from { transform: translateY(0); } to { transform: translateY(5px); } }
+/* 上手前のマグカップ（浅い被写界深度） */
+.mug {
+  position: absolute; left: 806px; top: 46px; width: 96px; height: 96px;
+  border-radius: 50%; background: var(--sage);
+  filter: blur(4px); opacity: .85;
+}
+.mug::before {
+  content: ""; position: absolute; inset: 14px; border-radius: 50%;
+  background: #fdfbf6;
+}
+.mug::after {
+  content: ""; position: absolute; left: -22px; top: 30px; width: 34px; height: 34px;
+  border-radius: 50%; border: 9px solid var(--sage);
+}
+
+/* ============ ビート2：プリンタからシートが出てくる ============ */
+.s2 { animation: s2fade var(--T) linear infinite; }
+.s2 .cam { animation: s2cam var(--T) linear infinite; }
+@keyframes s2fade {
+  0%, 19% { opacity: 0; } 21% { opacity: 1; } 39% { opacity: 1; } 41%, 100% { opacity: 0; }
+}
+@keyframes s2cam {
+  0%, 19% { transform: scale(1.06) translateX(-10px); }
+  40%, 100% { transform: scale(1) translateX(0); animation-timing-function: ease-in-out; }
+}
+.prn { position: absolute; left: 330px; top: 36px; width: 300px; height: 200px; }
+.prn-tray {
+  position: absolute; left: 64px; top: -4px; width: 172px; height: 44px;
+  background: #d9dfe9; border-radius: 10px; transform: skewX(-12deg);
+}
+.prn-sheetup {
+  position: absolute; top: -22px; width: 120px; height: 34px;
+  background: #fff; border-radius: 3px; transform: skewX(-12deg);
+  box-shadow: 0 0 0 1px rgba(190,200,215,.5) inset;
+}
+.prn-sheetup.a { left: 88px; } .prn-sheetup.b { left: 100px; top: -16px; background: #fbfcfe; }
+.prn-body {
+  position: absolute; left: 0; top: 20px; width: 300px; height: 170px;
+  border-radius: 22px;
+  background: linear-gradient(#f0f3f8, #dee4ee);
+  box-shadow: 0 14px 26px rgba(140,120,95,.16);
+  animation: prjig var(--T) linear infinite;
+}
+@keyframes prjig {
+  0%, 21.3% { transform: translateY(0); }
+  23% { transform: translateY(.9px); } 25% { transform: translateY(0); }
+  27% { transform: translateY(.9px); } 29% { transform: translateY(0); }
+  31% { transform: translateY(.9px); } 32.7%, 100% { transform: translateY(0); }
+}
+.prn-seam { position: absolute; left: 24px; right: 24px; top: 44px; height: 2px; border-radius: 1px; background: rgba(160,172,192,.35); }
+.prn-led {
+  position: absolute; right: 26px; top: 60px; width: 10px; height: 10px; border-radius: 50%;
+  background: #b6ddc4;
+  animation: led var(--T) linear infinite;
+}
+@keyframes led {
+  0%, 21% { box-shadow: none; opacity: .5; }
+  22%, 32% { opacity: 1; box-shadow: 0 0 10px 2px rgba(150,220,175,.8); }
+  33%, 100% { opacity: .5; box-shadow: none; }
+}
+.prn-slot {
+  position: absolute; left: 40px; top: 158px; width: 220px; height: 9px;
+  border-radius: 5px; background: #c3cbd9;
+  box-shadow: 0 2px 3px rgba(90,100,120,.3) inset;
+}
+/* 排紙されるシート（スロットから下へスライド） */
+.pwrap {
+  position: absolute; left: 355px; top: 236px; width: 250px; height: 330px;
+  overflow: hidden;
+  animation: plift var(--T) linear infinite;
+}
+@keyframes plift {
+  0%, 36% { transform: translateY(0) rotate(0) scale(1); animation-timing-function: ease-in-out; }
+  38.7%, 100% { transform: translateY(-16px) rotate(-2deg) scale(1.03); }
+}
+.sheet2 {
+  position: absolute; left: 30px; top: 10px; width: 190px; height: 272px;
+  border-radius: 3px;
+  box-shadow: 0 8px 20px rgba(140,115,90,.18);
+  animation: pfeed var(--T) linear infinite;
+  background: #fff;
+}
+@keyframes pfeed {
+  0%, 21.3% { transform: translateY(-292px); background: #fff8ea; }
+  31.5% { transform: translateY(-8px); background: #fffbf2; animation-timing-function: ease-out; }
+  33.3% { transform: translateY(0); }
+  39%, 100% { transform: translateY(0); background: #fff; }
+}
+/* 折り線（横・薄いピンク）と切り取り線（縦・破線） */
+.fl { position: absolute; left: 7px; right: 7px; height: 1px; background: var(--fold-line); }
+.clv {
+  position: absolute; top: 5px; bottom: 5px; width: 1px;
+  background: repeating-linear-gradient(0deg, var(--cut-dash) 0 6px, transparent 6px 12px);
+}
+/* シートを持ち上げる手 */
+.h2 {
+  position: absolute; left: 470px; top: 300px; width: 240px; height: 150px;
+  animation: h2move var(--T) linear infinite;
+  opacity: 0;
+}
+@keyframes h2move {
+  0%, 33% { transform: translate(230px, 170px) rotate(10deg); opacity: 0; animation-timing-function: ease-out; }
+  36% { transform: translate(36px, 16px) rotate(2deg); opacity: 1; animation-timing-function: ease-in-out; }
+  38.7%, 40.9% { transform: translate(34px, 0px) rotate(0deg); opacity: 1; }
+  41%, 100% { opacity: 0; transform: translate(34px, 0px); }
+}
+/* 観葉植物（前ボケ） */
+.plant { position: absolute; filter: blur(5px); opacity: .8; }
+.plant.tl { left: 18px; top: 8px; }
+.leaf { position: absolute; width: 46px; height: 96px; border-radius: 50% 50% 46% 46%; background: #c6d9c8; }
+.leaf.l1 { transform: rotate(-24deg); left: 0; }
+.leaf.l2 { transform: rotate(4deg); left: 34px; top: -14px; background: #d3e3d2; }
+.leaf.l3 { transform: rotate(30deg); left: 66px; }
+
+/* ============ ビート3：蛇腹折り（アコーディオン） ============ */
+.s3 { animation: s3fade var(--T) linear infinite; }
+.s3 .cam { animation: s3cam var(--T) linear infinite; }
+@keyframes s3fade {
+  0%, 39% { opacity: 0; } 41% { opacity: 1; } 57.8% { opacity: 1; } 59.8%, 100% { opacity: 0; }
+}
+@keyframes s3cam {
+  0%, 40% { transform: scale(1.05) translateY(-6px); }
+  60%, 100% { transform: scale(1) translateY(12px); animation-timing-function: ease-in-out; }
+}
+.persp3 { position: absolute; inset: 0; perspective: 1200px; perspective-origin: 50% 28%; }
+.tilt3 {
+  position: absolute; left: 290px; top: 110px; width: 380px; height: 384px;
+  transform-style: preserve-3d;
+  transform: rotateX(50deg) rotateZ(-4deg);
+}
+.fp {
+  position: absolute; left: 0; width: 380px; height: 64px;
+  background: linear-gradient(#ffffff, #faf6f0);
+  transform-style: preserve-3d;
+  transform-origin: 50% 0;
+  box-shadow: 0 0 0 .5px #f0ece5 inset;
+}
+.fp .ink { position: absolute; inset: 0; backface-visibility: hidden; }
+.fp .crease { position: absolute; left: 8px; right: 8px; bottom: 0; height: 1px; background: var(--fold-line); }
+.c3cut {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: repeating-linear-gradient(0deg, var(--cut-dash) 0 6px, transparent 6px 12px);
+}
+.p0 { top: 0; }
+.p1, .p2, .p3, .p4, .p5 { top: 64px; }
+/* 下から1コマずつ折り上げる（各ヒンジ ≒ 相対 +177°） */
+.p5 { animation: fh5 var(--T) linear infinite; }
+.p4 { animation: fh4 var(--T) linear infinite; }
+.p3g { animation: fh3 var(--T) linear infinite; }
+.p2 { animation: fh2 var(--T) linear infinite; }
+.p1 { animation: fh1 var(--T) linear infinite; }
+@keyframes fh5 {
+  0%, 42.7% { transform: rotateX(0) translateZ(0); animation-timing-function: ease-in-out; }
+  46%, 100% { transform: rotateX(177deg) translateZ(.7px); }
+}
+@keyframes fh4 {
+  0%, 46% { transform: rotateX(0) translateZ(0); animation-timing-function: ease-in-out; }
+  49.3%, 100% { transform: rotateX(176deg) translateZ(.7px); }
+}
+@keyframes fh3 {
+  0%, 49.3% { transform: rotateX(0) translateZ(0); animation-timing-function: ease-in-out; }
+  52.7%, 100% { transform: rotateX(175deg) translateZ(.7px); }
+}
+@keyframes fh2 {
+  0%, 52.7% { transform: rotateX(0) translateZ(0); animation-timing-function: ease-in-out; }
+  56%, 100% { transform: rotateX(174deg) translateZ(.7px); }
+}
+@keyframes fh1 {
+  0%, 55.6% { transform: rotateX(0) translateZ(0); animation-timing-function: ease-in-out; }
+  58.4%, 100% { transform: rotateX(172deg) translateZ(.7px); }
+}
+.fshadow {
+  position: absolute; left: 282px; top: 150px; width: 396px; height: 320px;
+  border-radius: 45%;
+  background: radial-gradient(closest-side, rgba(150,120,95,.17), transparent);
+  filter: blur(8px);
+  animation: fsh var(--T) linear infinite;
+}
+@keyframes fsh {
+  0%, 42.7% { transform: translateY(0) scaleY(1); animation-timing-function: ease-in-out; }
+  59.3%, 100% { transform: translateY(-80px) scaleY(.32); }
+}
+/* 折る手：左手で紙を押さえ、右手が折り目を下から上へ */
+.h3l {
+  position: absolute; left: 0; top: 0; width: 240px; height: 130px;
+  animation: h3l var(--T) linear infinite;
+  opacity: 0;
+}
+@keyframes h3l {
+  0%, 39.5% { opacity: 0; transform: translate(30px, 200px) scaleX(-1); animation-timing-function: ease-out; }
+  42% { opacity: 1; transform: translate(96px, 148px) scaleX(-1); animation-timing-function: ease-in-out; }
+  46% { transform: translate(96px, 151px) scaleX(-1); animation-timing-function: ease-in-out; }
+  49.3% { transform: translate(96px, 148px) scaleX(-1); animation-timing-function: ease-in-out; }
+  52.7% { transform: translate(96px, 151px) scaleX(-1); animation-timing-function: ease-in-out; }
+  56% { transform: translate(96px, 148px) scaleX(-1); }
+  59%, 100% { opacity: 1; transform: translate(96px, 150px) scaleX(-1); }
+}
+.h3r {
+  position: absolute; left: 0; top: 0; width: 240px; height: 130px;
+  animation: h3r var(--T) linear infinite;
+  opacity: 0;
+}
+@keyframes h3r {
+  0%, 40% { transform: translate(760px, 500px) rotate(-14deg); opacity: 0; animation-timing-function: ease-out; }
+  42.7% { transform: translate(584px, 318px) rotate(-8deg); opacity: 1; animation-timing-function: ease-in-out; }
+  45% { transform: translate(582px, 326px) rotate(-8deg); animation-timing-function: ease-in-out; }
+  46.5% { transform: translate(580px, 275px) rotate(-8deg); animation-timing-function: ease-in-out; }
+  48.6% { transform: translate(578px, 283px) rotate(-8deg); animation-timing-function: ease-in-out; }
+  50% { transform: translate(576px, 234px) rotate(-7deg); animation-timing-function: ease-in-out; }
+  52% { transform: translate(574px, 242px) rotate(-7deg); animation-timing-function: ease-in-out; }
+  53.5% { transform: translate(572px, 193px) rotate(-6deg); animation-timing-function: ease-in-out; }
+  55.4% { transform: translate(570px, 201px) rotate(-6deg); animation-timing-function: ease-in-out; }
+  57% { transform: translate(566px, 152px) rotate(-5deg); animation-timing-function: ease-in-out; }
+  58.6% { transform: translate(564px, 160px) rotate(-5deg); }
+  59.3%, 100% { transform: translate(564px, 158px) rotate(-5deg); opacity: 1; }
+}
+
+/* ============ ビート4：ハサミで縦の線を切る ============ */
+.s4 { animation: s4fade var(--T) linear infinite; }
+.s4 .cam { animation: s4cam var(--T) linear infinite; }
+@keyframes s4fade {
+  0%, 57.8% { opacity: 0; } 59.8% { opacity: 1; } 79% { opacity: 1; } 81%, 100% { opacity: 0; }
+}
+@keyframes s4cam {
+  0%, 60% { transform: scale(1.02); }
+  80%, 100% { transform: scale(1.08) translateY(2px); animation-timing-function: ease-in-out; }
+}
+.band { position: absolute; left: 290px; top: 258px; width: 380px; height: 84px; }
+.bshadow {
+  position: absolute; left: 280px; top: 266px; width: 400px; height: 92px;
+  border-radius: 14px;
+  background: rgba(150,120,95,.15);
+  filter: blur(9px);
+}
+.st {
+  position: absolute; top: 0; width: 95px; height: 84px;
+  background: linear-gradient(#ffffff, #fbf8f3);
+  box-shadow: 0 0 0 .5px #f0ece5 inset;
+}
+/* 蛇腹の重なり（下端に层の縁） */
+.st::before {
+  content: ""; position: absolute; left: 2px; right: 2px; bottom: -5px; height: 7px;
+  background: #f4efe7; border-radius: 0 0 3px 3px;
+  box-shadow: 0 5px 0 -1px #eae2d6;
+}
+.st.cutline::after {
+  content: ""; position: absolute; left: 0; top: 3px; bottom: 3px; width: 1px;
+  background: repeating-linear-gradient(0deg, var(--cut-dash) 0 6px, transparent 6px 12px);
+}
+.st1 { left: 0; animation: sep1 var(--T) linear infinite; }
+.st2 { left: 95px; animation: sep2 var(--T) linear infinite; }
+.st3 { left: 190px; animation: sep3 var(--T) linear infinite; }
+.st4 { left: 285px; animation: sep4 var(--T) linear infinite; }
+@keyframes sep1 {
+  0%, 66% { transform: none; animation-timing-function: ease-out; }
+  69.5%, 100% { transform: translate(-20px, 3px) rotate(-2.2deg); }
+}
+@keyframes sep2 {
+  0%, 72% { transform: none; animation-timing-function: ease-out; }
+  75.5%, 100% { transform: translate(-9px, -2px) rotate(-1.1deg); }
+}
+@keyframes sep3 {
+  0%, 77% { transform: none; animation-timing-function: ease-out; }
+  80%, 100% { transform: translate(-4px, 1px) rotate(-.5deg); }
+}
+@keyframes sep4 {
+  0%, 78% { transform: none; animation-timing-function: ease-out; }
+  80.5%, 100% { transform: translate(6px, -1px) rotate(.4deg); }
+}
+/* ハサミ（縦の線に沿って下へ） */
+.sci {
+  position: absolute; left: 0; top: 0; width: 120px; height: 290px;
+  animation: sci var(--T) linear infinite;
+  opacity: 0;
+}
+@keyframes sci {
+  0%, 59% { transform: translate(345px, -40px); opacity: 0; animation-timing-function: ease-out; }
+  61% { transform: translate(325px, 36px); opacity: 1; animation-timing-function: ease-in-out; }
+  63.3% { transform: translate(325px, 48px); animation-timing-function: linear; }
+  68.7% { transform: translate(325px, 183px); animation-timing-function: ease-in-out; }
+  70.7% { transform: translate(420px, 40px); animation-timing-function: linear; }
+  74.7% { transform: translate(420px, 183px); animation-timing-function: ease-in-out; }
+  76% { transform: translate(515px, 48px); animation-timing-function: linear; }
+  79.9% { transform: translate(515px, 183px); opacity: 1; }
+  80.5%, 100% { transform: translate(515px, 190px); opacity: 0; }
+}
+.blA { animation: snipA .48s ease-in-out infinite alternate; transform-box: view-box; transform-origin: 60px 70px; }
+.blB { animation: snipB .48s ease-in-out infinite alternate; transform-box: view-box; transform-origin: 60px 70px; }
+@keyframes snipA { from { transform: rotate(0deg); } to { transform: rotate(-11deg); } }
+@keyframes snipB { from { transform: rotate(0deg); } to { transform: rotate(11deg); } }
+/* 帯を押さえる左手 */
+.h4l {
+  position: absolute; left: 0; top: 0; width: 240px; height: 130px;
+  animation: h4l var(--T) linear infinite;
+  opacity: 0;
+}
+@keyframes h4l {
+  0%, 59.5% { opacity: 0; transform: translate(20px, 320px) scaleX(-1); animation-timing-function: ease-out; }
+  62% { opacity: 1; transform: translate(76px, 236px) scaleX(-1); animation-timing-function: ease-in-out; }
+  66% { transform: translate(76px, 236px) scaleX(-1); animation-timing-function: ease-out; }
+  69.5%, 79% { transform: translate(56px, 239px) scaleX(-1); opacity: 1; }
+  81%, 100% { opacity: 0; transform: translate(56px, 239px) scaleX(-1); }
+}
+
+/* ============ ビート5：パタパタめくって覚える ============ */
+.s5 { animation: s5fade var(--T) linear infinite; }
+.s5 .cam { animation: s5cam var(--T) linear infinite; }
+@keyframes s5fade {
+  0%, 79% { opacity: 0; } 81% { opacity: 1; } 97.4% { opacity: 1; } 100% { opacity: 0; }
+}
+@keyframes s5cam {
+  0%, 80% { transform: scale(.98); }
+  100% { transform: scale(1.05); }
+}
+.persp5 { position: absolute; inset: 0; perspective: 900px; perspective-origin: 50% 42%; }
+.cardtilt {
+  position: absolute; left: 360px; top: 230px; width: 240px; height: 140px;
+  transform: rotate(-4deg);
+  transform-style: preserve-3d;
+}
+.flip5 {
+  position: absolute; inset: 0;
+  transform-style: preserve-3d;
+  animation: flip5 var(--T) linear infinite;
+}
+@keyframes flip5 {
+  0%, 81% { transform: rotateX(-10deg); animation-timing-function: ease-in-out; }
+  85% { transform: rotateX(-5deg); animation-timing-function: ease-in-out; }
+  86.7% { transform: rotateX(-7deg); animation-timing-function: ease-in-out; }
+  91.3% { transform: rotateX(-186deg); animation-timing-function: ease-in-out; }
+  92.3% { transform: rotateX(-183deg); animation-timing-function: ease-in-out; }
+  94% { transform: rotateX(-184deg); animation-timing-function: ease-in-out; }
+  98% { transform: rotateX(-354deg); animation-timing-function: ease-in-out; }
+  99.4%, 100% { transform: rotateX(-352deg); }
+}
+.cf, .cb {
+  position: absolute; inset: 0;
+  background: var(--paper);
+  border-radius: 5px;
+  backface-visibility: hidden;
+  box-shadow: 0 0 0 .5px #efeae2 inset;
+}
+.cf { transform: translateZ(1.5px); }
+.cb { transform: rotateX(180deg) translateZ(1.5px); }
+.ly { position: absolute; border-radius: 4px; }
+.ly1 { inset: 2px 5px -4px 5px; background: #f6f1e9; transform: translateZ(-3px); }
+.ly2 { inset: 4px 10px -8px 10px; background: #efe8dd; transform: translateZ(-6px); }
+.cshadow {
+  position: absolute; left: 345px; top: 376px; width: 280px; height: 40px;
+  border-radius: 50%;
+  background: rgba(150,120,95,.18);
+  filter: blur(9px);
+  animation: cshadow var(--T) linear infinite;
+}
+@keyframes cshadow {
+  0%, 86.7% { transform: scaleX(1); opacity: 1; animation-timing-function: ease-in-out; }
+  89% { transform: scaleX(.82); opacity: .7; animation-timing-function: ease-in-out; }
+  91.3% { transform: scaleX(1); opacity: 1; animation-timing-function: ease-in-out; }
+  96% { transform: scaleX(.82); opacity: .7; animation-timing-function: ease-in-out; }
+  98%, 100% { transform: scaleX(1); opacity: 1; }
+}
+/* 帯を持つ手（軸上の左端をつまむ） */
+.h5 {
+  position: absolute; left: 0; top: 0; width: 240px; height: 130px;
+  animation: h5sway var(--T) linear infinite;
+}
+@keyframes h5sway {
+  0%, 81% { transform: translate(134px, 226px) scaleX(-1) rotate(10deg); animation-timing-function: ease-in-out; }
+  89% { transform: translate(134px, 229px) scaleX(-1) rotate(9deg); animation-timing-function: ease-in-out; }
+  100% { transform: translate(134px, 226px) scaleX(-1) rotate(10deg); }
+}
+.thumb5 {
+  position: absolute; left: 342px; top: 290px; width: 54px; height: 22px;
+  border-radius: 12px;
+  background: linear-gradient(#f5cda9, #eebd94);
+  transform: rotate(20deg);
+  box-shadow: 0 2px 3px rgba(160,100,60,.18);
+}
+.glow5 {
+  position: absolute; left: 290px; top: 170px; width: 380px; height: 260px;
+  background: radial-gradient(closest-side, rgba(255,252,240,.9), transparent);
+  opacity: 0;
+  animation: glow5 var(--T) linear infinite;
+}
+@keyframes glow5 {
+  0%, 94% { opacity: 0; } 97.5% { opacity: .55; } 100% { opacity: .3; }
+}
+.plant.br { left: 856px; top: 400px; transform: rotate(160deg); }
+
+/* ---------- コントロール（動画フレーム外） ---------- */
+.bar {
+  margin-top: 16px;
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+}
+.bar button {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: none; cursor: pointer;
+  background: #fff; color: #8a7a66;
+  box-shadow: 0 3px 10px rgba(120,90,60,.15);
+  display: flex; align-items: center; justify-content: center;
+}
+.bar button:hover { background: #fdf9f2; }
+.bar svg { width: 17px; height: 17px; fill: #8a7a66; }
+.player.paused .icon-pause { display: none; }
+.player:not(.paused) .icon-play { display: none; }
+.dots { display: flex; gap: 10px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #ddd2c2; }
+.dot1 { animation: dot1 var(--T) linear infinite; }
+.dot2 { animation: dot2 var(--T) linear infinite; }
+.dot3 { animation: dot3 var(--T) linear infinite; }
+.dot4 { animation: dot4 var(--T) linear infinite; }
+.dot5 { animation: dot5 var(--T) linear infinite; }
+@keyframes dot1 { 0%, 19.9% { background: #9db4cf; transform: scale(1.3); } 20%, 100% { background: #ddd2c2; transform: scale(1); } }
+@keyframes dot2 { 0%, 19.9% { background: #ddd2c2; transform: scale(1); } 20%, 39.9% { background: #9db4cf; transform: scale(1.3); } 40%, 100% { background: #ddd2c2; transform: scale(1); } }
+@keyframes dot3 { 0%, 39.9% { background: #ddd2c2; transform: scale(1); } 40%, 59.9% { background: #9db4cf; transform: scale(1.3); } 60%, 100% { background: #ddd2c2; transform: scale(1); } }
+@keyframes dot4 { 0%, 59.9% { background: #ddd2c2; transform: scale(1); } 60%, 79.9% { background: #9db4cf; transform: scale(1.3); } 80%, 100% { background: #ddd2c2; transform: scale(1); } }
+@keyframes dot5 { 0%, 79.9% { background: #ddd2c2; transform: scale(1); } 80%, 100% { background: #9db4cf; transform: scale(1.3); } }
+
+/* 一時停止・省モーション */
+.player.paused *, .player.paused { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  .player:not(.force-play) *, .player:not(.force-play) { animation-play-state: paused !important; }
+}
+</style>
+</head>
+<body>
+<div class="spacer">
+<div class="player" id="player">
+  <div class="frame" role="img" aria-label="単語プリントの作り方：入力して印刷し、蛇腹に折って、切り分けて、めくって覚える15秒のアニメーション">
+
+    <!-- 手の共通シェイプ（指先はビューボックス左側 x≈16, y≈62） -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <g id="mitt">
+          <rect x="180" y="22" width="60" height="86" rx="22" fill="var(--sleeve)"/>
+          <rect x="112" y="34" width="92" height="62" rx="30" fill="var(--skin)"/>
+          <rect x="58" y="28" width="88" height="74" rx="31" fill="var(--skin)"/>
+          <rect x="22" y="29" width="70" height="15" rx="7.5" fill="var(--skin)"/>
+          <rect x="14" y="46.5" width="78" height="15" rx="7.5" fill="var(--skin)"/>
+          <rect x="17" y="64" width="75" height="15" rx="7.5" fill="var(--skin)"/>
+          <rect x="26" y="81.5" width="66" height="15" rx="7.5" fill="var(--skin)"/>
+          <path d="M96 34 v62 M120 38 v56" stroke="var(--skin-line)" stroke-width="2" fill="none"/>
+        </g>
+        <g id="mitt-grip">
+          <use href="#mitt"/>
+          <rect x="66" y="92" width="64" height="19" rx="9.5" fill="#f5cda9" transform="rotate(14 66 92)"/>
+        </g>
+      </defs>
+    </svg>
+
+    <!-- ビート1：フラッシュカードアプリに単語ペアを入力 -->
+    <section class="scene s1">
+      <div class="cam">
+        <div class="mug"></div>
+        <div class="lap">
+          <div class="lap-screen">
+            <div class="display">
+              <div class="appui">
+                <div class="appbar"><i></i><i></i><i></i></div>
+                <div class="tdiv"></div>
+                <div class="thead" style="left:36px;width:74px"></div>
+                <div class="thead" style="left:258px;width:60px"></div>
+                <div id="s1rows"></div>
+                <div class="caret" style="left:318px;top:180px"></div>
+              </div>
+              <div class="sheen"></div>
+            </div>
+          </div>
+          <div class="lap-deck">
+            <div class="keys"></div>
+            <div class="spacebar"></div>
+          </div>
+        </div>
+        <svg class="hand-type ht-l" viewBox="0 0 150 230" aria-hidden="true">
+          <rect x="38" y="168" width="76" height="70" rx="24" fill="var(--sleeve)"/>
+          <rect x="46" y="132" width="60" height="52" rx="22" fill="var(--skin)"/>
+          <rect x="30" y="72" width="92" height="78" rx="36" fill="var(--skin)"/>
+          <g class="fA"><rect x="33" y="22" width="17" height="70" rx="8.5" fill="var(--skin)"/></g>
+          <g class="fB"><rect x="55" y="10" width="17" height="82" rx="8.5" fill="var(--skin)"/></g>
+          <g class="fA"><rect x="77" y="14" width="17" height="78" rx="8.5" fill="var(--skin)"/></g>
+          <g class="fC"><rect x="99" y="26" width="17" height="66" rx="8.5" fill="var(--skin)"/></g>
+          <g class="fB"><rect x="112" y="96" width="34" height="17" rx="8.5" fill="var(--skin)" transform="rotate(28 112 96)"/></g>
+          <path d="M42 90 v46 M64 84 v52 M86 86 v50" stroke="var(--skin-line)" stroke-width="2" fill="none"/>
+        </svg>
+        <svg class="hand-type ht-r" viewBox="0 0 150 230" aria-hidden="true">
+          <rect x="38" y="168" width="76" height="70" rx="24" fill="var(--sleeve)"/>
+          <rect x="46" y="132" width="60" height="52" rx="22" fill="var(--skin)"/>
+          <rect x="30" y="72" width="92" height="78" rx="36" fill="var(--skin)"/>
+          <g class="fB"><rect x="33" y="22" width="17" height="70" rx="8.5" fill="var(--skin)"/></g>
+          <g class="fC"><rect x="55" y="10" width="17" height="82" rx="8.5" fill="var(--skin)"/></g>
+          <g class="fA"><rect x="77" y="14" width="17" height="78" rx="8.5" fill="var(--skin)"/></g>
+          <g class="fB"><rect x="99" y="26" width="17" height="66" rx="8.5" fill="var(--skin)"/></g>
+          <g class="fA"><rect x="4" y="96" width="34" height="17" rx="8.5" fill="var(--skin)" transform="rotate(-28 38 96)"/></g>
+          <path d="M64 90 v46 M86 84 v52 M108 86 v50" stroke="var(--skin-line)" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ビート2：プリンタがシートを排紙、手が持ち上げる -->
+    <section class="scene s2">
+      <div class="cam">
+        <div class="plant tl"><span class="leaf l1"></span><span class="leaf l2"></span><span class="leaf l3"></span></div>
+        <div class="prn">
+          <div class="prn-tray"></div>
+          <div class="prn-sheetup a"></div>
+          <div class="prn-sheetup b"></div>
+          <div class="prn-body">
+            <div class="prn-seam"></div>
+            <div class="prn-led"></div>
+          </div>
+          <div class="prn-slot"></div>
+        </div>
+        <div class="pwrap">
+          <div class="sheet2" id="sheet2"></div>
+        </div>
+        <svg class="h2" viewBox="0 0 240 130" aria-hidden="true"><use href="#mitt-grip"/></svg>
+      </div>
+    </section>
+
+    <!-- ビート3：横の折り線で蛇腹折り -->
+    <section class="scene s3">
+      <div class="cam">
+        <div class="fshadow"></div>
+        <div class="persp3">
+          <div class="tilt3">
+            <div class="fp p0"><div class="ink"></div>
+              <div class="fp p1"><div class="ink"></div>
+                <div class="fp p2"><div class="ink"></div>
+                  <div class="fp p3 p3g"><div class="ink"></div>
+                    <div class="fp p4"><div class="ink"></div>
+                      <div class="fp p5"><div class="ink"></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <svg class="h3l" viewBox="0 0 240 130" aria-hidden="true"><use href="#mitt"/></svg>
+        <svg class="h3r" viewBox="0 0 240 130" aria-hidden="true"><use href="#mitt"/></svg>
+      </div>
+    </section>
+
+    <!-- ビート4：縦の切り取り線で帯（短冊）に切り分ける -->
+    <section class="scene s4">
+      <div class="cam">
+        <div class="bshadow"></div>
+        <div class="band">
+          <div class="st st1" id="st1"></div>
+          <div class="st st2 cutline" id="st2"></div>
+          <div class="st st3 cutline" id="st3"></div>
+          <div class="st st4 cutline" id="st4"></div>
+        </div>
+        <svg class="h4l" viewBox="0 0 240 130" aria-hidden="true"><use href="#mitt"/></svg>
+        <svg class="sci" viewBox="0 -90 120 290" aria-hidden="true">
+          <rect x="38" y="-90" width="56" height="62" rx="20" fill="var(--sleeve)"/>
+          <rect x="44" y="-38" width="44" height="48" rx="18" fill="var(--skin)"/>
+          <g class="blA">
+            <path d="M61 74 L49 84 L56 182 Z" fill="#b7c2d4" stroke="#b7c2d4" stroke-width="7" stroke-linejoin="round"/>
+            <ellipse cx="46" cy="34" rx="12" ry="25" fill="none" stroke="var(--coral)" stroke-width="8"/>
+          </g>
+          <g class="blB">
+            <path d="M59 74 L71 84 L64 182 Z" fill="#a4b1c6" stroke="#a4b1c6" stroke-width="7" stroke-linejoin="round"/>
+            <ellipse cx="76" cy="34" rx="12" ry="25" fill="none" stroke="var(--coral)" stroke-width="8"/>
+          </g>
+          <circle cx="60" cy="70" r="5.5" fill="#8f9bb0"/>
+          <ellipse cx="61" cy="4" rx="30" ry="22" fill="var(--skin)"/>
+          <rect x="34" y="14" width="20" height="36" rx="10" fill="var(--skin)" transform="rotate(9 44 32)"/>
+          <rect x="68" y="14" width="22" height="38" rx="11" fill="var(--skin)" transform="rotate(-9 79 33)"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ビート5：パタパタめくって表と裏を確認 -->
+    <section class="scene s5">
+      <div class="cam">
+        <div class="plant br"><span class="leaf l1"></span><span class="leaf l2"></span><span class="leaf l3"></span></div>
+        <div class="glow5"></div>
+        <div class="cshadow"></div>
+        <svg class="h5" viewBox="0 0 240 130" aria-hidden="true"><use href="#mitt-grip"/></svg>
+        <div class="persp5">
+          <div class="cardtilt">
+            <div class="flip5">
+              <div class="ly ly2"></div>
+              <div class="ly ly1"></div>
+              <div class="cf" id="cardf"></div>
+              <div class="cb" id="cardb"></div>
+            </div>
+          </div>
+        </div>
+        <div class="thumb5"></div>
+      </div>
+    </section>
+
+    <div class="light"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <!-- コントロール（動画フレーム外） -->
+  <div class="bar">
+    <button id="pp" aria-label="再生 / 一時停止">
+      <svg class="icon-pause" viewBox="0 0 16 16"><rect x="2.5" y="1.5" width="4" height="13" rx="1.2"/><rect x="9.5" y="1.5" width="4" height="13" rx="1.2"/></svg>
+      <svg class="icon-play" viewBox="0 0 16 16"><path d="M3.5 1.8 v12.4 a.9.9 0 0 0 1.36 .77 l10 -6.2 a.9.9 0 0 0 0 -1.54 l-10 -6.2 a.9.9 0 0 0 -1.36 .77 Z"/></svg>
+    </button>
+    <div class="dots" aria-hidden="true">
+      <span class="dot dot1"></span><span class="dot dot2"></span><span class="dot dot3"></span>
+      <span class="dot dot4"></span><span class="dot dot5"></span>
+    </div>
+    <button id="re" aria-label="最初から再生">
+      <svg viewBox="0 0 16 16"><path d="M8 2.2 a5.8 5.8 0 1 1 -5.5 4 l1.5 .5 A4.2 4.2 0 1 0 8 3.8 V6.4 L4.2 3.2 8 0 Z"/></svg>
+    </button>
+  </div>
+</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ぼかし単語の幅（決定的な擬似ランダム）
+  var W = [34, 26, 40, 30, 36, 24, 38, 28, 32, 42, 27, 35, 31, 39, 25, 37, 29, 41, 33, 23, 36, 28, 34, 30];
+  var wi = 0;
+  function nextW(scale) { return Math.round(W[(wi++) % W.length] * (scale || 1)); }
+  function blob(parent, x, y, w, h, cls) {
+    var d = document.createElement("div");
+    d.className = "b" + (cls ? " " + cls : "");
+    d.style.left = x + "px";
+    d.style.top = y + "px";
+    d.style.width = w + "px";
+    if (h) { d.style.height = h + "px"; }
+    parent.appendChild(d);
+    return d;
+  }
+
+  // ビート1：アプリ画面のテーブル（2列×5行、4・5行目は入力中に出現）
+  var rows = document.getElementById("s1rows");
+  var rowY = [56, 90, 124, 158, 192];
+  var appear = ["", "", "", "rb1", "rb3"];
+  var appearR = ["", "", "", "rb2", "rb4"];
+  for (var r = 0; r < 5; r++) {
+    blob(rows, 36, rowY[r], nextW(2.2), 9, appear[r]);
+    blob(rows, 258, rowY[r], nextW(1.9), 9, appearR[r]);
+  }
+
+  // ビート2：A4シート（6行×4列のぼかし単語＋折り線＋切り取り線）
+  var sheet = document.getElementById("sheet2");
+  var CW = 190 / 4, RH = 272 / 6;
+  for (var i = 1; i < 6; i++) {
+    var fl = document.createElement("div");
+    fl.className = "fl";
+    fl.style.top = Math.round(RH * i) + "px";
+    sheet.appendChild(fl);
+  }
+  for (var c = 1; c < 4; c++) {
+    var cl = document.createElement("div");
+    cl.className = "clv";
+    cl.style.left = Math.round(CW * c) + "px";
+    sheet.appendChild(cl);
+  }
+  for (var rr = 0; rr < 6; rr++) {
+    for (var cc = 0; cc < 4; cc++) {
+      var w2 = nextW(0.82);
+      blob(sheet, Math.round(CW * cc + (CW - w2) / 2), Math.round(RH * rr + RH / 2 - 3), w2, 6);
+    }
+  }
+
+  // ビート3：蛇腹折りの各コマ（4列のぼかし単語＋切り取り線＋折り線）
+  var inks = document.querySelectorAll(".tilt3 .ink");
+  for (var s = 0; s < inks.length; s++) {
+    var ink = inks[s];
+    for (var c3 = 1; c3 < 4; c3++) {
+      var cut = document.createElement("div");
+      cut.className = "c3cut";
+      cut.style.left = (95 * c3) + "px";
+      ink.appendChild(cut);
+    }
+    for (var c4 = 0; c4 < 4; c4++) {
+      var w3 = nextW(1.3);
+      blob(ink, Math.round(95 * c4 + (95 - w3) / 2), 28, w3, 8);
+    }
+    if (s < 5) {
+      var cr = document.createElement("div");
+      cr.className = "crease";
+      ink.appendChild(cr);
+    }
+  }
+
+  // ビート4：帯の上面（各帯にぼかし単語1つ）
+  for (var t = 1; t <= 4; t++) {
+    var st = document.getElementById("st" + t);
+    var w4 = nextW(1.3);
+    blob(st, Math.round((95 - w4) / 2), 38, w4, 8);
+  }
+
+  // ビート5：カード表（単語）と裏（答え）
+  var cf = document.getElementById("cardf");
+  blob(cf, 66, 63, 108, 13);
+  var cb = document.getElementById("cardb");
+  blob(cb, 82, 50, 76, 10);
+  blob(cb, 96, 76, 48, 9);
+
+  // ---- プレイヤー制御 ----
+  var spacer = document.querySelector(".spacer");
+  function fit() {
+    var s = Math.min((window.innerWidth - 32) / 960, (window.innerHeight - 110) / 540, 1.3);
+    var player = document.getElementById("player");
+    player.style.transform = "scale(" + s + ")";
+    spacer.style.width = (960 * s) + "px";
+    spacer.style.height = (610 * s) + "px";
+  }
+  window.addEventListener("resize", fit);
+  fit();
+
+  // クローンで全アニメーションを0秒から再スタート
+  document.addEventListener("click", function (e) {
+    var player = document.getElementById("player");
+    if (e.target.closest && e.target.closest("#re")) {
+      var wasPaused = player.classList.contains("paused");
+      var clone = player.cloneNode(true);
+      clone.classList.remove("paused");
+      clone.classList.add("force-play");
+      player.replaceWith(clone);
+      void wasPaused;
+    } else if (e.target.closest && e.target.closest("#pp")) {
+      if (player.classList.contains("paused")) {
+        player.classList.remove("paused");
+        player.classList.add("force-play");
+      } else {
+        player.classList.add("paused");
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
