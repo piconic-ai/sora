@@ -16,10 +16,12 @@ interface AppProps {
 
 // The Popover API attributes (`popover`, `popovertarget`) are standard HTML
 // but are not yet in @barefootjs/jsx's attribute types. Spreading them from a
-// plain record keeps the JSX type-checking while still compiling down to the
-// same static `popover="auto"` / `popovertarget="..."` attributes.
+// plain record keeps the JSX type-checking. These must be const object
+// literals (not a function call) so the compiler folds them into both the
+// SSR and client templates as static attributes; a function-call spread is
+// left dynamic and drops out of the client template.
 const popoverTarget: Record<string, string> = { popover: 'auto' }
-const popoverTrigger = (id: string): Record<string, string> => ({ popovertarget: id })
+const popoverTrigger: Record<string, string> = { popovertarget: 'sora-info' }
 
 export function App(props: AppProps) {
   const [pairs, setPairs] = createSignal<Pair[]>([])
@@ -63,11 +65,11 @@ export function App(props: AppProps) {
           <option value="ja">日本語</option>
           <option value="en">English</option>
         </select>
-        <button type="button" className="info-button" aria-label={t().infoLabel} {...popoverTrigger('sora-info')}>
+        <button type="button" className="info-button" aria-label={t().infoLabel} {...popoverTrigger}>
           <span aria-hidden="true">ⓘ</span>
         </button>
       </header>
-      <div id="sora-info" className="info-popover no-print" {...popoverTarget}>
+      <div id="sora-info" role="note" aria-label={t().infoLabel} className="info-popover no-print" {...popoverTarget}>
         <p className="info-lead">
           <strong>Sora</strong>
           {t().infoLead}
@@ -76,25 +78,17 @@ export function App(props: AppProps) {
         <p className="info-built">
           {locale() === 'ja' ? (
             <span>
-              <a href="https://hono.dev" target="_blank" rel="noopener">
-                Hono
-              </a>
+              <a href="https://hono.dev" target="_blank" rel="noopener">Hono</a>
               {' と '}
-              <a href="https://github.com/piconic-ai/barefootjs" target="_blank" rel="noopener">
-                Barefoot.js
-              </a>
+              <a href="https://github.com/piconic-ai/barefootjs" target="_blank" rel="noopener">Barefoot.js</a>
               {' で構築。'}
             </span>
           ) : (
             <span>
               {'Built with '}
-              <a href="https://hono.dev" target="_blank" rel="noopener">
-                Hono
-              </a>
+              <a href="https://hono.dev" target="_blank" rel="noopener">Hono</a>
               {' and '}
-              <a href="https://github.com/piconic-ai/barefootjs" target="_blank" rel="noopener">
-                Barefoot.js
-              </a>
+              <a href="https://github.com/piconic-ai/barefootjs" target="_blank" rel="noopener">Barefoot.js</a>
               {'.'}
             </span>
           )}
@@ -103,9 +97,7 @@ export function App(props: AppProps) {
         <p className="info-contact">
           {t().infoContactIntro}
           <span className="info-contact-links">
-            <a href="https://x.com/kfly8" target="_blank" rel="noopener">
-              x.com/kfly8
-            </a>
+            <a href="https://x.com/kfly8" target="_blank" rel="noopener">x.com/kfly8</a>
             <a href="mailto:kentafly88@gmail.com">kentafly88@gmail.com</a>
           </span>
         </p>
