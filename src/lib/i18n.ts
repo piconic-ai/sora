@@ -48,13 +48,6 @@ export const messages: Record<Locale, Messages> = {
   },
 }
 
-export function summary(locale: Locale, words: number, pages: number): string {
-  if (locale === 'ja') return `${words}語 ・ ${pages}ページ`
-  const wordLabel = words === 1 ? 'word' : 'words'
-  const pageLabel = pages === 1 ? 'page' : 'pages'
-  return `${words} ${wordLabel} · ${pages} ${pageLabel}`
-}
-
 // Caption for the page-capacity progress bar (FB4): communicates which page
 // is currently being filled and how many words are still needed to fill it
 // completely (28 pairs per page by default — see DEFAULTS/computeCapacity).
