@@ -62,4 +62,10 @@ describe('deserializeDraft rejects invalid input', () => {
     expect(deserializeDraft({ v: 1, pairs: [] })).toBeNull()
     expect(deserializeDraft({ v: 1, pairs: [], updatedAt: '1' })).toBeNull()
   })
+
+  test('updatedAt is NaN or Infinity', () => {
+    expect(deserializeDraft({ v: 1, pairs: [], updatedAt: Number.NaN })).toBeNull()
+    expect(deserializeDraft({ v: 1, pairs: [], updatedAt: Number.POSITIVE_INFINITY })).toBeNull()
+    expect(deserializeDraft({ v: 1, pairs: [], updatedAt: Number.NEGATIVE_INFINITY })).toBeNull()
+  })
 })

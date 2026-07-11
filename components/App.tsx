@@ -98,9 +98,8 @@ export function App(props: AppProps) {
           type="button"
           className="new-button"
           onClick={() => {
-            void saveList(pairs())
+            void saveList(pairs()).then(() => refreshHistory())
             setLoadRequest({ pairs: [], nonce: ++loadNonce })
-            void refreshHistory()
           }}
         >
           {t().newList}
@@ -179,16 +178,18 @@ export function App(props: AppProps) {
             </div>
           ))
         )}
-        <button
-          type="button"
-          className="history-clear-all"
-          onClick={async () => {
-            await clearAllLists()
-            await refreshHistory()
-          }}
-        >
-          {t().clearAllLists}
-        </button>
+        {history().length === 0 ? null : (
+          <button
+            type="button"
+            className="history-clear-all"
+            onClick={async () => {
+              await clearAllLists()
+              await refreshHistory()
+            }}
+          >
+            {t().clearAllLists}
+          </button>
+        )}
       </div>
       <div className="app-input no-print">
         <WordTable breakIndices={breakIndices()} onChange={setPairs} locale={locale()} loadRequest={loadRequest()} />
@@ -210,9 +211,8 @@ export function App(props: AppProps) {
           className="print-button"
           disabled={layout().pages.length === 0}
           onClick={() => {
-            void saveList(pairs())
+            void saveList(pairs()).then(() => refreshHistory())
             window.print()
-            void refreshHistory()
           }}
         >
           {t().print}

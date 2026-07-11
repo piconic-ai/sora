@@ -46,11 +46,34 @@ describe('saveList / listSaved', () => {
     expect(await listSaved()).toHaveLength(2)
   })
 
-  test('a duplicate of an older (non-latest) entry is still saved', async () => {
+  test('a duplicate of an older (non-latest) entry is not saved either', async () => {
+    let now = 1000
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+
     await saveList([{ front: 'Apple', back: 'りんご' }])
+    now = 2000
     await saveList([{ front: 'Banana', back: 'ばなな' }])
-    await saveList([{ front: 'Apple', back: 'りんご' }]) // equals entry[0], not entry[-1] (latest)
-    expect(await listSaved()).toHaveLength(3)
+    now = 3000
+    await saveList([{ front: 'Apple', back: 'りんご' }]) // equals the older entry, not the latest one
+    const lists = await listSaved()
+    expect(lists).toHaveLength(2)
+    expect(lists.map((l) => l.pairs[0].front)).toEqual(['Banana', 'Apple'])
+  })
+
+  test('checks against every existing entry, not just the latest, with the oldest matched', async () => {
+    let now = 1000
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+
+    await saveList([{ front: 'Apple', back: 'りんご' }])
+    now = 2000
+    await saveList([{ front: 'Banana', back: 'ばなな' }])
+    now = 3000
+    await saveList([{ front: 'Cherry', back: 'さくらんぼ' }])
+    now = 4000
+    await saveList([{ front: 'Apple', back: 'りんご' }]) // matches the oldest of the three
+    const lists = await listSaved()
+    expect(lists).toHaveLength(3)
+    expect(lists.map((l) => l.pairs[0].front)).toEqual(['Cherry', 'Banana', 'Apple'])
   })
 
   test('listSaved returns entries newest first', async () => {

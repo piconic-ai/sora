@@ -4,8 +4,8 @@
 // isStorageAvailable — or disabled/restricted, e.g. some private-browsing
 // modes) or an operation errors for any reason, the call resolves to a
 // null/no-op result instead of throwing or rejecting. Callers never need a
-// try/catch around these — the app must keep working with drafts simply not
-// persisting.
+// try/catch around these — the app must keep working with drafts/lists
+// simply not persisting.
 
 const DB_NAME = 'sora'
 const DB_VERSION = 2
@@ -38,12 +38,12 @@ function upgrade(db: IDBDatabase, oldVersion: number): void {
 let dbPromise: Promise<IDBDatabase | null> | null = null
 let warned = false
 
-// Log a single fail-soft warning per session so a "drafts aren't saving"
+// Log a single fail-soft warning per session so a "data isn't saving"
 // problem is diagnosable, without spamming the console on every operation.
 function warnOnce(reason: string): void {
   if (warned) return
   warned = true
-  console.warn(`[sora] IndexedDB unavailable, drafts will not persist: ${reason}`)
+  console.warn(`[sora] IndexedDB unavailable, data will not persist: ${reason}`)
 }
 
 // Opens (and caches) the shared 'sora' database connection. Resolves to

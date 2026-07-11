@@ -68,6 +68,12 @@ describe('deserializeList rejects invalid input', () => {
     expect(deserializeList({ v: 1, id: 'a', pairs: [] })).toBeNull()
     expect(deserializeList({ v: 1, id: 'a', pairs: [], createdAt: '1' })).toBeNull()
   })
+
+  test('createdAt is NaN or Infinity', () => {
+    expect(deserializeList({ v: 1, id: 'a', pairs: [], createdAt: Number.NaN })).toBeNull()
+    expect(deserializeList({ v: 1, id: 'a', pairs: [], createdAt: Number.POSITIVE_INFINITY })).toBeNull()
+    expect(deserializeList({ v: 1, id: 'a', pairs: [], createdAt: Number.NEGATIVE_INFINITY })).toBeNull()
+  })
 })
 
 describe('pairsEqual', () => {

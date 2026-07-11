@@ -5,25 +5,36 @@ import { type SavedList, deserializeList, pairsEqual, serializeList } from './sc
 const STORE = 'lists'
 const MAX_LISTS = 50
 
+// `crypto.randomUUID()` is only defined in secure contexts (HTTPS or
+// localhost) — calling it over plain HTTP (e.g. a LAN IP during local
+// testing) throws a TypeError. Fall back to a non-cryptographic but
+// sufficiently-unique id in that case, matching db.ts's fail-soft policy of
+// never letting storage plumbing throw.
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
 // Automatic history snapshot, taken on print and on "new list" — see
 // components/App.tsx. Fire-and-forget from the caller's point of view (every
 // db.ts primitive already fails soft), so a broken/unavailable IndexedDB
 // just means history silently doesn't accumulate.
 //
-// `crypto.randomUUID()` / `Date.now()` are read here, at the edge of the
-// pure schema layer, rather than in schema.ts's serializeList — keeping
+// `generateId()` / `Date.now()` are read here, at the edge of the pure
+// schema layer, rather than in schema.ts's serializeList — keeping
 // serializeList a pure function of its arguments is what makes it trivially
 // testable.
 export async function saveList(pairs: Pair[]): Promise<void> {
   if (pairs.length === 0) return
 
-  // Newest-first: the most recent entry is what a repeated, unedited print
-  // would duplicate, so it's the one to compare against.
+  // Duplicate-save detection: skip writing a new snapshot if its content
+  // matches *any* existing saved list, not just the most recent one — the
+  // requirement is "never store a duplicate", not just "never store a
+  // duplicate of the last print".
   const existing = await listSaved()
-  const latest = existing[0]
-  if (latest && pairsEqual(latest.pairs, pairs)) return
+  if (existing.some((item) => pairsEqual(item.pairs, pairs))) return
 
-  const entry = serializeList(crypto.randomUUID(), pairs, Date.now())
+  const entry = serializeList(generateId(), pairs, Date.now())
   await idbPut(STORE, entry)
 
   // Cap at MAX_LISTS, oldest first. `existing` is newest-first and doesn't

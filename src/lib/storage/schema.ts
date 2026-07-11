@@ -39,7 +39,7 @@ export function deserializeDraft(raw: unknown): Draft | null {
   if (d.v !== DRAFT_VERSION) return null
   if (!Array.isArray(d.pairs)) return null
   if (!d.pairs.every(isPair)) return null
-  if (typeof d.updatedAt !== 'number') return null
+  if (typeof d.updatedAt !== 'number' || !Number.isFinite(d.updatedAt)) return null
 
   return { v: DRAFT_VERSION, pairs: normalizePairs(d.pairs as Pair[]), updatedAt: d.updatedAt }
 }
@@ -74,15 +74,14 @@ export function deserializeList(raw: unknown): SavedList | null {
   if (typeof d.id !== 'string' || d.id === '') return null
   if (!Array.isArray(d.pairs)) return null
   if (!d.pairs.every(isPair)) return null
-  if (typeof d.createdAt !== 'number') return null
+  if (typeof d.createdAt !== 'number' || !Number.isFinite(d.createdAt)) return null
 
   return { v: LIST_VERSION, id: d.id, pairs: normalizePairs(d.pairs as Pair[]), createdAt: d.createdAt }
 }
 
 // Duplicate-save detection: saveList() skips writing a new snapshot when the
-// current pairs are identical to the most recently saved list, so repeatedly
-// printing the same list without editing it doesn't spam the history with
-// identical entries.
+// current pairs are identical to any already-saved list, so history never
+// accumulates duplicate entries.
 export function pairsEqual(a: Pair[], b: Pair[]): boolean {
   if (a.length !== b.length) return false
   return a.every((p, i) => p.front === b[i].front && p.back === b[i].back)

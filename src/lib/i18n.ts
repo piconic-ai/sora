@@ -73,7 +73,7 @@ export const messages: Record<Locale, Messages> = {
     historyEmpty: '履歴はまだありません',
     loadList: '読み込む',
     deleteList: '削除',
-    clearAllLists: 'すべて削除',
+    clearAllLists: '履歴をすべて削除',
   },
   en: {
     title: 'Sora — Learn by heart',
@@ -95,7 +95,7 @@ export const messages: Record<Locale, Messages> = {
     historyEmpty: 'No history yet',
     loadList: 'Load',
     deleteList: 'Delete',
-    clearAllLists: 'Clear all',
+    clearAllLists: 'Clear all history',
   },
 }
 

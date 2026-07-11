@@ -98,6 +98,16 @@ export function WordTable(props: WordTableProps) {
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   let latestPairs: Pair[] = []
 
+  // Set by the loadRequest effect below the first time it applies a request.
+  // Guards the draft restore below: loadRequest only fires from an explicit
+  // user action ("New" / history's "Load"), so once one has landed it must
+  // win over the async draft restore, even if the restore's isPristine()
+  // check would otherwise still pass (e.g. "New" resets the table back to a
+  // single blank row, which *is* pristine) — otherwise a "New"/"Load" click
+  // that races ahead of the still-in-flight loadDraft() would be silently
+  // undone the moment that draft resolves.
+  let loadRequestApplied = false
+
   const flushSave = () => {
     // Only flush a *pending* save. Without this guard, a pagehide/hidden that
     // fires before the user has edited anything (e.g. right after load, while
@@ -146,8 +156,10 @@ export function WordTable(props: WordTableProps) {
 
     void (async () => {
       const pairs = await loadDraft()
+      if (loadRequestApplied) return
       if (!pairs || pairs.length === 0) return
       if (!isPristine(rows())) return
+      if (loadRequestApplied) return
       const restored = ensureTrailingBlank(pairs.map((p) => ({ id: nextRowId++, front: p.front, back: p.back })))
       setRows(restored)
       emit(restored)
@@ -167,6 +179,7 @@ export function WordTable(props: WordTableProps) {
     const req = props.loadRequest
     if (!req || req.nonce === lastNonce) return
     lastNonce = req.nonce
+    loadRequestApplied = true
     const restored = ensureTrailingBlank(req.pairs.map((p) => ({ id: nextRowId++, front: p.front, back: p.back })))
     setRows(restored)
     emit(restored)
