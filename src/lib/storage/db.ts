@@ -1,0 +1,95 @@
+// Minimal, dependency-free Promise wrapper around IndexedDB.
+//
+// Every function here fails soft: if IndexedDB is unavailable (SSR — see
+// isStorageAvailable — or disabled/restricted, e.g. some private-browsing
+// modes) or an operation errors for any reason, the call resolves to a
+// null/no-op result instead of throwing or rejecting. Callers never need a
+// try/catch around these — the app must keep working with drafts simply not
+// persisting.
+
+const DB_NAME = 'sora'
+const DB_VERSION = 1
+
+export function isStorageAvailable(): boolean {
+  return typeof indexedDB !== 'undefined'
+}
+
+// Per-version schema migrations, applied in ascending order from
+// oldVersion+1 through DB_VERSION. Add a new `if (oldVersion < N)` branch for
+// each future version bump instead of editing existing branches, so a
+// browser upgrading from any past version replays every migration it missed.
+// PR2 is expected to add: `if (oldVersion < 2) db.createObjectStore('lists')`.
+function upgrade(db: IDBDatabase, oldVersion: number): void {
+  if (oldVersion < 1) {
+    // Out-of-line keys (no keyPath): the key is passed explicitly to
+    // put/get/delete rather than read off the stored value.
+    db.createObjectStore('drafts')
+  }
+}
+
+let dbPromise: Promise<IDBDatabase | null> | null = null
+
+// Opens (and caches) the shared 'sora' database connection. Resolves to
+// null — rather than rejecting — whenever the connection can't be
+// established, so callers can treat "no database" as a normal case.
+export function openSoraDb(): Promise<IDBDatabase | null> {
+  if (!isStorageAvailable()) return Promise.resolve(null)
+  if (dbPromise) return dbPromise
+
+  dbPromise = new Promise((resolve) => {
+    let request: IDBOpenDBRequest
+    try {
+      request = indexedDB.open(DB_NAME, DB_VERSION)
+    } catch {
+      resolve(null)
+      return
+    }
+    request.onupgradeneeded = (event) => upgrade(request.result, event.oldVersion)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => resolve(null)
+    // Another tab holds an older-version connection open; rather than hang
+    // waiting for it to close, treat this attempt as unavailable — the
+    // caller's fail-soft handling covers "no database" cases already.
+    request.onblocked = () => resolve(null)
+  })
+
+  return dbPromise
+}
+
+function runRequest<T>(
+  storeName: string,
+  mode: IDBTransactionMode,
+  run: (store: IDBObjectStore) => IDBRequest<T>,
+): Promise<T | null> {
+  return openSoraDb().then((db) => {
+    if (!db) return null
+    return new Promise<T | null>((resolve) => {
+      try {
+        const tx = db.transaction(storeName, mode)
+        const request = run(tx.objectStore(storeName))
+        request.onsuccess = () => resolve(request.result ?? null)
+        request.onerror = () => resolve(null)
+        tx.onerror = () => resolve(null)
+      } catch {
+        resolve(null)
+      }
+    })
+  })
+}
+
+export function idbGet<T>(store: string, key: IDBValidKey): Promise<T | null> {
+  return runRequest<T>(store, 'readonly', (s) => s.get(key) as IDBRequest<T>)
+}
+
+export async function idbPut(store: string, value: unknown, key: IDBValidKey): Promise<void> {
+  await runRequest<IDBValidKey>(store, 'readwrite', (s) => s.put(value, key))
+}
+
+export async function idbDel(store: string, key: IDBValidKey): Promise<void> {
+  await runRequest<undefined>(store, 'readwrite', (s) => s.delete(key))
+}
+
+export async function idbGetAll<T>(store: string): Promise<T[]> {
+  const result = await runRequest<T[]>(store, 'readonly', (s) => s.getAll() as IDBRequest<T[]>)
+  return result ?? []
+}

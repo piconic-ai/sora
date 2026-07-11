@@ -17,16 +17,17 @@
     "hono": "^4.6.0"
   },
   "devDependencies": {
+    "@barefootjs/cli": "^0.18.5",
+    "@barefootjs/test": "^0.18.5",
+    "@cloudflare/workers-types": "^4.20260702.1",
+    "@types/node": "^22.0.0",
     "@unocss/cli": "^66.0.0",
     "@unocss/preset-wind4": "^66.0.0",
-    "unocss": "^66.0.0",
-    "@barefootjs/cli": "^0.18.5",
-    "@cloudflare/workers-types": "^4.20260702.1",
-    "@barefootjs/test": "^0.18.5",
     "concurrently": "^9.0.0",
+    "fake-indexeddb": "^6.2.5",
     "typescript": "^5.6.0",
-    "wrangler": "^4.0.0",
-    "@types/node": "^22.0.0",
-    "vitest": "^4.0.0"
+    "unocss": "^66.0.0",
+    "vitest": "^4.0.0",
+    "wrangler": "^4.0.0"
   }
 }
