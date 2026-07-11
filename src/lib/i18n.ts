@@ -20,6 +20,18 @@ export function pickLocale(acceptLanguage: string | null | undefined): Locale {
   return /\bja\b/i.test(acceptLanguage) ? 'ja' : 'en'
 }
 
+// Resolves the locale to render for a request: a previously-set `locale`
+// cookie wins (so a manual language switch persists across reloads), and
+// falls back to Accept-Language sniffing (pickLocale) for first-time
+// visitors with no cookie yet.
+export function resolveLocale(
+  cookieValue: string | null | undefined,
+  acceptLanguage: string | null | undefined,
+): Locale {
+  if (cookieValue === 'ja' || cookieValue === 'en') return cookieValue
+  return pickLocale(acceptLanguage)
+}
+
 export const messages: Record<Locale, Messages> = {
   ja: {
     title: 'Sora — そらで覚える',

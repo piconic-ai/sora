@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { pageMeterCaption, pickLocale } from '../src/lib/i18n'
+import { pageMeterCaption, pickLocale, resolveLocale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
 
 describe('pickLocale', () => {
@@ -25,6 +25,32 @@ describe('pickLocale', () => {
 
   test('ja-JP -> ja', () => {
     expect(pickLocale('ja-JP')).toBe('ja')
+  })
+})
+
+describe('resolveLocale', () => {
+  test("cookie 'ja' wins over accept-language", () => {
+    expect(resolveLocale('ja', 'en-US,en')).toBe('ja')
+  })
+
+  test("cookie 'en' wins over accept-language", () => {
+    expect(resolveLocale('en', 'ja,en-US;q=0.9')).toBe('en')
+  })
+
+  test('invalid cookie value falls back to accept-language', () => {
+    expect(resolveLocale('fr', 'ja,en-US;q=0.9')).toBe('ja')
+  })
+
+  test('missing cookie falls back to accept-language', () => {
+    expect(resolveLocale(undefined, 'ja,en-US;q=0.9')).toBe('ja')
+  })
+
+  test('null cookie falls back to accept-language', () => {
+    expect(resolveLocale(null, null)).toBe('en')
+  })
+
+  test('empty string cookie falls back to accept-language', () => {
+    expect(resolveLocale('', 'ja,en-US;q=0.9')).toBe('ja')
   })
 })
 
