@@ -61,7 +61,7 @@ export function WordTable(props: WordTableProps) {
   const [rows, setRows] = createSignal<Row[]>([emptyRow()])
   const [pasteError, setPasteError] = createSignal<string | null>(null)
 
-  const t = messages[(props.locale as Locale) ?? 'ja']
+  const t = createMemo(() => messages[(props.locale as Locale) ?? 'ja'])
 
   // breakIndices (from App) is a pair index — blank rows excluded — but
   // rows() includes blank rows, so each row's position and its pair index
@@ -107,7 +107,7 @@ export function WordTable(props: WordTableProps) {
     if (!/[\t\n,]/.test(text)) return // single value — let the browser paste normally
     e.preventDefault()
     const { pairs, error } = parseInput(text)
-    setPasteError(error ? t.pasteError : null)
+    setPasteError(error ? t().pasteError : null)
     if (pairs.length === 0) return
     setRows((rs) => {
       const rowIndex = rs.findIndex((r) => r.id === rowId)
@@ -241,8 +241,8 @@ export function WordTable(props: WordTableProps) {
       <table className="word-table">
         <thead>
           <tr>
-            <th>{t.front}</th>
-            <th>{t.back}</th>
+            <th>{t().front}</th>
+            <th>{t().back}</th>
           </tr>
         </thead>
         <tbody>
