@@ -6,8 +6,6 @@ export interface Messages {
   metaDescription: string
   front: string
   back: string
-  addRow: string
-  deleteRow: string
   print: string
   hint: string
   pasteError: string
@@ -28,8 +26,6 @@ export const messages: Record<Locale, Messages> = {
       '単語（表面）と訳（裏面）を入力するだけで、切って蛇腹に折る単語帳の印刷レイアウトを作れます。ログイン不要・保存不要。',
     front: '表面',
     back: '裏面',
-    addRow: '+ 行を追加',
-    deleteRow: '行を削除',
     print: '印刷',
     hint: '表面と裏面を入力すると、切って折るだけの単語帳になります。',
     pasteError: '貼り付けた行数が奇数のため、ペアを作れませんでした',
@@ -42,8 +38,6 @@ export const messages: Record<Locale, Messages> = {
     metaDescription: 'Type word pairs and print a fold-and-cut flashcard booklet. No login, nothing saved.',
     front: 'Front',
     back: 'Back',
-    addRow: '+ Add row',
-    deleteRow: 'Delete row',
     print: 'Print',
     hint: 'Enter fronts and backs to make a cut-and-fold flashcard booklet.',
     pasteError: "Odd number of lines — couldn't form pairs",
