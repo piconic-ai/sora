@@ -91,10 +91,13 @@ export function WordTable(props: WordTableProps) {
   let latestPairs: Pair[] = []
 
   const flushSave = () => {
-    if (saveTimer !== null) {
-      clearTimeout(saveTimer)
-      saveTimer = null
-    }
+    // Only flush a *pending* save. Without this guard, a pagehide/hidden that
+    // fires before the user has edited anything (e.g. right after load, while
+    // the async restore is still in flight) would call saveDraft([]) and
+    // delete a previously-stored draft — permanent data loss.
+    if (saveTimer === null) return
+    clearTimeout(saveTimer)
+    saveTimer = null
     void saveDraft(latestPairs)
   }
 

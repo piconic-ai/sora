@@ -28,29 +28,55 @@ function upgrade(db: IDBDatabase, oldVersion: number): void {
 }
 
 let dbPromise: Promise<IDBDatabase | null> | null = null
+let warned = false
+
+// Log a single fail-soft warning per session so a "drafts aren't saving"
+// problem is diagnosable, without spamming the console on every operation.
+function warnOnce(reason: string): void {
+  if (warned) return
+  warned = true
+  console.warn(`[sora] IndexedDB unavailable, drafts will not persist: ${reason}`)
+}
 
 // Opens (and caches) the shared 'sora' database connection. Resolves to
 // null — rather than rejecting — whenever the connection can't be
-// established, so callers can treat "no database" as a normal case.
+// established, so callers can treat "no database" as a normal case. A failed
+// open is not cached: dbPromise is reset so the next call retries (a failure
+// may be transient — quota pressure, a competing upgrade in another tab).
 export function openSoraDb(): Promise<IDBDatabase | null> {
   if (!isStorageAvailable()) return Promise.resolve(null)
   if (dbPromise) return dbPromise
 
   dbPromise = new Promise((resolve) => {
+    const fail = (reason: string) => {
+      warnOnce(reason)
+      dbPromise = null // allow a later retry rather than caching the failure
+      resolve(null)
+    }
     let request: IDBOpenDBRequest
     try {
       request = indexedDB.open(DB_NAME, DB_VERSION)
-    } catch {
-      resolve(null)
+    } catch (e) {
+      fail(String(e))
       return
     }
     request.onupgradeneeded = (event) => upgrade(request.result, event.oldVersion)
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => resolve(null)
+    request.onsuccess = () => {
+      const db = request.result
+      // If another tab later opens a higher version, close this connection so
+      // it doesn't block that upgrade; drop the cache so the next call
+      // reopens at the new version.
+      db.onversionchange = () => {
+        db.close()
+        dbPromise = null
+      }
+      resolve(db)
+    }
+    request.onerror = () => fail('open error')
     // Another tab holds an older-version connection open; rather than hang
     // waiting for it to close, treat this attempt as unavailable — the
     // caller's fail-soft handling covers "no database" cases already.
-    request.onblocked = () => resolve(null)
+    request.onblocked = () => fail('blocked by another tab')
   })
 
   return dbPromise
@@ -67,9 +93,16 @@ function runRequest<T>(
       try {
         const tx = db.transaction(storeName, mode)
         const request = run(tx.objectStore(storeName))
-        request.onsuccess = () => resolve(request.result ?? null)
-        request.onerror = () => resolve(null)
+        let result: T | null = null
+        request.onsuccess = () => {
+          result = request.result ?? null
+        }
+        // Resolve on tx.oncomplete, not request.onsuccess: for writes the
+        // success event fires before commit, which can still abort (e.g. on
+        // quota) and roll the write back. oncomplete means it's durable.
+        tx.oncomplete = () => resolve(result)
         tx.onerror = () => resolve(null)
+        tx.onabort = () => resolve(null)
       } catch {
         resolve(null)
       }
