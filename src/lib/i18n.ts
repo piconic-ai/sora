@@ -1,3 +1,5 @@
+import type { PageFill } from './pageMeter'
+
 export type Locale = 'ja' | 'en'
 
 export interface Messages {
@@ -51,4 +53,21 @@ export function summary(locale: Locale, words: number, pages: number): string {
   const wordLabel = words === 1 ? 'word' : 'words'
   const pageLabel = pages === 1 ? 'page' : 'pages'
   return `${words} ${wordLabel} · ${pages} ${pageLabel}`
+}
+
+// Caption for the page-capacity progress bar (FB4): communicates which page
+// is currently being filled and how many words are still needed to fill it
+// completely (28 pairs per page by default — see DEFAULTS/computeCapacity).
+export function pageMeterCaption(locale: Locale, fill: PageFill): string {
+  const { page, filled, capacity, isFull } = fill
+
+  if (locale === 'ja') {
+    if (isFull) return `${page}ページ目 ・ ${filled}/${capacity}語 ・ ちょうど1ページ分`
+    return `${page}ページ目 ・ ${filled}/${capacity}語 ・ あと${capacity - filled}語で1ページ`
+  }
+
+  if (isFull) return `Page ${page} · ${filled}/${capacity} words · Fills the page exactly`
+  const remaining = capacity - filled
+  const wordLabel = remaining === 1 ? 'word' : 'words'
+  return `Page ${page} · ${filled}/${capacity} words · ${remaining} more ${wordLabel} to fill the page`
 }

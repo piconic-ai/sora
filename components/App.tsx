@@ -5,8 +5,9 @@ import { PrintSheets } from './PrintSheets'
 import { WordTable } from './WordTable'
 import { computeLayout } from '../src/lib/layout'
 import { DEFAULTS } from '../src/lib/constants'
-import { messages, summary } from '../src/lib/i18n'
+import { messages, pageMeterCaption } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
+import { computePageFill } from '../src/lib/pageMeter'
 import type { Pair } from '../src/lib/types'
 
 interface AppProps {
@@ -17,6 +18,7 @@ export function App(props: AppProps) {
   const [pairs, setPairs] = createSignal<Pair[]>([])
 
   const layout = createMemo(() => computeLayout(pairs(), DEFAULTS))
+  const pageFill = createMemo(() => computePageFill(pairs().length, layout().capacity.pairsPerPage))
   // Every element of pageBreakAfterPairIndex marks the last pair of a
   // page, including the very last pair overall — but there's no line to
   // draw after the final row, so that last entry is dropped.
@@ -38,7 +40,17 @@ export function App(props: AppProps) {
         {pairs().length === 0 ? (
           <p className="hint">{t.hint}</p>
         ) : (
-          <p className="summary">{summary((props.locale as Locale) ?? 'ja', pairs().length, layout().totalPages)}</p>
+          <div className="page-meter">
+            <div className="page-meter-track">
+              <div
+                className={pageFill().isFull ? 'page-meter-fill is-full' : 'page-meter-fill'}
+                style={`width:${Math.round(pageFill().ratio * 100)}%`}
+              />
+            </div>
+            <p className="page-meter-caption">
+              {pageMeterCaption((props.locale as Locale) ?? 'ja', pageFill())}
+            </p>
+          </div>
         )}
         <button
           type="button"

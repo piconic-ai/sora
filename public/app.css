@@ -106,6 +106,36 @@
   margin: 0;
 }
 
+.page-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-meter-track {
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.page-meter-fill {
+  height: 100%;
+  background: #111;
+  border-radius: 3px;
+  transition: width 0.2s;
+}
+
+.page-meter-fill.is-full {
+  background: #2e7d32;
+}
+
+.page-meter-caption {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+
 .print-button {
   align-self: flex-start;
   margin-top: 8px;
