@@ -40,6 +40,11 @@ export interface KeyActionInput {
   isFirstRow: boolean
   /** This row is the last row in the table. */
   isLastRow: boolean
+  /** Modifier keys held down when the event fired (KeyboardEvent flags). */
+  metaKey?: boolean
+  ctrlKey?: boolean
+  altKey?: boolean
+  shiftKey?: boolean
 }
 
 /**
@@ -52,7 +57,30 @@ export interface KeyActionInput {
  * the resolved action (Enter must never insert a newline or submit).
  */
 export function resolveKeyAction(input: KeyActionInput): Action {
-  const { key, col, caretAtStart, caretAtEnd, cellEmpty, rowEmpty, isFirstRow, isLastRow } = input
+  const {
+    key,
+    col,
+    caretAtStart,
+    caretAtEnd,
+    cellEmpty,
+    rowEmpty,
+    isFirstRow,
+    isLastRow,
+    metaKey = false,
+    ctrlKey = false,
+    altKey = false,
+    shiftKey = false,
+  } = input
+
+  // Never hijack OS/browser shortcuts. Cmd/Ctrl/Alt combinations (e.g.
+  // Cmd+ArrowUp to jump to the start of the field, Cmd+ArrowLeft to jump to
+  // line start) and Shift+Arrow (selection extension) must fall through to
+  // default behavior rather than being reinterpreted as cell-to-cell
+  // navigation.
+  if (metaKey || ctrlKey || altKey) return 'none'
+  if (shiftKey && (key === 'ArrowUp' || key === 'ArrowDown' || key === 'ArrowLeft' || key === 'ArrowRight')) {
+    return 'none'
+  }
 
   switch (key) {
     case 'ArrowUp':
@@ -81,12 +109,20 @@ export function resolveKeyAction(input: KeyActionInput): Action {
       if (col === 1) return 'moveToFrontCell'
       // col === 0 (front cell)
       if (!rowEmpty) return 'none'
-      if (isFirstRow) return 'none'
+      // isFirstRow: no previous row to merge into. isLastRow: this is the
+      // trailing ghost row — it must always exist (see
+      // WordTable.ensureTrailingBlank), so never let it be deleted here.
+      // Deleting an empty *middle* row (isFirstRow: false, isLastRow: false)
+      // is still allowed below.
+      if (isFirstRow || isLastRow) return 'none'
       return 'deleteRowFocusPrev'
 
     case 'Delete':
       if (!(cellEmpty && col === 0 && rowEmpty)) return 'none'
-      if (isFirstRow && isLastRow) return 'none' // the only row — never delete it
+      // isLastRow covers both "the only row" (isFirstRow && isLastRow) and
+      // the trailing ghost row on a multi-row table — neither may be
+      // deleted. An empty middle row (isLastRow: false) is still allowed.
+      if (isLastRow) return 'none'
       return 'deleteRowFocusNext'
 
     default:

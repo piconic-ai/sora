@@ -30,6 +30,22 @@ function emptyRow(): Row {
   return { id: nextRowId++, front: '', back: '' }
 }
 
+// Self-healing normalization for the "there is always exactly one blank row
+// at the end of the table" invariant. Every code path that produces a new
+// `rows` array must run its result through this before setRows/emit, so
+// that if the invariant is ever violated — e.g. a future bug, or a
+// resolveKeyAction regression that lets the ghost row be deleted — it is
+// restored on the very next render instead of leaving the table in a state
+// where Enter/typing on the last row can no longer create a new row.
+function ensureTrailingBlank(rows: Row[]): Row[] {
+  if (rows.length === 0) return [emptyRow()]
+  const last = rows[rows.length - 1]
+  if (last.front.trim() !== '' || last.back.trim() !== '') {
+    return [...rows, emptyRow()]
+  }
+  return rows
+}
+
 // Focuses the input in `col` (0 = front, 1 = back) inside `tr`, if both
 // exist, and moves the caret to the end of its value.
 function focusCellIn(tr: Element | null | undefined, col: Col) {
@@ -65,18 +81,13 @@ export function WordTable(props: WordTableProps) {
 
   // Invariant: there is always exactly one empty row at the end of the
   // table, so there is always somewhere to type the next pair — this is
-  // what replaces the old "+ Add row" button.
+  // what replaces the old "+ Add row" button. Enforced by
+  // ensureTrailingBlank() in every code path below that produces a new
+  // `rows` array (edit, paste, row deletion).
   const editCell = (id: number, field: 'front' | 'back', value: string) => {
     setRows((rs) => {
-      const next = rs.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-      const lastIndex = next.length - 1
-      const editedIndex = next.findIndex((r) => r.id === id)
-      if (editedIndex === lastIndex) {
-        const last = next[lastIndex]
-        if (last.front.trim() !== '' || last.back.trim() !== '') {
-          next.push(emptyRow())
-        }
-      }
+      const edited = rs.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+      const next = ensureTrailingBlank(edited)
       emit(next)
       return next
     })
@@ -84,7 +95,8 @@ export function WordTable(props: WordTableProps) {
 
   const deleteRowById = (id: number) => {
     setRows((rs) => {
-      const next = rs.filter((r) => r.id !== id)
+      const filtered = rs.filter((r) => r.id !== id)
+      const next = ensureTrailingBlank(filtered)
       emit(next)
       return next
     })
@@ -103,7 +115,8 @@ export function WordTable(props: WordTableProps) {
       const before = rs.slice(0, start)
       const pasted = pairs.map((p) => ({ id: nextRowId++, front: p.front, back: p.back }))
       const after = rs.slice(start + pairs.length)
-      const next = [...before, ...pasted, ...(after.length > 0 ? after : [emptyRow()])]
+      const merged = [...before, ...pasted, ...(after.length > 0 ? after : [emptyRow()])]
+      const next = ensureTrailingBlank(merged)
       emit(next)
       return next
     })
@@ -121,6 +134,12 @@ export function WordTable(props: WordTableProps) {
     // `keyCode === 229` is the legacy sentinel some browsers still emit for
     // the composition-confirming keystroke even when `isComposing` is false;
     // read it via a cast to sidestep the `keyCode` deprecation lint.
+    // Note: this guard is tuned for desktop IMEs (it protects the Enter that
+    // confirms a Japanese conversion). Some Android software keyboards also
+    // report keyCode 229 for ordinary, non-conversion keys such as
+    // Backspace, which would suppress row-deletion there too. Mobile is a
+    // secondary target for this PC-first editor, so we accept that gap for
+    // now rather than complicate this guard — revisit if mobile usage grows.
     if (e.isComposing || (e as { keyCode?: number }).keyCode === 229) return
 
     const input = e.target as HTMLInputElement
@@ -154,6 +173,10 @@ export function WordTable(props: WordTableProps) {
       rowEmpty,
       isFirstRow,
       isLastRow,
+      metaKey: e.metaKey,
+      ctrlKey: e.ctrlKey,
+      altKey: e.altKey,
+      shiftKey: e.shiftKey,
     })
 
     // Enter must never insert a newline / submit a form, regardless of

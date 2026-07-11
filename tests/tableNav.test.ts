@@ -35,6 +35,17 @@ describe('resolveKeyAction: ArrowUp', () => {
   test('does nothing on the first row even if it is also the last row', () => {
     expect(resolveKeyAction(baseInput({ key: 'ArrowUp', isFirstRow: true, isLastRow: true }))).toBe('none')
   })
+
+  test('caret position is irrelevant — moves up regardless of caretAtStart/caretAtEnd', () => {
+    expect(
+      resolveKeyAction(
+        baseInput({ key: 'ArrowUp', isFirstRow: false, caretAtStart: false, caretAtEnd: false }),
+      ),
+    ).toBe('moveUp')
+    expect(
+      resolveKeyAction(baseInput({ key: 'ArrowUp', isFirstRow: false, caretAtStart: true, caretAtEnd: true })),
+    ).toBe('moveUp')
+  })
 })
 
 describe('resolveKeyAction: ArrowDown', () => {
@@ -48,6 +59,15 @@ describe('resolveKeyAction: ArrowDown', () => {
 
   test('does nothing on the last row', () => {
     expect(resolveKeyAction(baseInput({ key: 'ArrowDown', isLastRow: true }))).toBe('none')
+  })
+
+  test('caret position is irrelevant — moves down regardless of caretAtStart/caretAtEnd', () => {
+    expect(
+      resolveKeyAction(baseInput({ key: 'ArrowDown', isLastRow: false, caretAtStart: false, caretAtEnd: false })),
+    ).toBe('moveDown')
+    expect(
+      resolveKeyAction(baseInput({ key: 'ArrowDown', isLastRow: false, caretAtStart: true, caretAtEnd: true })),
+    ).toBe('moveDown')
   })
 })
 
@@ -126,6 +146,12 @@ describe('resolveKeyAction: Enter', () => {
     )
   })
 
+  test('front -> back even on the last row (ghost row) — Enter never deletes, only moves', () => {
+    expect(
+      resolveKeyAction(baseInput({ key: 'Enter', col: 0, isLastRow: true, cellEmpty: true, rowEmpty: true })),
+    ).toBe('moveNextCell')
+  })
+
   test('back -> next row front when a next row exists', () => {
     expect(resolveKeyAction(baseInput({ key: 'Enter', col: 1, isLastRow: false }))).toBe('moveNextCell')
   })
@@ -138,9 +164,15 @@ describe('resolveKeyAction: Enter', () => {
 })
 
 describe('resolveKeyAction: Backspace', () => {
-  test('does nothing when caret is not at the start', () => {
+  test('does nothing when caret is not at the start (front column)', () => {
     expect(
       resolveKeyAction(baseInput({ key: 'Backspace', col: 0, caretAtStart: false, cellEmpty: true, rowEmpty: true })),
+    ).toBe('none')
+  })
+
+  test('does nothing when caret is not at the start (back column)', () => {
+    expect(
+      resolveKeyAction(baseInput({ key: 'Backspace', col: 1, caretAtStart: false, cellEmpty: true, rowEmpty: true })),
     ).toBe('none')
   })
 
@@ -187,7 +219,7 @@ describe('resolveKeyAction: Backspace', () => {
     ).toBe('none')
   })
 
-  test('deletes the row and focuses the previous row front cell when a previous row exists', () => {
+  test('deletes an empty middle row (not first, not last) and focuses the previous row front cell', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -197,12 +229,21 @@ describe('resolveKeyAction: Backspace', () => {
           cellEmpty: true,
           rowEmpty: true,
           isFirstRow: false,
+          isLastRow: false,
         }),
       ),
     ).toBe('deleteRowFocusPrev')
   })
 
-  test('deletes an empty last row and focuses the previous row front cell', () => {
+  // Regression test for the FB3 review finding: the trailing blank row (the
+  // "ghost row") must never be deletable via Backspace, even though it is
+  // empty and has a previous row to fall back to. Deleting it would break
+  // the "always one blank row at the end" invariant and leave the table
+  // unable to create a new row via Enter until the user typed into the
+  // (now-last, non-blank) row again. This used to incorrectly return
+  // 'deleteRowFocusPrev' — see WordTable's ensureTrailingBlank() for the
+  // matching self-healing safety net.
+  test('does NOT delete the trailing ghost row (empty, isLastRow) even when a previous row exists', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -215,7 +256,7 @@ describe('resolveKeyAction: Backspace', () => {
           isLastRow: true,
         }),
       ),
-    ).toBe('deleteRowFocusPrev')
+    ).toBe('none')
   })
 })
 
@@ -248,12 +289,15 @@ describe('resolveKeyAction: Delete', () => {
     ).toBe('deleteRowFocusNext')
   })
 
-  test('deletes an empty last row (not the only row) — executor falls back to the previous row', () => {
+  // Regression test for the FB3 review finding: same ghost-row protection
+  // as Backspace above — the trailing blank row must never be deletable via
+  // Delete either, even when it isn't also the first row.
+  test('does NOT delete the trailing ghost row (empty, isLastRow) even when a previous row exists', () => {
     expect(
       resolveKeyAction(
         baseInput({ key: 'Delete', col: 0, cellEmpty: true, rowEmpty: true, isFirstRow: false, isLastRow: true }),
       ),
-    ).toBe('deleteRowFocusNext')
+    ).toBe('none')
   })
 
   test('deletes an empty middle row and focuses the row that shifts up', () => {
@@ -262,6 +306,90 @@ describe('resolveKeyAction: Delete', () => {
         baseInput({ key: 'Delete', col: 0, cellEmpty: true, rowEmpty: true, isFirstRow: false, isLastRow: false }),
       ),
     ).toBe('deleteRowFocusNext')
+  })
+})
+
+describe('resolveKeyAction: modifier keys defer to OS/browser shortcuts', () => {
+  test('Cmd+ArrowUp does nothing (would otherwise move focus, hijacking caret-to-start)', () => {
+    expect(resolveKeyAction(baseInput({ key: 'ArrowUp', isFirstRow: false, metaKey: true }))).toBe('none')
+  })
+
+  test('Cmd+ArrowDown does nothing', () => {
+    expect(resolveKeyAction(baseInput({ key: 'ArrowDown', isLastRow: false, metaKey: true }))).toBe('none')
+  })
+
+  test('Cmd+ArrowLeft does nothing (would otherwise move focus, hijacking line-start)', () => {
+    expect(
+      resolveKeyAction(baseInput({ key: 'ArrowLeft', col: 1, caretAtStart: true, metaKey: true })),
+    ).toBe('none')
+  })
+
+  test('Ctrl+ArrowRight does nothing', () => {
+    expect(
+      resolveKeyAction(baseInput({ key: 'ArrowRight', col: 0, caretAtEnd: true, ctrlKey: true })),
+    ).toBe('none')
+  })
+
+  test('Alt+ArrowDown does nothing', () => {
+    expect(resolveKeyAction(baseInput({ key: 'ArrowDown', isLastRow: false, altKey: true }))).toBe('none')
+  })
+
+  test('Cmd+Backspace does nothing (would otherwise delete a row via row-deletion logic)', () => {
+    expect(
+      resolveKeyAction(
+        baseInput({
+          key: 'Backspace',
+          col: 0,
+          caretAtStart: true,
+          cellEmpty: true,
+          rowEmpty: true,
+          isFirstRow: false,
+          isLastRow: false,
+          metaKey: true,
+        }),
+      ),
+    ).toBe('none')
+  })
+
+  test('Cmd+Enter does nothing (Enter would otherwise move to the next cell)', () => {
+    expect(resolveKeyAction(baseInput({ key: 'Enter', col: 0, metaKey: true }))).toBe('none')
+  })
+
+  test('Shift+ArrowUp does nothing (respects text selection extension)', () => {
+    expect(resolveKeyAction(baseInput({ key: 'ArrowUp', isFirstRow: false, shiftKey: true }))).toBe('none')
+  })
+
+  test('Shift+ArrowDown does nothing', () => {
+    expect(resolveKeyAction(baseInput({ key: 'ArrowDown', isLastRow: false, shiftKey: true }))).toBe('none')
+  })
+
+  test('Shift+ArrowLeft does nothing', () => {
+    expect(
+      resolveKeyAction(baseInput({ key: 'ArrowLeft', col: 1, caretAtStart: true, shiftKey: true })),
+    ).toBe('none')
+  })
+
+  test('Shift+ArrowRight does nothing', () => {
+    expect(
+      resolveKeyAction(baseInput({ key: 'ArrowRight', col: 0, caretAtEnd: true, shiftKey: true })),
+    ).toBe('none')
+  })
+
+  test('Shift alone does not suppress non-arrow keys — Shift+Backspace still deletes an empty middle row', () => {
+    expect(
+      resolveKeyAction(
+        baseInput({
+          key: 'Backspace',
+          col: 0,
+          caretAtStart: true,
+          cellEmpty: true,
+          rowEmpty: true,
+          isFirstRow: false,
+          isLastRow: false,
+          shiftKey: true,
+        }),
+      ),
+    ).toBe('deleteRowFocusPrev')
   })
 })
 
