@@ -42,6 +42,105 @@
   margin: 0;
 }
 
+.lang-select {
+  margin-left: auto;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.lang-select:hover {
+  color: #111;
+  border-color: #ccc;
+}
+
+.lang-select:focus {
+  outline: none;
+  border-color: #111;
+}
+
+.info-button {
+  margin-left: 6px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.info-button:hover {
+  color: #111;
+  border-color: #ccc;
+}
+
+.info-button:focus-visible {
+  outline: none;
+  border-color: #111;
+}
+
+/* Native Popover API (popover/popovertarget) handles open/close, ESC, and
+   light-dismiss — this is purely presentational. The UA stylesheet gives
+   [popover] elements `inset: 0; margin: auto; border: solid; ...`, so
+   top/right are overridden here and bottom/left are pinned to `auto` to
+   avoid inheriting a full-viewport-height box from that shorthand. */
+.info-popover {
+  position: fixed;
+  top: 64px;
+  right: 24px;
+  bottom: auto;
+  left: auto;
+  margin: 0;
+  padding: 20px 22px;
+  width: min(320px, calc(100vw - 48px));
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.7;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+
+.info-popover p {
+  margin: 0 0 10px;
+}
+
+.info-popover p:last-child {
+  margin-bottom: 0;
+}
+
+.info-popover a {
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.info-popover hr {
+  margin: 14px 0;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+.info-contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 4px;
+}
+
 .app-input {
   display: flex;
   flex-direction: column;
@@ -99,42 +198,37 @@
   padding-bottom: 10px;
 }
 
-.word-table .wt-row .wt-delete {
-  background: none;
-  border: none;
-  color: #888;
-  font-size: 16px;
-  cursor: pointer;
-  line-height: 1;
-  padding: 4px;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.word-table .wt-row:hover .wt-delete {
-  opacity: 0.5;
-}
-
-.word-table .wt-delete:hover {
-  opacity: 1;
-}
-
-.word-table .wt-add {
-  margin-top: 8px;
-  padding: 4px 0;
+.hint {
   font-size: 13px;
   color: #888;
-  background: none;
-  border: none;
-  cursor: pointer;
+  margin: 0;
 }
 
-.word-table .wt-add:hover {
-  color: #111;
+.page-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.summary,
-.hint {
+.page-meter-track {
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.page-meter-fill {
+  height: 100%;
+  background: #111;
+  border-radius: 3px;
+  transition: width 0.2s;
+}
+
+.page-meter-fill.is-full {
+  background: #2e7d32;
+}
+
+.page-meter-caption {
   font-size: 13px;
   color: #888;
   margin: 0;
@@ -183,19 +277,4 @@
   max-width: 480px;
   margin-top: 8px;
   outline: 1px solid #eee;
-}
-
-.app-footer {
-  margin-top: 40px;
-  font-size: 12px;
-}
-
-.app-footer a {
-  color: #bbb;
-  text-decoration: none;
-}
-
-.app-footer a:hover {
-  color: #888;
-  text-decoration: underline;
 }
