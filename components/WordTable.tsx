@@ -1,12 +1,13 @@
 'use client'
 
-import { createMemo, createSignal } from '@barefootjs/client'
+import { createMemo, createSignal, onCleanup, onMount } from '@barefootjs/client'
 import { parseInput } from '../src/lib/parse'
 import { messages } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import type { Pair } from '../src/lib/types'
 import { resolveKeyAction } from '../src/lib/tableNav'
 import type { Col } from '../src/lib/tableNav'
+import { loadDraft, saveDraft } from '../src/lib/storage/drafts'
 
 interface Row {
   id: number
@@ -46,6 +47,16 @@ function ensureTrailingBlank(rows: Row[]): Row[] {
   return rows
 }
 
+// True only for the untouched initial table (the single trailing blank row
+// with nothing typed into it yet). Guards draft restore: if the user has
+// already started typing before the async loadDraft() resolves, their input
+// wins and the restored draft is discarded rather than clobbering it.
+function isPristine(rows: Row[]): boolean {
+  return rows.length === 1 && rows[0].front === '' && rows[0].back === ''
+}
+
+const DRAFT_SAVE_DEBOUNCE_MS = 500
+
 // Focuses the input in `col` (0 = front, 1 = back) inside `tr`, if both
 // exist, and moves the caret to the end of its value.
 function focusCellIn(tr: Element | null | undefined, col: Col) {
@@ -72,12 +83,65 @@ export function WordTable(props: WordTableProps) {
     return rows().map((row) => (row.front.trim() !== '' || row.back.trim() !== '' ? ++pairIndex : -1))
   })
 
+  // Draft autosave: debounced so rapid keystrokes coalesce into one write
+  // instead of hitting IndexedDB on every keystroke. `latestPairs` +
+  // `flushSave` let pagehide/visibilitychange save the most recent value
+  // immediately, bypassing the timer, when the page is about to go away.
+  let saveTimer: ReturnType<typeof setTimeout> | null = null
+  let latestPairs: Pair[] = []
+
+  const flushSave = () => {
+    if (saveTimer !== null) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    void saveDraft(latestPairs)
+  }
+
+  const scheduleSave = (pairs: Pair[]) => {
+    latestPairs = pairs
+    if (saveTimer !== null) clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+      saveTimer = null
+      void saveDraft(pairs)
+    }, DRAFT_SAVE_DEBOUNCE_MS)
+  }
+
   const emit = (rs: Row[]) => {
     const pairs = rs
       .filter((r) => r.front.trim() !== '' || r.back.trim() !== '')
       .map((r) => ({ front: r.front, back: r.back }))
     props.onChange(pairs)
+    scheduleSave(pairs)
   }
+
+  // Draft restore (PR1) + save-on-exit listeners. Runs once on mount, client
+  // side only — see isPristine above for why a restore loses to the user's
+  // own input, and drafts.ts/db.ts for why a missing/broken IndexedDB just
+  // resolves to "no draft" instead of throwing.
+  onMount(() => {
+    const flushOnHide = () => flushSave()
+    const flushOnVisibilityChange = () => {
+      if (document.hidden) flushSave()
+    }
+    window.addEventListener('pagehide', flushOnHide)
+    document.addEventListener('visibilitychange', flushOnVisibilityChange)
+
+    onCleanup(() => {
+      window.removeEventListener('pagehide', flushOnHide)
+      document.removeEventListener('visibilitychange', flushOnVisibilityChange)
+      if (saveTimer !== null) clearTimeout(saveTimer)
+    })
+
+    void (async () => {
+      const pairs = await loadDraft()
+      if (!pairs || pairs.length === 0) return
+      if (!isPristine(rows())) return
+      const restored = ensureTrailingBlank(pairs.map((p) => ({ id: nextRowId++, front: p.front, back: p.back })))
+      setRows(restored)
+      emit(restored)
+    })()
+  })
 
   // Invariant: there is always exactly one empty row at the end of the
   // table, so there is always somewhere to type the next pair — this is
