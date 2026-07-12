@@ -130,11 +130,6 @@ body {
   position: absolute; inset: 0;
   background: linear-gradient(105deg, rgba(255,255,255,.45), rgba(255,255,255,0) 55%);
 }
-.caret {
-  position: absolute; width: 2px; height: 13px; background: #7d8794;
-  animation: blink .85s steps(1) infinite;
-}
-@keyframes blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
 /* 入力に合わせてぼかし単語が現れる */
 .rb1 { animation: rb1 var(--T) linear infinite; transform-origin: left center; }
 .rb2 { animation: rb2 var(--T) linear infinite; transform-origin: left center; }
@@ -497,7 +492,6 @@ body {
                 <div class="thead" style="left:36px;width:74px"></div>
                 <div class="thead" style="left:258px;width:60px"></div>
                 <div id="s1rows"></div>
-                <div class="caret" style="left:316px;top:224px"></div>
               </div>
               <div class="sheen"></div>
             </div>
