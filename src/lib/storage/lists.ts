@@ -1,29 +1,42 @@
 import type { Pair } from '../types'
 import { idbClear, idbDel, idbGet, idbGetAll, idbPut } from './db'
+import { generateId } from './id'
 import { type SavedList, deserializeList, pairsEqual, serializeList } from './schema'
 
 const STORE = 'lists'
 const MAX_LISTS = 50
 
-// `crypto.randomUUID()` is only defined in secure contexts (HTTPS or
-// localhost) — calling it over plain HTTP (e.g. a LAN IP during local
-// testing) throws a TypeError. Fall back to a non-cryptographic but
-// sufficiently-unique id in that case, matching db.ts's fail-soft policy of
-// never letting storage plumbing throw.
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+// Creates a brand-new document-mode list: a fresh URL-safe id, createdAt ==
+// updatedAt == now. No dedup and no MAX_LISTS eviction here — those are
+// history-popover-specific policies that belong to saveList()'s caller
+// (App.tsx), not to "create a list" itself.
+export async function createList(pairs: Pair[]): Promise<SavedList> {
+  const now = Date.now()
+  const entry = serializeList(generateId(), pairs, now, now)
+  await idbPut(STORE, entry)
+  return entry
+}
+
+// In-place update of an existing document-mode list: pairs change, updatedAt
+// advances to now, but `id`/`createdAt` — and therefore its fixed position in
+// the carousel's creation-order — are preserved. A no-op if `id` doesn't
+// exist (e.g. it was deleted from another tab/carousel position in the
+// meantime) or if `pairs` is unchanged from what's already stored, so callers
+// can call this on every keystroke/blur without worrying about redundant
+// writes or resurrecting a deleted list.
+export async function updateList(id: string, pairs: Pair[]): Promise<void> {
+  const existing = await getList(id)
+  if (!existing) return
+  if (pairsEqual(existing.pairs, pairs)) return
+
+  const entry = serializeList(id, pairs, existing.createdAt, Date.now())
+  await idbPut(STORE, entry)
 }
 
 // Automatic history snapshot, taken on print and on "new list" — see
 // components/App.tsx. Fire-and-forget from the caller's point of view (every
 // db.ts primitive already fails soft), so a broken/unavailable IndexedDB
 // just means history silently doesn't accumulate.
-//
-// `generateId()` / `Date.now()` are read here, at the edge of the pure
-// schema layer, rather than in schema.ts's serializeList — keeping
-// serializeList a pure function of its arguments is what makes it trivially
-// testable.
 export async function saveList(pairs: Pair[]): Promise<void> {
   if (pairs.length === 0) return
 
@@ -34,12 +47,12 @@ export async function saveList(pairs: Pair[]): Promise<void> {
   const existing = await listSaved()
   if (existing.some((item) => pairsEqual(item.pairs, pairs))) return
 
-  const entry = serializeList(generateId(), pairs, Date.now())
-  await idbPut(STORE, entry)
+  await createList(pairs)
 
   // Cap at MAX_LISTS, oldest first. `existing` is newest-first and doesn't
-  // yet include `entry`, so the total after this write is existing.length +
-  // 1, and the oldest surplus lives at the tail of `existing`.
+  // yet include the just-created entry, so the total after this write is
+  // existing.length + 1, and the oldest surplus lives at the tail of
+  // `existing`.
   const total = existing.length + 1
   if (total > MAX_LISTS) {
     const overflow = existing.slice(-(total - MAX_LISTS))
