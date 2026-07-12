@@ -18,7 +18,6 @@
   --ink: #98a0ab;
   --fold-line: #eddadb;
   --cut-dash: #d5dde9;
-  --coral: #f0a9b4;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
@@ -358,27 +357,23 @@ body {
   0%, 78% { transform: none; animation-timing-function: ease-out; }
   80.5%, 100% { transform: translate(6px, -1px) rotate(.4deg); }
 }
-/* ハサミ（縦の線に沿って下へ） */
+/* ハサミ：単色のフラットなグリフが切り取り線に沿って滑るだけ */
 .sci {
-  position: absolute; left: 0; top: 0; width: 120px; height: 290px;
+  position: absolute; left: 0; top: 0; width: 80px; height: 170px;
   animation: sci var(--T) linear infinite;
   opacity: 0;
 }
 @keyframes sci {
-  0%, 59% { transform: translate(345px, -40px); opacity: 0; animation-timing-function: ease-out; }
-  61% { transform: translate(325px, 36px); opacity: 1; animation-timing-function: ease-in-out; }
-  63.3% { transform: translate(325px, 48px); animation-timing-function: linear; }
-  68.7% { transform: translate(325px, 183px); animation-timing-function: ease-in-out; }
-  70.7% { transform: translate(420px, 40px); animation-timing-function: linear; }
-  74.7% { transform: translate(420px, 183px); animation-timing-function: ease-in-out; }
-  76% { transform: translate(515px, 48px); animation-timing-function: linear; }
-  79.9% { transform: translate(515px, 183px); opacity: 1; }
-  80.5%, 100% { transform: translate(515px, 190px); opacity: 0; }
+  0%, 59.5% { transform: translate(345px, 30px); opacity: 0; animation-timing-function: ease-out; }
+  61.5% { transform: translate(345px, 68px); opacity: 1; animation-timing-function: ease-in-out; }
+  63.3% { transform: translate(345px, 80px); animation-timing-function: linear; }
+  68.7% { transform: translate(345px, 196px); animation-timing-function: ease-in-out; }
+  70.7% { transform: translate(440px, 80px); animation-timing-function: linear; }
+  74.7% { transform: translate(440px, 196px); animation-timing-function: ease-in-out; }
+  76% { transform: translate(535px, 80px); animation-timing-function: linear; }
+  79.9% { transform: translate(535px, 196px); opacity: 1; }
+  80.5%, 100% { transform: translate(535px, 200px); opacity: 0; }
 }
-.blA { animation: snipA .48s ease-in-out infinite alternate; transform-box: view-box; transform-origin: 60px 70px; }
-.blB { animation: snipB .48s ease-in-out infinite alternate; transform-box: view-box; transform-origin: 60px 70px; }
-@keyframes snipA { from { transform: rotate(0deg); } to { transform: rotate(-11deg); } }
-@keyframes snipB { from { transform: rotate(0deg); } to { transform: rotate(11deg); } }
 /* ============ ビート5：パタパタめくって覚える ============ */
 .s5 { animation: s5fade var(--T) linear infinite; }
 .s5 .cam { animation: s5cam var(--T) linear infinite; }
@@ -562,16 +557,12 @@ body {
           <div class="st st3 cutline" id="st3"></div>
           <div class="st st4 cutline" id="st4"></div>
         </div>
-        <svg class="sci" viewBox="0 -90 120 290" aria-hidden="true">
-          <g class="blA">
-            <path d="M61 74 L49 84 L56 182 Z" fill="#b7c2d4" stroke="#b7c2d4" stroke-width="7" stroke-linejoin="round"/>
-            <ellipse cx="46" cy="34" rx="12" ry="25" fill="none" stroke="var(--coral)" stroke-width="8"/>
-          </g>
-          <g class="blB">
-            <path d="M59 74 L71 84 L64 182 Z" fill="#a4b1c6" stroke="#a4b1c6" stroke-width="7" stroke-linejoin="round"/>
-            <ellipse cx="76" cy="34" rx="12" ry="25" fill="none" stroke="var(--coral)" stroke-width="8"/>
-          </g>
-          <circle cx="60" cy="70" r="5.5" fill="#8f9bb0"/>
+        <svg class="sci" viewBox="0 0 80 170" aria-hidden="true">
+          <circle cx="31" cy="26" r="11" fill="none" stroke="#a8b4c6" stroke-width="6"/>
+          <circle cx="49" cy="26" r="11" fill="none" stroke="#a8b4c6" stroke-width="6"/>
+          <rect x="36.5" y="42" width="7" height="110" rx="3.5" fill="#a8b4c6" transform="rotate(5 40 60)"/>
+          <rect x="36.5" y="42" width="7" height="110" rx="3.5" fill="#a8b4c6" transform="rotate(-5 40 60)"/>
+          <circle cx="40" cy="66" r="4" fill="#8f9bb0"/>
         </svg>
       </div>
     </section>
