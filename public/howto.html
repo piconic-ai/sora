@@ -150,16 +150,6 @@ body {
   40%, 100% { transform: scale(1) translateX(0); animation-timing-function: ease-in-out; }
 }
 .prn { position: absolute; left: 330px; top: 36px; width: 300px; height: 200px; }
-.prn-tray {
-  position: absolute; left: 64px; top: -4px; width: 172px; height: 44px;
-  background: #d9dfe9; border-radius: 10px; transform: skewX(-12deg);
-}
-.prn-sheetup {
-  position: absolute; top: -22px; width: 120px; height: 34px;
-  background: #fff; border-radius: 3px; transform: skewX(-12deg);
-  box-shadow: 0 0 0 1px rgba(190,200,215,.5) inset;
-}
-.prn-sheetup.a { left: 88px; } .prn-sheetup.b { left: 100px; top: -16px; background: #fbfcfe; }
 .prn-body {
   position: absolute; left: 0; top: 20px; width: 300px; height: 170px;
   border-radius: 22px;
@@ -173,7 +163,6 @@ body {
   27% { transform: translateY(.9px); } 29% { transform: translateY(0); }
   31% { transform: translateY(.9px); } 32.7%, 100% { transform: translateY(0); }
 }
-.prn-seam { position: absolute; left: 24px; right: 24px; top: 44px; height: 2px; border-radius: 1px; background: rgba(160,172,192,.35); }
 .prn-led {
   position: absolute; right: 26px; top: 60px; width: 10px; height: 10px; border-radius: 50%;
   background: #b6ddc4;
@@ -504,11 +493,7 @@ body {
     <section class="scene s2">
       <div class="cam">
         <div class="prn">
-          <div class="prn-tray"></div>
-          <div class="prn-sheetup a"></div>
-          <div class="prn-sheetup b"></div>
           <div class="prn-body">
-            <div class="prn-seam"></div>
             <div class="prn-led"></div>
           </div>
           <div class="prn-slot"></div>
