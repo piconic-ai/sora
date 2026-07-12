@@ -241,8 +241,8 @@ body {
   animation: fgather var(--T) linear infinite;
 }
 @keyframes fgather {
-  0%, 42.7% { transform: translateY(0) rotateX(50deg) rotateZ(-4deg); animation-timing-function: ease-in-out; }
-  57.5%, 100% { transform: translateY(56px) rotateX(50deg) rotateZ(-4deg); }
+  0%, 43.5% { transform: translateY(0) rotateX(50deg) rotateZ(-4deg); animation-timing-function: ease-in-out; }
+  57%, 100% { transform: translateY(64px) rotateX(50deg) rotateZ(-4deg); }
 }
 .fp {
   position: absolute; left: 0; width: 380px; height: 64px;
@@ -259,33 +259,41 @@ body {
 }
 .p0 { top: 0; }
 .p1, .p2, .p3, .p4, .p5 { top: 64px; }
-/* 山折り・谷折りを交互に：相対角を +/− 交互にして
-   コマの向きが +80° / −78° / +78° / −76° / +76° と
-   ジグザグ（W字）に立ち上がる蛇腹。下から波が伝わるよう少しずらす */
-.p5 { animation: fh5 var(--T) linear infinite; }
-.p4 { animation: fh4 var(--T) linear infinite; }
-.p3g { animation: fh3 var(--T) linear infinite; }
-.p2 { animation: fh2 var(--T) linear infinite; }
+/* 山折り始まりの蛇腹：表（Hello）と裏（こんにちは）の間の折り目が
+   山折り（∧の稜線）になるよう、先頭コマ自体を +65° 持ち上げ、
+   以降のヒンジ相対角を −/＋ 交互にする。
+   コマの向き（水平基準）は +65 / −65 / +63 / −63 / +61 / −61 のW字。
+   全ヒンジを同じ時間窓で比例圧縮すると、谷折りの接地点が
+   常に机面にぴったり着いたまま畳まれる */
+.p0 { animation: fh0 var(--T) linear infinite; }
 .p1 { animation: fh1 var(--T) linear infinite; }
-@keyframes fh5 {
-  0%, 42.7% { transform: rotateX(0); animation-timing-function: ease-in-out; }
-  55.5%, 100% { transform: rotateX(124deg); }
-}
-@keyframes fh4 {
-  0%, 43.6% { transform: rotateX(0); animation-timing-function: ease-in-out; }
-  56%, 100% { transform: rotateX(-126deg); }
-}
-@keyframes fh3 {
-  0%, 44.5% { transform: rotateX(0); animation-timing-function: ease-in-out; }
-  56.5%, 100% { transform: rotateX(128deg); }
-}
-@keyframes fh2 {
-  0%, 45.4% { transform: rotateX(0); animation-timing-function: ease-in-out; }
-  57%, 100% { transform: rotateX(-130deg); }
+.p2 { animation: fh2 var(--T) linear infinite; }
+.p3g { animation: fh3 var(--T) linear infinite; }
+.p4 { animation: fh4 var(--T) linear infinite; }
+.p5 { animation: fh5 var(--T) linear infinite; }
+@keyframes fh0 {
+  0%, 43.5% { transform: rotateX(0); animation-timing-function: ease-in-out; }
+  57%, 100% { transform: rotateX(65deg); }
 }
 @keyframes fh1 {
-  0%, 46.3% { transform: rotateX(0); animation-timing-function: ease-in-out; }
-  57.5%, 100% { transform: rotateX(65deg); }
+  0%, 43.5% { transform: rotateX(0); animation-timing-function: ease-in-out; }
+  57%, 100% { transform: rotateX(-130deg); }
+}
+@keyframes fh2 {
+  0%, 43.5% { transform: rotateX(0); animation-timing-function: ease-in-out; }
+  57%, 100% { transform: rotateX(128deg); }
+}
+@keyframes fh3 {
+  0%, 43.5% { transform: rotateX(0); animation-timing-function: ease-in-out; }
+  57%, 100% { transform: rotateX(-126deg); }
+}
+@keyframes fh4 {
+  0%, 43.5% { transform: rotateX(0); animation-timing-function: ease-in-out; }
+  57%, 100% { transform: rotateX(124deg); }
+}
+@keyframes fh5 {
+  0%, 43.5% { transform: rotateX(0); animation-timing-function: ease-in-out; }
+  57%, 100% { transform: rotateX(-122deg); }
 }
 .fshadow {
   position: absolute; left: 282px; top: 150px; width: 396px; height: 320px;
