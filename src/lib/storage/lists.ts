@@ -4,15 +4,30 @@ import { generateId } from './id'
 import { type SavedList, deserializeList, pairsEqual, serializeList } from './schema'
 
 const STORE = 'lists'
-const MAX_LISTS = 50
+export const MAX_LISTS = 50
 
 // Creates a brand-new document-mode list: a fresh URL-safe id, createdAt ==
 // updatedAt == now. No dedup and no MAX_LISTS eviction here — those are
 // history-popover-specific policies that belong to saveList()'s caller
 // (App.tsx), not to "create a list" itself.
-export async function createList(pairs: Pair[]): Promise<SavedList> {
+//
+// `overrides` lets a caller pin `id`/`createdAt` instead of generating them
+// here. This exists for the carousel's "new card" flow (App.tsx): a fresh
+// card is assigned an id and a createdAt the moment it's created in memory —
+// which fixes its position in the creation-order carousel and the URL it's
+// reachable at — but is only written to IndexedDB once the user types its
+// first pair. Writing it then with a *new* id/createdAt would silently move
+// it and change its URL, so the first real write reuses the id/createdAt
+// that were already handed out. `updatedAt` is always "now" (the moment of
+// the actual write), regardless of overrides.
+export async function createList(
+  pairs: Pair[],
+  overrides?: { id?: string; createdAt?: number },
+): Promise<SavedList> {
   const now = Date.now()
-  const entry = serializeList(generateId(), pairs, now, now)
+  const id = overrides?.id ?? generateId()
+  const createdAt = overrides?.createdAt ?? now
+  const entry = serializeList(id, pairs, createdAt, now)
   await idbPut(STORE, entry)
   return entry
 }

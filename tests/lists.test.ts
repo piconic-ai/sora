@@ -188,6 +188,32 @@ describe('createList', () => {
     const b = await createList([{ front: 'Banana', back: 'ばなな' }])
     expect(a.id).not.toBe(b.id)
   })
+
+  test('overrides.id/createdAt pin the id and createdAt of a first real write, updatedAt is still now', async () => {
+    let now = 9000
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+
+    now = 10000 // the moment of the actual write, distinct from the pinned createdAt
+    const list = await createList([{ front: 'Apple', back: 'りんご' }], { id: 'pinned-id', createdAt: 3000 })
+
+    expect(list).toEqual({
+      v: 1,
+      id: 'pinned-id',
+      pairs: [{ front: 'Apple', back: 'りんご' }],
+      createdAt: 3000,
+      updatedAt: 10000,
+    })
+    await expect(getList('pinned-id')).resolves.toEqual(list)
+  })
+
+  test('a partial overrides object falls back to generated id / now createdAt for the missing field', async () => {
+    let now = 4000
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+
+    const list = await createList([{ front: 'Apple', back: 'りんご' }], { id: 'pinned-only' })
+    expect(list.id).toBe('pinned-only')
+    expect(list.createdAt).toBe(4000)
+  })
 })
 
 describe('updateList', () => {
