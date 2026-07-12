@@ -4,11 +4,11 @@
 // isStorageAvailable — or disabled/restricted, e.g. some private-browsing
 // modes) or an operation errors for any reason, the call resolves to a
 // null/no-op result instead of throwing or rejecting. Callers never need a
-// try/catch around these — the app must keep working with drafts simply not
-// persisting.
+// try/catch around these — the app must keep working with drafts/lists
+// simply not persisting.
 
 const DB_NAME = 'sora'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export function isStorageAvailable(): boolean {
   return typeof indexedDB !== 'undefined'
@@ -18,24 +18,32 @@ export function isStorageAvailable(): boolean {
 // oldVersion+1 through DB_VERSION. Add a new `if (oldVersion < N)` branch for
 // each future version bump instead of editing existing branches, so a
 // browser upgrading from any past version replays every migration it missed.
-// PR2 is expected to add: `if (oldVersion < 2) db.createObjectStore('lists')`.
 function upgrade(db: IDBDatabase, oldVersion: number): void {
   if (oldVersion < 1) {
     // Out-of-line keys (no keyPath): the key is passed explicitly to
     // put/get/delete rather than read off the stored value.
     db.createObjectStore('drafts')
   }
+  if (oldVersion < 2) {
+    // In-line key (keyPath: 'id'): SavedList already carries its own `id`,
+    // so put()/get()/delete() work off that field rather than a key passed
+    // alongside the value. The `createdAt` index exists for potential future
+    // range queries; lists.ts currently just idbGetAll + sorts in memory,
+    // which is plenty fast at the 50-item cap.
+    const store = db.createObjectStore('lists', { keyPath: 'id' })
+    store.createIndex('createdAt', 'createdAt')
+  }
 }
 
 let dbPromise: Promise<IDBDatabase | null> | null = null
 let warned = false
 
-// Log a single fail-soft warning per session so a "drafts aren't saving"
+// Log a single fail-soft warning per session so a "data isn't saving"
 // problem is diagnosable, without spamming the console on every operation.
 function warnOnce(reason: string): void {
   if (warned) return
   warned = true
-  console.warn(`[sora] IndexedDB unavailable, drafts will not persist: ${reason}`)
+  console.warn(`[sora] IndexedDB unavailable, data will not persist: ${reason}`)
 }
 
 // Opens (and caches) the shared 'sora' database connection. Resolves to
@@ -114,8 +122,12 @@ export function idbGet<T>(store: string, key: IDBValidKey): Promise<T | null> {
   return runRequest<T>(store, 'readonly', (s) => s.get(key) as IDBRequest<T>)
 }
 
-export async function idbPut(store: string, value: unknown, key: IDBValidKey): Promise<void> {
-  await runRequest<IDBValidKey>(store, 'readwrite', (s) => s.put(value, key))
+// `key` is only needed for out-of-line stores (e.g. 'drafts'). In-line
+// (keyPath) stores like 'lists' carry their own key on the value and must be
+// put() without a second argument — passing one alongside an in-line key
+// throws a DataError.
+export async function idbPut(store: string, value: unknown, key?: IDBValidKey): Promise<void> {
+  await runRequest<IDBValidKey>(store, 'readwrite', (s) => (key === undefined ? s.put(value) : s.put(value, key)))
 }
 
 export async function idbDel(store: string, key: IDBValidKey): Promise<void> {
@@ -125,4 +137,8 @@ export async function idbDel(store: string, key: IDBValidKey): Promise<void> {
 export async function idbGetAll<T>(store: string): Promise<T[]> {
   const result = await runRequest<T[]>(store, 'readonly', (s) => s.getAll() as IDBRequest<T[]>)
   return result ?? []
+}
+
+export async function idbClear(store: string): Promise<void> {
+  await runRequest<undefined>(store, 'readwrite', (s) => s.clear())
 }

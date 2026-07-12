@@ -1,4 +1,5 @@
 import type { PageFill } from './pageMeter'
+import type { Pair } from './types'
 
 export type Locale = 'ja' | 'en'
 
@@ -21,6 +22,16 @@ export interface Messages {
   infoLead: string
   infoNote: string
   infoContactIntro: string
+  // Privacy note appended to the info popover (history feature): clarifies
+  // that saved lists never leave the device.
+  infoPrivacyNote: string
+  // History (autosaved lists) feature.
+  history: string
+  newList: string
+  historyEmpty: string
+  loadList: string
+  deleteList: string
+  clearAllLists: string
 }
 
 export function pickLocale(acceptLanguage: string | null | undefined): Locale {
@@ -56,6 +67,13 @@ export const messages: Record<Locale, Messages> = {
     infoLead: 'は、単語（表面）と訳（裏面）を入力するだけで、切って蛇腹に折る単語帳の印刷レイアウトをつくります。',
     infoNote: '「そら」は「そらで覚える（諳んじる）」から。',
     infoContactIntro: 'ご質問・ご感想は kobaken まで：',
+    infoPrivacyNote: 'データはこの端末のブラウザ内にのみ保存されます。',
+    history: '履歴',
+    newList: '新規作成',
+    historyEmpty: '履歴はまだありません',
+    loadList: '読み込む',
+    deleteList: '削除',
+    clearAllLists: '履歴をすべて削除',
   },
   en: {
     title: 'Sora — Learn by heart',
@@ -71,6 +89,13 @@ export const messages: Record<Locale, Messages> = {
     infoLead: ' turns your word pairs into a print-and-fold accordion flashcard booklet.',
     infoNote: '"Sora" comes from the Japanese "そらで覚える" — to learn something by heart.',
     infoContactIntro: 'Questions or feedback? Reach out to kobaken:',
+    infoPrivacyNote: 'Your lists are saved only in this browser, on this device.',
+    history: 'History',
+    newList: 'New',
+    historyEmpty: 'No history yet',
+    loadList: 'Load',
+    deleteList: 'Delete',
+    clearAllLists: 'Clear all history',
   },
 }
 
@@ -89,4 +114,25 @@ export function pageMeterCaption(locale: Locale, fill: PageFill): string {
   const remaining = capacity - filled
   const wordLabel = remaining === 1 ? 'word' : 'words'
   return `Page ${page} · ${filled}/${capacity} words · ${remaining} more ${wordLabel} to fill the page`
+}
+
+// Auto-generated display title for a history entry: saved lists carry no
+// title of their own (see schema.ts's SavedList), so the label is derived
+// every time from the first pair's front + word count + save date. Locale-
+// dependent so a language switch immediately relabels every history item.
+// ja: "Apple ほか12語 · 7/11"  en: "Apple +11 · 7/11"
+export function historyItemTitle(locale: Locale, pairs: Pair[], createdAt: number): string {
+  const date = new Date(createdAt)
+  const dateLabel = `${date.getMonth() + 1}/${date.getDate()}`
+
+  if (pairs.length === 0) {
+    return locale === 'ja' ? `空のリスト · ${dateLabel}` : `Empty list · ${dateLabel}`
+  }
+
+  const front = pairs[0].front.trim()
+  const label = front === '' ? (locale === 'ja' ? '(無題)' : '(untitled)') : front
+  const rest = pairs.length - 1
+
+  if (rest === 0) return `${label} · ${dateLabel}`
+  return locale === 'ja' ? `${label} ほか${rest}語 · ${dateLabel}` : `${label} +${rest} · ${dateLabel}`
 }

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { pageMeterCaption, pickLocale, resolveLocale } from '../src/lib/i18n'
+import { historyItemTitle, pageMeterCaption, pickLocale, resolveLocale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
+import type { Pair } from '../src/lib/types'
 
 describe('pickLocale', () => {
   test('ja,en-US;q=0.9 -> ja', () => {
@@ -77,5 +78,57 @@ describe('pageMeterCaption', () => {
 
   test('en full', () => {
     expect(pageMeterCaption('en', computePageFill(28, 28))).toBe('Page 1 · 28/28 words · Fills the page exactly')
+  })
+})
+
+describe('historyItemTitle', () => {
+  // Local-time construction (rather than a hardcoded epoch ms) so the
+  // expected "M/D" label doesn't depend on the test runner's timezone.
+  const createdAt = new Date(2026, 0, 5).getTime() // Jan 5
+
+  test('ja: empty pairs', () => {
+    expect(historyItemTitle('ja', [], createdAt)).toBe('空のリスト · 1/5')
+  })
+
+  test('en: empty pairs', () => {
+    expect(historyItemTitle('en', [], createdAt)).toBe('Empty list · 1/5')
+  })
+
+  test('ja: a single pair has no "ほかN語" suffix', () => {
+    const pairs: Pair[] = [{ front: 'Apple', back: 'りんご' }]
+    expect(historyItemTitle('ja', pairs, createdAt)).toBe('Apple · 1/5')
+  })
+
+  test('en: a single pair has no "+N" suffix', () => {
+    const pairs: Pair[] = [{ front: 'Apple', back: 'りんご' }]
+    expect(historyItemTitle('en', pairs, createdAt)).toBe('Apple · 1/5')
+  })
+
+  test('ja: multiple pairs append "ほかN語"', () => {
+    const pairs: Pair[] = [
+      { front: 'Apple', back: 'りんご' },
+      { front: 'Banana', back: 'ばなな' },
+      { front: 'Cherry', back: 'さくらんぼ' },
+    ]
+    expect(historyItemTitle('ja', pairs, createdAt)).toBe('Apple ほか2語 · 1/5')
+  })
+
+  test('en: multiple pairs append "+N"', () => {
+    const pairs: Pair[] = [
+      { front: 'Apple', back: 'りんご' },
+      { front: 'Banana', back: 'ばなな' },
+      { front: 'Cherry', back: 'さくらんぼ' },
+    ]
+    expect(historyItemTitle('en', pairs, createdAt)).toBe('Apple +2 · 1/5')
+  })
+
+  test('ja: a blank first front falls back to "(無題)"', () => {
+    const pairs: Pair[] = [{ front: '  ', back: 'りんご' }]
+    expect(historyItemTitle('ja', pairs, createdAt)).toBe('(無題) · 1/5')
+  })
+
+  test('en: a blank first front falls back to "(untitled)"', () => {
+    const pairs: Pair[] = [{ front: '', back: 'りんご' }]
+    expect(historyItemTitle('en', pairs, createdAt)).toBe('(untitled) · 1/5')
   })
 })
