@@ -12,6 +12,9 @@ export interface Messages {
   print: string
   hint: string
   pasteError: string
+  // "作り方 / How to make it" — the standalone /how-to page's heading and
+  // <title>, and doubles as the aria-label for the header's "?" link to
+  // that page (components/HowToPage.tsx, components/App.tsx).
   howTo: string
   // Info popover (FB5) — the "Sora" bit of the lead sentence is hard-coded
   // as <strong>Sora</strong> in App.tsx, so infoLead is just the remainder
@@ -43,6 +46,15 @@ export interface Messages {
   // "Clear all history" lives in the info popover (a shared-device privacy
   // control), not the sidebar itself.
   clearAllLists: string
+  // aria-label for the header's sidebar open/close toggle button.
+  sidebarToggleLabel: string
+  // The three fold/cut/fold steps on the standalone /how-to page (see
+  // docs/DESIGN.md §2 for the reference procedure this text summarizes).
+  howToStep1: string
+  howToStep2: string
+  howToStep3: string
+  // aria-label for the "← Sora" link back to the app from /how-to.
+  howToBackLabel: string
 }
 
 export function pickLocale(acceptLanguage: string | null | undefined): Locale {
@@ -86,6 +98,11 @@ export const messages: Record<Locale, Messages> = {
     confirmClearAll: 'すべてのリストを削除しますか？この操作は取り消せません。',
     confirmEvictOldest: '保存できるリストは50件までです。最も古いリストを削除して新規作成しますか？',
     clearAllLists: '履歴をすべて削除',
+    sidebarToggleLabel: 'サイドバーの開閉',
+    howToStep1: '横に折る：単語が書けるくらいの高さで、紙を上から下へアコーディオン状に折ります。',
+    howToStep2: '縦に切る：折ったまま縦に等分して切り分け、細い帯にします。',
+    howToStep3: '蛇腹に折る：各帯を蛇腹に折りたたむと、1コマずつめくれる単語帳になります。',
+    howToBackLabel: 'Soraに戻る',
   },
   en: {
     title: 'Sora — Learn by heart',
@@ -109,6 +126,11 @@ export const messages: Record<Locale, Messages> = {
     confirmClearAll: 'Delete every list? This cannot be undone.',
     confirmEvictOldest: 'You can only keep 50 lists. Delete the oldest one and create a new list?',
     clearAllLists: 'Clear all history',
+    sidebarToggleLabel: 'Toggle list sidebar',
+    howToStep1: 'Fold across: accordion-fold the paper from top to bottom, in bands tall enough to fit a word.',
+    howToStep2: 'Cut into strips: while still folded, cut it into equal vertical strips.',
+    howToStep3: 'Fold into an accordion: fold each strip back and forth so it flips open one word at a time.',
+    howToBackLabel: 'Back to Sora',
   },
 }
 

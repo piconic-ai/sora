@@ -8,9 +8,9 @@
   place-items: initial;
   padding: 56px 24px 96px;
   text-align: left;
-  /* Wide enough for the sidebar (220px) + editor side by side with room to
-     breathe. */
-  max-width: 860px;
+  /* Wide enough for the sidebar (220px) + a generously wide editor column,
+     with the editor's own content re-centered narrower via .editor-body. */
+  max-width: 1280px;
   margin: 0 auto;
   box-sizing: border-box;
   font-family:
@@ -30,6 +30,35 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
+}
+
+/* Header-left icon button that shows/hides the list sidebar (.workspace's
+   sidebar-closed modifier below) — same visual language as .info-button,
+   just first in the header rather than last. */
+.sidebar-toggle {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sidebar-toggle:hover {
+  color: #111;
+  border-color: #ccc;
+}
+
+.sidebar-toggle:focus-visible {
+  outline: none;
+  border-color: #111;
 }
 
 .app-header h1 {
@@ -89,6 +118,37 @@
 }
 
 .info-button:focus-visible {
+  outline: none;
+  border-color: #111;
+}
+
+/* "?" link to the standalone /how-to page — same tone as .info-button, just
+   an <a> (real navigation, not a popover) so it needs no popover attrs. */
+.help-button {
+  margin-left: 6px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 50%;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.help-button:hover {
+  color: #111;
+  border-color: #ccc;
+}
+
+.help-button:focus-visible {
   outline: none;
   border-color: #111;
 }
@@ -217,6 +277,21 @@
   box-sizing: border-box;
 }
 
+/* Sidebar open/close (the header's .sidebar-toggle button). On a wide
+   layout this just drops the sidebar out of the flex row; on a narrow one
+   (see the max-width:720px block below, where .list-sidebar becomes a
+   fixed-position drawer) it's what keeps the drawer off-screen by default. */
+.workspace.sidebar-closed .list-sidebar {
+  display: none;
+}
+
+/* Backdrop behind the narrow-viewport drawer, dismissing it on click.
+   Invisible/inert on wide layouts — only the max-width:720px block below
+   turns it into a visible, fixed full-screen scrim. */
+.sidebar-scrim {
+  display: none;
+}
+
 /* Cap the scroll region to the viewport so a long list scrolls inside the
    sidebar rather than growing the page. */
 .list-items {
@@ -308,38 +383,58 @@
 .editor-main {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Keeps the actual editing column (table/meter/print button) narrow and
+   centered within the now much wider .editor-main, rather than stretching
+   the input table across the full right panel. */
+.editor-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
-.editor-title {
-  font-size: 13px;
-  color: #888;
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Narrow screens: stack the sidebar above the editor rather than side by
-   side (PC-first, but shouldn't break on a phone). */
+/* Narrow screens: the sidebar becomes a fixed-position overlay drawer
+   (initially closed — see components/App.tsx's onMount) instead of a
+   side-by-side column, since there isn't room for both at once. Opened via
+   the header's .sidebar-toggle button; .sidebar-scrim dismisses it. */
 @media (max-width: 720px) {
-  .workspace {
-    flex-direction: column;
-  }
-
   .list-sidebar {
-    width: 100%;
-    flex: 1 1 auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 20;
+    width: min(84vw, 300px);
+    background: #fff;
     border-right: none;
-    border-bottom: 1px solid #eee;
-    padding-right: 0;
-    padding-bottom: 12px;
+    padding: 20px;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
   }
 
   .list-items {
-    max-height: 30vh;
+    max-height: none;
+  }
+
+  .sidebar-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: rgba(17, 17, 17, 0.35);
+  }
+
+  /* Before client JS marks itself ready (App's onMount adds .js-ready), keep
+     the drawer + scrim hidden so a phone-width first paint doesn't flash them
+     open over a dark scrim — SSR always renders sidebarOpen=true and onMount
+     corrects it to false only after hydration. */
+  html:not(.js-ready) .list-sidebar,
+  html:not(.js-ready) .sidebar-scrim {
+    display: none;
   }
 }
 
@@ -431,7 +526,7 @@
 }
 
 .print-button {
-  align-self: flex-start;
+  align-self: center;
   margin-top: 8px;
   padding: 10px 28px;
   font-size: 14px;
@@ -448,29 +543,54 @@
   cursor: not-allowed;
 }
 
-.howto {
-  margin-top: 4px;
-}
-
-.howto summary {
-  font-size: 13px;
-  color: #888;
-  cursor: pointer;
-  list-style: none;
-}
-
-.howto summary::-webkit-details-marker {
-  display: none;
-}
-
-.howto summary:hover {
+/* ---- Standalone "how to" page (/how-to, components/HowToPage.tsx) -----
+   A plain server-rendered page (no sidebar/editor, no hydration), styled
+   independently of .print-root. */
+.howto-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 56px 24px 96px;
+  box-sizing: border-box;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', Meiryo,
+    sans-serif;
+  font-size: 15px;
   color: #111;
 }
 
-.howto video {
+.howto-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #888;
+  text-decoration: none;
+}
+
+.howto-back:hover {
+  color: #111;
+}
+
+.howto-page h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.howto-steps {
+  margin: 0 0 24px;
+  padding-left: 22px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #333;
+}
+
+.howto-steps li + li {
+  margin-top: 10px;
+}
+
+.howto-video {
   display: block;
   width: 100%;
   max-width: 480px;
-  margin-top: 8px;
   outline: 1px solid #eee;
 }

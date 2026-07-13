@@ -71,6 +71,15 @@ export function App(props: AppProps) {
   const [lists, setLists] = createSignal<SavedList[]>([])
   const [activeIndex, setActiveIndex] = createSignal(0)
 
+  // Whether the list sidebar is shown. Starts `true` on both SSR and the
+  // first client render (a wide-viewport assumption, matching what SSR always
+  // renders regardless of the real device) so hydration never mismatches;
+  // onMount below corrects it to `false` on an actually-narrow viewport
+  // (matchMedia is a client-only API, so it can't run before mount). Not
+  // persisted — every load re-derives it from the current viewport.
+  const [sidebarOpen, setSidebarOpen] = createSignal(true)
+  const isNarrowViewport = () => window.matchMedia('(max-width: 720px)').matches
+
   // Imperative "load this / clear to this" instruction forwarded to
   // WordTable — see WordTableProps.loadRequest for why it carries a
   // monotonic `nonce` rather than being applied from the payload alone.
@@ -328,6 +337,9 @@ export function App(props: AppProps) {
     setLists(ls)
     setActiveIndex(ls.length - 1)
     openList(fresh)
+    // Close the narrow-viewport drawer before focusing, so the editor (and the
+    // software keyboard it summons) isn't left behind the open drawer + scrim.
+    if (isNarrowViewport()) setSidebarOpen(false)
     focusEditorInput()
   }
 
@@ -337,9 +349,16 @@ export function App(props: AppProps) {
   // navigate, which commits the list being left (evaporating it if empty) and
   // opens the target.
   const selectList = (id: string) => {
+    // On a narrow viewport the sidebar is an overlay drawer (see the
+    // sidebar-closed CSS) — picking a list should return focus to the
+    // editor, not leave the drawer covering it. Done even when tapping the
+    // already-active item (a common "go back to the editor" gesture), so it
+    // runs before the same-id early return below.
+    if (isNarrowViewport()) setSidebarOpen(false)
     if (id === activeList()?.id) return
     const idx = lists().findIndex((l) => l.id === id)
-    if (idx >= 0) navigate(idx)
+    if (idx < 0) return
+    navigate(idx)
   }
 
   // Deletes a specific list from the sidebar's per-item ✕. If it's the active
@@ -467,6 +486,14 @@ export function App(props: AppProps) {
   }
 
   onMount(() => {
+    // Mark that client JS is live. The narrow-viewport CSS keeps the drawer +
+    // scrim hidden until this class is present, so a phone-width first paint
+    // doesn't flash an open drawer over a dark scrim before hydration corrects
+    // sidebarOpen to false below. Set on <html> (outside the island) so it
+    // doesn't perturb hydration reconciliation.
+    document.documentElement.classList.add('js-ready')
+    if (isNarrowViewport()) setSidebarOpen(false)
+
     const flushOnHide = () => flushSave()
     const flushOnVisibilityChange = () => {
       if (document.hidden) flushSave()
@@ -498,6 +525,16 @@ export function App(props: AppProps) {
   return (
     <div className="app">
       <header className="app-header no-print">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          aria-expanded={sidebarOpen()}
+          aria-controls="list-sidebar"
+          aria-label={t().sidebarToggleLabel}
+          onClick={() => setSidebarOpen(!sidebarOpen())}
+        >
+          <span aria-hidden="true">☰</span>
+        </button>
         <h1>Sora</h1>
         <p className="app-tagline">{t().tagline}</p>
         <select
@@ -512,6 +549,9 @@ export function App(props: AppProps) {
         <button type="button" className="info-button" aria-label={t().infoLabel} {...popoverTrigger}>
           <span aria-hidden="true">ⓘ</span>
         </button>
+        <a href="/how-to" className="help-button" aria-label={t().howTo}>
+          <span aria-hidden="true">?</span>
+        </a>
       </header>
       <div id="sora-info" role="note" aria-label={t().infoLabel} className="info-popover no-print" {...popoverTarget}>
         <p className="info-lead">
@@ -550,8 +590,11 @@ export function App(props: AppProps) {
           </span>
         </p>
       </div>
-      <div className="workspace no-print">
-        <aside className="list-sidebar" aria-label={t().listsLabel}>
+      <div className={sidebarOpen() ? 'workspace no-print' : 'workspace no-print sidebar-closed'}>
+        {sidebarOpen() && (
+          <div className="sidebar-scrim" aria-hidden="true" onClick={() => setSidebarOpen(false)} />
+        )}
+        <aside id="list-sidebar" className="list-sidebar" aria-label={t().listsLabel}>
           <button type="button" className="new-button" onClick={createNewList}>
             <span className="new-button-plus" aria-hidden="true">+</span>
             {t().newList}
@@ -580,37 +623,32 @@ export function App(props: AppProps) {
           </div>
         </aside>
 
-        <main className="editor-main">
-          <p className="editor-title no-print">
-            {activeList() ? historyItemTitle(locale(), activeList()!.pairs, activeList()!.createdAt) : ''}
-          </p>
-          <WordTable breakIndices={breakIndices()} onChange={handleTableChange} locale={locale()} loadRequest={loadRequest()} />
-          {pairs().length === 0 ? (
-            <p className="hint no-print">{t().hint}</p>
-          ) : (
-            <div className="page-meter no-print">
-              <div className="page-meter-track">
-                <div
-                  className={pageFill().isFull ? 'page-meter-fill is-full' : 'page-meter-fill'}
-                  style={`width:${Math.round(pageFill().ratio * 100)}%`}
-                />
+        <section className="editor-main">
+          <div className="editor-body">
+            <WordTable breakIndices={breakIndices()} onChange={handleTableChange} locale={locale()} loadRequest={loadRequest()} />
+            {pairs().length === 0 ? (
+              <p className="hint no-print">{t().hint}</p>
+            ) : (
+              <div className="page-meter no-print">
+                <div className="page-meter-track">
+                  <div
+                    className={pageFill().isFull ? 'page-meter-fill is-full' : 'page-meter-fill'}
+                    style={`width:${Math.round(pageFill().ratio * 100)}%`}
+                  />
+                </div>
+                <p className="page-meter-caption">{pageMeterCaption(locale(), pageFill())}</p>
               </div>
-              <p className="page-meter-caption">{pageMeterCaption(locale(), pageFill())}</p>
-            </div>
-          )}
-          <button
-            type="button"
-            className="print-button no-print"
-            disabled={layout().pages.length === 0}
-            onClick={() => window.print()}
-          >
-            {t().print}
-          </button>
-          <details className="howto no-print">
-            <summary>{t().howTo}</summary>
-            <video src="/howto.webm" controls muted loop />
-          </details>
-        </main>
+            )}
+            <button
+              type="button"
+              className="print-button no-print"
+              disabled={layout().pages.length === 0}
+              onClick={() => window.print()}
+            >
+              {t().print}
+            </button>
+          </div>
+        </section>
       </div>
       <PrintSheets layout={layout()} settings={DEFAULTS} />
     </div>

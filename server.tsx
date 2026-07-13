@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { getCookie } from 'hono/cookie'
 import { renderer } from './renderer'
 import { App } from '@/components/App'
+import { HowToPage } from '@/components/HowToPage'
 import { resolveLocale, messages } from './src/lib/i18n'
 
 const app = new Hono()
@@ -24,7 +25,17 @@ function renderShell(c: Context) {
   )
 }
 
+// The standalone "how to fold/cut/fold" page (components/HowToPage.tsx),
+// linked from the header's "?" button. A static server-rendered page (no
+// islands), so it's just a plain c.render with no print-root/no-print
+// wrapping to worry about.
+function renderHowTo(c: Context) {
+  const locale = resolveLocale(getCookie(c, 'locale'), c.req.header('accept-language'))
+  return c.render(<HowToPage locale={locale} />, { title: `${messages[locale].howTo} — Sora`, locale })
+}
+
 app.get('/', renderShell)
 app.get('/l/:id', renderShell)
+app.get('/how-to', renderHowTo)
 
 export default app
