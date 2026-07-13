@@ -19,7 +19,6 @@ export type Action =
   | 'moveDown'
   | 'moveNextCell'
   | 'movePrevCell'
-  | 'deleteRowFocusPrev'
   | 'deleteRowFocusNext'
   | 'moveToFrontCell'
 
@@ -107,15 +106,14 @@ export function resolveKeyAction(input: KeyActionInput): Action {
     case 'Backspace':
       if (!(caretAtStart && cellEmpty)) return 'none'
       if (col === 1) return 'moveToFrontCell'
-      // col === 0 (front cell)
-      if (!rowEmpty) return 'none'
-      // isFirstRow: no previous row to merge into. isLastRow: this is the
-      // trailing ghost row — it must always exist (see
-      // WordTable.ensureTrailingBlank), so never let it be deleted here.
-      // Deleting an empty *middle* row (isFirstRow: false, isLastRow: false)
-      // is still allowed below.
-      if (isFirstRow || isLastRow) return 'none'
-      return 'deleteRowFocusPrev'
+      // col === 0 (front cell): mirror Enter's forward move
+      // (front -> back -> next-row-front) in reverse — Backspace on an
+      // empty front cell steps back into the previous row's back cell,
+      // regardless of what that row's cells hold. isFirstRow: no previous
+      // row to move into. Row deletion is Delete's job now (see the
+      // 'Delete' case below) — Backspace never removes a row.
+      if (isFirstRow) return 'none'
+      return 'movePrevCell'
 
     case 'Delete':
       if (!(cellEmpty && col === 0 && rowEmpty)) return 'none'

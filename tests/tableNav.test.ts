@@ -196,15 +196,21 @@ describe('resolveKeyAction: Backspace', () => {
     ).toBe('moveToFrontCell')
   })
 
-  test('does nothing on an empty front cell when the back cell still has content', () => {
+  // Backspace on an empty front cell mirrors Enter's forward move
+  // (front -> back -> next-row-front) in reverse: it steps back into the
+  // previous row's back cell regardless of what either of this row's cells
+  // hold — the same way col-1's moveToFrontCell above ignores rowEmpty.
+  // Row deletion is Delete's job now (see the 'Delete' describe block
+  // below); Backspace only ever moves focus.
+  test('moves to the previous row back cell even when the back cell still has content', () => {
     expect(
       resolveKeyAction(
         baseInput({ key: 'Backspace', col: 0, caretAtStart: true, cellEmpty: true, rowEmpty: false }),
       ),
-    ).toBe('none')
+    ).toBe('movePrevCell')
   })
 
-  test('does nothing on an empty row that is the first row (no previous row to merge into)', () => {
+  test('does nothing on an empty front cell that is the first row (no previous row to move into)', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -219,7 +225,7 @@ describe('resolveKeyAction: Backspace', () => {
     ).toBe('none')
   })
 
-  test('deletes an empty middle row (not first, not last) and focuses the previous row front cell', () => {
+  test('moves to the previous row back cell from an empty middle row (not first, not last)', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -232,18 +238,15 @@ describe('resolveKeyAction: Backspace', () => {
           isLastRow: false,
         }),
       ),
-    ).toBe('deleteRowFocusPrev')
+    ).toBe('movePrevCell')
   })
 
-  // Regression test for the FB3 review finding: the trailing blank row (the
-  // "ghost row") must never be deletable via Backspace, even though it is
-  // empty and has a previous row to fall back to. Deleting it would break
-  // the "always one blank row at the end" invariant and leave the table
-  // unable to create a new row via Enter until the user typed into the
-  // (now-last, non-blank) row again. This used to incorrectly return
-  // 'deleteRowFocusPrev' — see WordTable's ensureTrailingBlank() for the
-  // matching self-healing safety net.
-  test('does NOT delete the trailing ghost row (empty, isLastRow) even when a previous row exists', () => {
+  // Unlike the old deleteRowFocusPrev behavior, Backspace never deletes a
+  // row anymore, so the trailing blank "ghost row" (see WordTable's
+  // ensureTrailingBlank) is not a special case here: moving focus out of it
+  // is harmless since nothing is removed. Only isFirstRow (no previous row
+  // to move into) blocks the move.
+  test('moves to the previous row back cell from the trailing ghost row (isLastRow) too', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -256,7 +259,7 @@ describe('resolveKeyAction: Backspace', () => {
           isLastRow: true,
         }),
       ),
-    ).toBe('none')
+    ).toBe('movePrevCell')
   })
 })
 
@@ -334,7 +337,7 @@ describe('resolveKeyAction: modifier keys defer to OS/browser shortcuts', () => 
     expect(resolveKeyAction(baseInput({ key: 'ArrowDown', isLastRow: false, altKey: true }))).toBe('none')
   })
 
-  test('Cmd+Backspace does nothing (would otherwise delete a row via row-deletion logic)', () => {
+  test('Cmd+Backspace does nothing (would otherwise move focus to the previous row)', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -375,7 +378,7 @@ describe('resolveKeyAction: modifier keys defer to OS/browser shortcuts', () => 
     ).toBe('none')
   })
 
-  test('Shift alone does not suppress non-arrow keys — Shift+Backspace still deletes an empty middle row', () => {
+  test('Shift alone does not suppress non-arrow keys — Shift+Backspace still moves to the previous row', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -389,7 +392,7 @@ describe('resolveKeyAction: modifier keys defer to OS/browser shortcuts', () => 
           shiftKey: true,
         }),
       ),
-    ).toBe('deleteRowFocusPrev')
+    ).toBe('movePrevCell')
   })
 })
 

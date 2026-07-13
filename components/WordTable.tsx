@@ -237,17 +237,6 @@ export function WordTable(props: WordTableProps) {
       case 'moveToFrontCell':
         focusCellIn(tr, 0)
         break
-      case 'deleteRowFocusPrev': {
-        const targetTr = trs[rowIndex - 1]
-        const targetKey = targetTr?.getAttribute('data-key') ?? null
-        deleteRowById(rowId)
-        if (targetKey !== null) {
-          requestAnimationFrame(() => {
-            focusCellIn(tbody.querySelector(`tr[data-key="${targetKey}"]`), 0)
-          })
-        }
-        break
-      }
       case 'deleteRowFocusNext': {
         const targetTr = trs[rowIndex + 1] ?? trs[rowIndex - 1]
         const targetKey = targetTr?.getAttribute('data-key') ?? null

@@ -32,10 +32,13 @@
   gap: 10px;
 }
 
-/* Header-left icon button that shows/hides the list sidebar (.workspace's
-   sidebar-closed modifier below) — same visual language as .info-button,
-   just first in the header rather than last. */
-.sidebar-toggle {
+/* Header-left icon button that reopens the list sidebar (.workspace's
+   sidebar-closed modifier below). Only rendered while the sidebar is
+   closed (see components/App.tsx) — when it's open, the sidebar's own
+   .sidebar-collapse button lives at its top instead, so the header next to
+   "Sora" never shows a toggle that could read as a logo. Same visual
+   language as .info-button. */
+.sidebar-open {
   width: 24px;
   height: 24px;
   padding: 0;
@@ -51,12 +54,12 @@
   cursor: pointer;
 }
 
-.sidebar-toggle:hover {
+.sidebar-open:hover {
   color: #111;
   border-color: #ccc;
 }
 
-.sidebar-toggle:focus-visible {
+.sidebar-open:focus-visible {
   outline: none;
   border-color: #111;
 }
@@ -156,6 +159,38 @@
 
 .info-privacy {
   color: #888;
+}
+
+/* Collapses the sidebar (moved here, above "New", from the header — a
+   header-left ☰ read as a logo next to "Sora"; see components/App.tsx).
+   Right-aligned and icon-sized so it reads as a subtle affordance rather
+   than a second primary action competing with "New" below it; the
+   sidebar's own flex `gap` (10px) already spaces it from .new-button. */
+.sidebar-collapse {
+  align-self: flex-end;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sidebar-collapse:hover {
+  color: #111;
+  border-color: #ccc;
+}
+
+.sidebar-collapse:focus-visible {
+  outline: none;
+  border-color: #111;
 }
 
 /* Full-width "New" button at the top of the sidebar. */
@@ -263,8 +298,19 @@
    list; the editor shows the active one. */
 .workspace {
   display: flex;
+  /* Keep the editor column top-aligned even once the sidebar below is
+     stretched to the workspace's full (viewport-derived) height — without
+     this, flex's default 'stretch' would grow .editor-main to match the
+     sidebar instead of letting it size to its own content. */
   align-items: flex-start;
   gap: 24px;
+  /* Lets a short list's sidebar divider (.list-sidebar's border-right)
+     reach the bottom of the viewport even when the sidebar's own content
+     is much shorter than that. 120px ≈ .print-root's padding-top (56px) +
+     the header's height (~24px) + the .app flex-column gap above the
+     workspace (20px) + .print-root's padding-bottom (96px) minus a bit of
+     slack; adjust here if the header or paddings change height. */
+  min-height: calc(100vh - 120px);
 }
 
 .list-sidebar {
@@ -276,11 +322,17 @@
   border-right: 1px solid #eee;
   padding-right: 20px;
   box-sizing: border-box;
+  /* Opts out of the default flex 'stretch' being blocked by .workspace's
+     align-items: flex-start, so the sidebar (and its border-right divider)
+     still grows to the workspace's full min-height even though the editor
+     column next to it stays top-aligned at its own natural height. */
+  align-self: stretch;
 }
 
-/* Sidebar open/close (the header's .sidebar-toggle button). On a wide
-   layout this just drops the sidebar out of the flex row; on a narrow one
-   (see the max-width:720px block below, where .list-sidebar becomes a
+/* Sidebar open/close (the sidebar's own .sidebar-collapse button while
+   open, the header's .sidebar-open button while closed). On a wide layout
+   this just drops the sidebar out of the flex row; on a narrow one (see
+   the max-width:720px block below, where .list-sidebar becomes a
    fixed-position drawer) it's what keeps the drawer off-screen by default. */
 .workspace.sidebar-closed .list-sidebar {
   display: none;
@@ -491,7 +543,8 @@
 /* Narrow screens: the sidebar becomes a fixed-position overlay drawer
    (initially closed — see components/App.tsx's onMount) instead of a
    side-by-side column, since there isn't room for both at once. Opened via
-   the header's .sidebar-toggle button; .sidebar-scrim dismisses it. */
+   the header's .sidebar-open button; closed via its own .sidebar-collapse
+   button or .sidebar-scrim. */
 @media (max-width: 720px) {
   .list-sidebar {
     position: fixed;
