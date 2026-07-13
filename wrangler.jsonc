@@ -3,6 +3,10 @@
   "name": "sora",
   "main": "server.tsx",
   "compatibility_date": "2025-01-01",
+  // Serve the deployed Worker from the production custom domain. Cloudflare
+  // provisions/attaches the hostname (and its certificate) on deploy; the
+  // zone for piconic.ai must be on this Cloudflare account for it to bind.
+  "routes": [{ "pattern": "sora.piconic.ai", "custom_domain": true }],
   // Static assets (CSS, generated client JS, manifest) are served
   // directly by Workers Assets. The Worker script handles everything
   // else — SSR, API routes, etc.
