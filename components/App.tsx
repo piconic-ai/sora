@@ -71,6 +71,15 @@ export function App(props: AppProps) {
   const [lists, setLists] = createSignal<SavedList[]>([])
   const [activeIndex, setActiveIndex] = createSignal(0)
 
+  // Whether the list sidebar is shown. Starts `true` on both SSR and the
+  // first client render (a wide-viewport assumption, matching what SSR always
+  // renders regardless of the real device) so hydration never mismatches;
+  // onMount below corrects it to `false` on an actually-narrow viewport
+  // (matchMedia is a client-only API, so it can't run before mount). Not
+  // persisted — every load re-derives it from the current viewport.
+  const [sidebarOpen, setSidebarOpen] = createSignal(true)
+  const isNarrowViewport = () => window.matchMedia('(max-width: 720px)').matches
+
   // Imperative "load this / clear to this" instruction forwarded to
   // WordTable — see WordTableProps.loadRequest for why it carries a
   // monotonic `nonce` rather than being applied from the payload alone.
@@ -339,7 +348,12 @@ export function App(props: AppProps) {
   const selectList = (id: string) => {
     if (id === activeList()?.id) return
     const idx = lists().findIndex((l) => l.id === id)
-    if (idx >= 0) navigate(idx)
+    if (idx < 0) return
+    navigate(idx)
+    // On a narrow viewport the sidebar is an overlay drawer (see the
+    // sidebar-closed CSS) — picking a list should return focus to the
+    // editor, not leave the drawer covering it.
+    if (isNarrowViewport()) setSidebarOpen(false)
   }
 
   // Deletes a specific list from the sidebar's per-item ✕. If it's the active
@@ -467,6 +481,8 @@ export function App(props: AppProps) {
   }
 
   onMount(() => {
+    if (isNarrowViewport()) setSidebarOpen(false)
+
     const flushOnHide = () => flushSave()
     const flushOnVisibilityChange = () => {
       if (document.hidden) flushSave()
@@ -498,6 +514,16 @@ export function App(props: AppProps) {
   return (
     <div className="app">
       <header className="app-header no-print">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          aria-expanded={sidebarOpen()}
+          aria-controls="list-sidebar"
+          aria-label={t().sidebarToggleLabel}
+          onClick={() => setSidebarOpen(!sidebarOpen())}
+        >
+          <span aria-hidden="true">☰</span>
+        </button>
         <h1>Sora</h1>
         <p className="app-tagline">{t().tagline}</p>
         <select
@@ -512,6 +538,9 @@ export function App(props: AppProps) {
         <button type="button" className="info-button" aria-label={t().infoLabel} {...popoverTrigger}>
           <span aria-hidden="true">ⓘ</span>
         </button>
+        <a href="/how-to" className="help-button" aria-label={t().howTo}>
+          <span aria-hidden="true">?</span>
+        </a>
       </header>
       <div id="sora-info" role="note" aria-label={t().infoLabel} className="info-popover no-print" {...popoverTarget}>
         <p className="info-lead">
@@ -550,8 +579,11 @@ export function App(props: AppProps) {
           </span>
         </p>
       </div>
-      <div className="workspace no-print">
-        <aside className="list-sidebar" aria-label={t().listsLabel}>
+      <div className={sidebarOpen() ? 'workspace no-print' : 'workspace no-print sidebar-closed'}>
+        {sidebarOpen() && (
+          <div className="sidebar-scrim" aria-hidden="true" onClick={() => setSidebarOpen(false)} />
+        )}
+        <aside id="list-sidebar" className="list-sidebar" aria-label={t().listsLabel}>
           <button type="button" className="new-button" onClick={createNewList}>
             <span className="new-button-plus" aria-hidden="true">+</span>
             {t().newList}
@@ -581,35 +613,30 @@ export function App(props: AppProps) {
         </aside>
 
         <main className="editor-main">
-          <p className="editor-title no-print">
-            {activeList() ? historyItemTitle(locale(), activeList()!.pairs, activeList()!.createdAt) : ''}
-          </p>
-          <WordTable breakIndices={breakIndices()} onChange={handleTableChange} locale={locale()} loadRequest={loadRequest()} />
-          {pairs().length === 0 ? (
-            <p className="hint no-print">{t().hint}</p>
-          ) : (
-            <div className="page-meter no-print">
-              <div className="page-meter-track">
-                <div
-                  className={pageFill().isFull ? 'page-meter-fill is-full' : 'page-meter-fill'}
-                  style={`width:${Math.round(pageFill().ratio * 100)}%`}
-                />
+          <div className="editor-body">
+            <WordTable breakIndices={breakIndices()} onChange={handleTableChange} locale={locale()} loadRequest={loadRequest()} />
+            {pairs().length === 0 ? (
+              <p className="hint no-print">{t().hint}</p>
+            ) : (
+              <div className="page-meter no-print">
+                <div className="page-meter-track">
+                  <div
+                    className={pageFill().isFull ? 'page-meter-fill is-full' : 'page-meter-fill'}
+                    style={`width:${Math.round(pageFill().ratio * 100)}%`}
+                  />
+                </div>
+                <p className="page-meter-caption">{pageMeterCaption(locale(), pageFill())}</p>
               </div>
-              <p className="page-meter-caption">{pageMeterCaption(locale(), pageFill())}</p>
-            </div>
-          )}
-          <button
-            type="button"
-            className="print-button no-print"
-            disabled={layout().pages.length === 0}
-            onClick={() => window.print()}
-          >
-            {t().print}
-          </button>
-          <details className="howto no-print">
-            <summary>{t().howTo}</summary>
-            <video src="/howto.webm" controls muted loop />
-          </details>
+            )}
+            <button
+              type="button"
+              className="print-button no-print"
+              disabled={layout().pages.length === 0}
+              onClick={() => window.print()}
+            >
+              {t().print}
+            </button>
+          </div>
         </main>
       </div>
       <PrintSheets layout={layout()} settings={DEFAULTS} />
