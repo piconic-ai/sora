@@ -623,7 +623,7 @@ export function App(props: AppProps) {
           </div>
         </aside>
 
-        <main className="editor-main">
+        <section className="editor-main">
           <div className="editor-body">
             <WordTable breakIndices={breakIndices()} onChange={handleTableChange} locale={locale()} loadRequest={loadRequest()} />
             {pairs().length === 0 ? (
@@ -648,7 +648,7 @@ export function App(props: AppProps) {
               {t().print}
             </button>
           </div>
-        </main>
+        </section>
       </div>
       <PrintSheets layout={layout()} settings={DEFAULTS} />
     </div>
