@@ -705,7 +705,7 @@ export function App(props: AppProps) {
           <option value="en">English</option>
         </select>
         <button type="button" className="info-button" aria-label={t().infoLabel} {...popoverTrigger}>
-          <span aria-hidden="true">ⓘ</span>
+          <span aria-hidden="true">i</span>
         </button>
         <a href="/how-to" className="help-button" aria-label={t().howTo}>
           <span aria-hidden="true">?</span>
