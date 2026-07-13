@@ -94,9 +94,9 @@ export function deserializeList(raw: unknown): SavedList | null {
   }
 }
 
-// Duplicate-save detection: saveList() skips writing a new snapshot when the
-// current pairs are identical to any already-saved list, so history never
-// accumulates duplicate entries.
+// Redundant-write detection: updateList() skips writing when the incoming
+// pairs are identical to what's already stored, so autosave can fire on every
+// keystroke without churning IndexedDB with no-op writes.
 export function pairsEqual(a: Pair[], b: Pair[]): boolean {
   if (a.length !== b.length) return false
   return a.every((p, i) => p.front === b[i].front && p.back === b[i].back)

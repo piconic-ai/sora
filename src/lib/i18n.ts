@@ -32,6 +32,10 @@ export interface Messages {
   nextListLabel: string
   noPrevList: string
   deleteThisList: string
+  // Shown via window.confirm before deleting a non-empty list (the center
+  // card's delete button) — a list can hold dozens of pairs and the delete
+  // is irreversible, so it needs explicit confirmation.
+  confirmDeleteThisList: string
   // Shown via window.confirm when creating a new list would push the saved
   // count past the MAX_LISTS cap (src/lib/storage/lists.ts) — evicting the
   // oldest list needs explicit confirmation rather than doing it silently.
@@ -80,6 +84,7 @@ export const messages: Record<Locale, Messages> = {
     nextListLabel: '次のリストへ',
     noPrevList: 'これより前はありません',
     deleteThisList: 'このリストを削除',
+    confirmDeleteThisList: 'このリストを削除しますか？',
     confirmEvictOldest: '保存できるリストは50件までです。最も古いリストを削除して新規作成しますか？',
     clearAllLists: '履歴をすべて削除',
   },
@@ -103,6 +108,7 @@ export const messages: Record<Locale, Messages> = {
     nextListLabel: 'Next list',
     noPrevList: 'No earlier lists',
     deleteThisList: 'Delete this list',
+    confirmDeleteThisList: 'Delete this list?',
     confirmEvictOldest: 'You can only keep 50 lists. Delete the oldest one and create a new list?',
     clearAllLists: 'Clear all history',
   },

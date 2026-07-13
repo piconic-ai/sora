@@ -11,7 +11,16 @@
 // spying on `Date.now` alone avoids that trap entirely.
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { clearAllLists, createList, deleteList, getList, listSaved, saveList, updateList } from '../src/lib/storage/lists'
+import {
+  clearAllLists,
+  createList,
+  deleteList,
+  getList,
+  listSaved,
+  putListDirect,
+  updateList,
+} from '../src/lib/storage/lists'
+import { serializeList } from '../src/lib/storage/schema'
 
 afterEach(async () => {
   // Clear the store so tests don't leak state into each other.
@@ -19,101 +28,63 @@ afterEach(async () => {
   vi.restoreAllMocks()
 })
 
-describe('saveList / listSaved', () => {
-  test('creates a new entry retrievable via listSaved', async () => {
-    await saveList([{ front: 'Apple', back: 'りんご' }])
+describe('listSaved', () => {
+  test('returns a created entry', async () => {
+    await createList([{ front: 'Apple', back: 'りんご' }])
     const lists = await listSaved()
     expect(lists).toHaveLength(1)
     expect(lists[0].pairs).toEqual([{ front: 'Apple', back: 'りんご' }])
   })
 
-  test('does not save an empty pairs list', async () => {
-    await saveList([])
-    expect(await listSaved()).toHaveLength(0)
-  })
-
-  test('skips saving a duplicate of the most recently saved list', async () => {
-    const pairs = [{ front: 'Apple', back: 'りんご' }]
-    await saveList(pairs)
-    await saveList(pairs)
-    await saveList([{ front: 'Apple', back: 'りんご' }]) // distinct array, equal content
-    expect(await listSaved()).toHaveLength(1)
-  })
-
-  test('saves again once the content differs from the most recent entry', async () => {
-    await saveList([{ front: 'Apple', back: 'りんご' }])
-    await saveList([{ front: 'Banana', back: 'ばなな' }])
-    expect(await listSaved()).toHaveLength(2)
-  })
-
-  test('a duplicate of an older (non-latest) entry is not saved either', async () => {
+  test('returns entries newest first (createdAt descending)', async () => {
     let now = 1000
     vi.spyOn(Date, 'now').mockImplementation(() => now)
 
-    await saveList([{ front: 'Apple', back: 'りんご' }])
+    await createList([{ front: 'A', back: 'a' }])
     now = 2000
-    await saveList([{ front: 'Banana', back: 'ばなな' }])
+    await createList([{ front: 'B', back: 'b' }])
     now = 3000
-    await saveList([{ front: 'Apple', back: 'りんご' }]) // equals the older entry, not the latest one
-    const lists = await listSaved()
-    expect(lists).toHaveLength(2)
-    expect(lists.map((l) => l.pairs[0].front)).toEqual(['Banana', 'Apple'])
-  })
-
-  test('checks against every existing entry, not just the latest, with the oldest matched', async () => {
-    let now = 1000
-    vi.spyOn(Date, 'now').mockImplementation(() => now)
-
-    await saveList([{ front: 'Apple', back: 'りんご' }])
-    now = 2000
-    await saveList([{ front: 'Banana', back: 'ばなな' }])
-    now = 3000
-    await saveList([{ front: 'Cherry', back: 'さくらんぼ' }])
-    now = 4000
-    await saveList([{ front: 'Apple', back: 'りんご' }]) // matches the oldest of the three
-    const lists = await listSaved()
-    expect(lists).toHaveLength(3)
-    expect(lists.map((l) => l.pairs[0].front)).toEqual(['Cherry', 'Banana', 'Apple'])
-  })
-
-  test('listSaved returns entries newest first', async () => {
-    let now = 1000
-    vi.spyOn(Date, 'now').mockImplementation(() => now)
-
-    await saveList([{ front: 'A', back: 'a' }])
-    now = 2000
-    await saveList([{ front: 'B', back: 'b' }])
-    now = 3000
-    await saveList([{ front: 'C', back: 'c' }])
+    await createList([{ front: 'C', back: 'c' }])
 
     const lists = await listSaved()
     expect(lists.map((l) => l.pairs[0].front)).toEqual(['C', 'B', 'A'])
     expect(lists.map((l) => l.createdAt)).toEqual([3000, 2000, 1000])
   })
 
-  test('caps at 50 entries: the 51st save evicts the oldest, keeping 50', async () => {
-    let now = 1000
-    vi.spyOn(Date, 'now').mockImplementation(() => now)
+  test('resolves empty when nothing has been created', async () => {
+    expect(await listSaved()).toHaveLength(0)
+  })
+})
 
-    for (let i = 0; i < 51; i++) {
-      now = 1000 + i
-      await saveList([{ front: `word${i}`, back: `back${i}` }])
-    }
+describe('putListDirect', () => {
+  test('writes a fully-formed record in one shot, retrievable via getList', async () => {
+    const rec = serializeList('direct-1', [{ front: 'Apple', back: 'りんご' }], 1000, 2000)
+    await putListDirect(rec)
+    await expect(getList('direct-1')).resolves.toEqual(rec)
+  })
 
-    const lists = await listSaved()
-    expect(lists).toHaveLength(50)
-    // word0 was the oldest (first saved) and should have been evicted;
-    // word1..word50 (50 entries) remain, newest (word50) first.
-    expect(lists.some((l) => l.pairs[0].front === 'word0')).toBe(false)
-    expect(lists.some((l) => l.pairs[0].front === 'word1')).toBe(true)
-    expect(lists[0].pairs[0].front).toBe('word50')
-    expect(lists[49].pairs[0].front).toBe('word1')
+  test('overwrites an existing record without a read-back or dedup', async () => {
+    const created = await createList([{ front: 'Apple', back: 'りんご' }], { id: 'direct-2', createdAt: 500 })
+    // Same id/createdAt, new pairs + updatedAt — a straight overwrite, even
+    // though updateList would have skipped an unchanged-content write.
+    const rec = serializeList('direct-2', [{ front: 'Banana', back: 'ばなな' }], created.createdAt, 9999)
+    await putListDirect(rec)
+    const stored = await getList('direct-2')
+    expect(stored).toEqual(rec)
+    expect(stored?.createdAt).toBe(500)
+    expect(stored?.updatedAt).toBe(9999)
+  })
+
+  test('does not disturb other records', async () => {
+    const a = await createList([{ front: 'Apple', back: 'りんご' }])
+    await putListDirect(serializeList('other', [{ front: 'Banana', back: 'ばなな' }], 1, 1))
+    await expect(getList(a.id)).resolves.toEqual(a)
   })
 })
 
 describe('getList', () => {
   test('retrieves a saved list by id', async () => {
-    await saveList([{ front: 'Apple', back: 'りんご' }])
+    await createList([{ front: 'Apple', back: 'りんご' }])
     const [saved] = await listSaved()
     await expect(getList(saved.id)).resolves.toEqual(saved)
   })
@@ -133,9 +104,9 @@ describe('deleteList', () => {
     let now = 1000
     vi.spyOn(Date, 'now').mockImplementation(() => now)
 
-    await saveList([{ front: 'Apple', back: 'りんご' }])
+    await createList([{ front: 'Apple', back: 'りんご' }])
     now = 2000
-    await saveList([{ front: 'Banana', back: 'ばなな' }])
+    await createList([{ front: 'Banana', back: 'ばなな' }])
     const [latest] = await listSaved()
     await deleteList(latest.id)
 
@@ -145,7 +116,7 @@ describe('deleteList', () => {
   })
 
   test('deleting an unknown id is a no-op', async () => {
-    await saveList([{ front: 'Apple', back: 'りんご' }])
+    await createList([{ front: 'Apple', back: 'りんご' }])
     await deleteList('does-not-exist')
     expect(await listSaved()).toHaveLength(1)
   })
@@ -153,8 +124,8 @@ describe('deleteList', () => {
 
 describe('clearAllLists', () => {
   test('empties the store', async () => {
-    await saveList([{ front: 'Apple', back: 'りんご' }])
-    await saveList([{ front: 'Banana', back: 'ばなな' }])
+    await createList([{ front: 'Apple', back: 'りんご' }])
+    await createList([{ front: 'Banana', back: 'ばなな' }])
     await clearAllLists()
     expect(await listSaved()).toHaveLength(0)
   })

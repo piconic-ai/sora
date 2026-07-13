@@ -11,9 +11,18 @@ import { computePageFill } from '../src/lib/pageMeter'
 import { adjustIndexAfterRemoval, buildListPath, parseListIdFromPath, shouldConfirmBeforeNewList } from '../src/lib/carousel'
 import { getActiveListId, setActiveListId } from '../src/lib/storage/active'
 import { generateId } from '../src/lib/storage/id'
-import { MAX_LISTS, clearAllLists, createList, deleteList, getList, listSaved, updateList } from '../src/lib/storage/lists'
+import {
+  MAX_LISTS,
+  clearAllLists,
+  createList,
+  deleteList,
+  getList,
+  listSaved,
+  putListDirect,
+  updateList,
+} from '../src/lib/storage/lists'
 import { migrateLegacyDraft } from '../src/lib/storage/migrate'
-import { LIST_VERSION, type SavedList } from '../src/lib/storage/schema'
+import { LIST_VERSION, serializeList, type SavedList } from '../src/lib/storage/schema'
 import type { Pair } from '../src/lib/types'
 
 interface AppProps {
@@ -70,6 +79,21 @@ export function App(props: AppProps) {
   const [loadRequest, setLoadRequest] = createSignal<{ pairs: Pair[]; nonce: number } | null>(null)
   let loadNonce = 0
 
+  // Tombstones for lists deleted this session (explicit delete, clear-all, or
+  // an empty card evaporating). A debounced save can already be in flight —
+  // past its getList()/existence check but not yet written — when a delete
+  // commits; without this guard its trailing create would resurrect the
+  // just-deleted record. doPersist's create path and the flush direct-put
+  // both bail on a tombstoned id. Session-scoped: ids are random and never
+  // reused, so the set never needs pruning within a page's lifetime.
+  const deletedIds = new Set<string>()
+
+  // Set once the user has typed or clicked "New" — read by initialize() to
+  // avoid clobbering input made during the async startup window (IndexedDB
+  // reads resolve a few frames after mount; anything typed in between must
+  // survive rather than be overwritten by the loaded active list).
+  let userInteracted = false
+
   const activeList = createMemo(() => lists()[activeIndex()] ?? null)
   const prevList = createMemo(() => lists()[activeIndex() - 1] ?? null)
   const nextList = createMemo(() => lists()[activeIndex() + 1] ?? null)
@@ -100,18 +124,25 @@ export function App(props: AppProps) {
   let saveTimer = null as ReturnType<typeof setTimeout> | null
   let pending = null as { id: string; pairs: Pair[]; createdAt: number } | null
 
-  // Writes one list's pairs to IndexedDB: an update if it's already there,
-  // or its first real creation (pinned to the id/createdAt it was already
-  // assigned in memory — see emptyCard/createList's `overrides`) if not. A
-  // no-op for an empty `pairs` — an empty list is never written; it either
-  // gets its first real content here later, or evaporates (see
-  // commitActiveEdits) without ever touching IndexedDB.
+  // The debounced-save writer. Empty pairs are a deletion, not a skip: if the
+  // user clears a list down to nothing while staying on the card, its stored
+  // record must go away too (deleteList is a harmless no-op when the record
+  // was never written), mirroring the "empty card evaporates" rule so a
+  // cleared list can't come back on reload. Non-empty: an in-place update if
+  // the record exists, else its first real creation — pinned to the id/
+  // createdAt already assigned in memory (see emptyCard/createList's
+  // `overrides`). The create path bails on a tombstoned id so a save that
+  // raced a delete can't resurrect the record.
   const doPersist = async (p: { id: string; pairs: Pair[]; createdAt: number }) => {
-    if (p.pairs.length === 0) return
+    if (p.pairs.length === 0) {
+      await deleteList(p.id)
+      return
+    }
     const existing = await getList(p.id)
     if (existing) {
       await updateList(p.id, p.pairs)
     } else {
+      if (deletedIds.has(p.id)) return
       await createList(p.pairs, { id: p.id, createdAt: p.createdAt })
     }
   }
@@ -124,14 +155,24 @@ export function App(props: AppProps) {
     pending = null
   }
 
-  // Flushes a *pending* save immediately. Guarded on saveTimer !== null so a
-  // pagehide/hidden firing with nothing scheduled (e.g. right after
-  // switching cards) can't re-write a card with data it already has.
+  // Flushes a *pending* save immediately, for pagehide/visibilitychange when
+  // the tab is about to go away. Guarded on saveTimer !== null so a hide with
+  // nothing scheduled can't re-write a card. Unlike the debounced path this
+  // writes in a *single* IndexedDB transaction (putListDirect) rather than a
+  // read-then-write, so the last edit is durable before the page unloads
+  // instead of losing the race with it. Empty pending is still a delete, and
+  // a tombstoned id is skipped, both consistent with doPersist.
   const flushSave = () => {
     if (saveTimer === null) return
     const p = pending
     cancelPendingSave()
-    if (p) void doPersist(p)
+    if (!p) return
+    if (p.pairs.length === 0) {
+      void deleteList(p.id)
+      return
+    }
+    if (deletedIds.has(p.id)) return
+    void putListDirect(serializeList(p.id, p.pairs, p.createdAt, Date.now()))
   }
 
   const scheduleSave = (id: string, pairsToSave: Pair[], createdAt: number) => {
@@ -150,6 +191,7 @@ export function App(props: AppProps) {
   // concurrent navigate always sees up-to-date content instead of whatever
   // was last persisted).
   const handleTableChange = (newPairs: Pair[]) => {
+    userInteracted = true
     setPairs(newPairs)
     const current = activeList()
     if (!current) return
@@ -174,6 +216,7 @@ export function App(props: AppProps) {
     const synced = lists().map((l) => (l.id === current.id ? { ...l, pairs: currentPairs } : l))
 
     if (currentPairs.length === 0) {
+      deletedIds.add(current.id) // an evaporated empty card must never be resurrected by a racing save
       void deleteList(current.id) // no-op if it was never written
       return synced.filter((l) => l.id !== current.id)
     }
@@ -238,12 +281,30 @@ export function App(props: AppProps) {
   // (evaporating an empty current card) can never itself land back on the
   // cap and prompt a confirm the user didn't expect.
   const createNewList = () => {
+    userInteracted = true
     let ls = commitActiveEdits()
     setLists(ls)
 
     if (shouldConfirmBeforeNewList(ls.length, MAX_LISTS)) {
-      if (!window.confirm(t().confirmEvictOldest)) return
+      if (!window.confirm(t().confirmEvictOldest)) {
+        // Cancelled — but commitActiveEdits may have evaporated the current
+        // (empty) card, leaving activeIndex past the end of `ls`. Re-anchor
+        // onto a valid card so activeList() never goes null (which would
+        // blank the title and drop autosave). Recreate one if none remain.
+        if (ls.length === 0) {
+          const fresh = emptyCard()
+          setLists([fresh])
+          setActiveIndex(0)
+          openList(fresh)
+        } else {
+          const clamped = Math.min(activeIndex(), ls.length - 1)
+          setActiveIndex(clamped)
+          openList(ls[clamped])
+        }
+        return
+      }
       const oldest = ls[0]
+      deletedIds.add(oldest.id)
       void deleteList(oldest.id)
       ls = ls.slice(1)
     }
@@ -262,10 +323,15 @@ export function App(props: AppProps) {
   // next (newer) card if there is one, else the previous (older) one, else
   // creates a fresh empty card.
   const deleteCurrentList = () => {
-    cancelPendingSave()
-
     const current = activeList()
     if (!current) return
+    // Confirm only when there's content to lose — deleting an untouched empty
+    // card is harmless and shouldn't nag. A populated list can hold dozens of
+    // irreversible pairs, so that one asks first.
+    if (current.pairs.length > 0 && !window.confirm(t().confirmDeleteThisList)) return
+
+    cancelPendingSave()
+    deletedIds.add(current.id)
     void deleteList(current.id)
 
     const idx = activeIndex()
@@ -292,6 +358,9 @@ export function App(props: AppProps) {
   // empty card, since there is nothing left to show.
   const handleClearAllLists = async () => {
     cancelPendingSave()
+    // Tombstone every id so any save that was already in flight when the wipe
+    // lands can't recreate a record clearAllLists just removed.
+    for (const l of lists()) deletedIds.add(l.id)
     await clearAllLists()
     const fresh = emptyCard()
     setLists([fresh])
@@ -313,6 +382,24 @@ export function App(props: AppProps) {
 
     const saved = await listSaved()
     const asc = [...saved].sort((a, b) => a.createdAt - b.createdAt)
+
+    // The user typed or clicked "New" during the async startup window. Their
+    // in-progress input lives in pairs() (and possibly a memory-only card),
+    // but nothing they did was persisted yet. Rather than clobber it with the
+    // loaded active list, fold it in as a fresh newest card and leave the
+    // editor untouched (no loadRequest). Everything below this line runs
+    // synchronously, so `userInteracted` can't flip again mid-merge.
+    if (userInteracted) {
+      const now = Date.now()
+      const fresh: SavedList = { v: LIST_VERSION, id: generateId(), pairs: pairs(), createdAt: now, updatedAt: now }
+      const merged = [...asc, fresh]
+      setLists(merged)
+      setActiveIndex(merged.length - 1)
+      void setActiveListId(fresh.id)
+      history.replaceState(null, '', buildListPath(fresh.id))
+      if (fresh.pairs.length > 0) scheduleSave(fresh.id, fresh.pairs, fresh.createdAt)
+      return
+    }
 
     const urlId = parseListIdFromPath(location.pathname)
     const storedActiveId = await getActiveListId()
