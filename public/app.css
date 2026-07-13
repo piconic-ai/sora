@@ -8,7 +8,10 @@
   place-items: initial;
   padding: 56px 24px 96px;
   text-align: left;
-  max-width: 560px;
+  /* Wide enough for the 3-slot carousel (side preview + center card + side
+     preview) rather than the single-column width of the old popover-based
+     history UI. */
+  max-width: 920px;
   margin: 0 auto;
   box-sizing: border-box;
   font-family:
@@ -95,7 +98,6 @@
   color: #888;
 }
 
-.history-button,
 .new-button {
   margin-left: 6px;
   padding: 3px 10px;
@@ -110,105 +112,14 @@
   white-space: nowrap;
 }
 
-.history-button:hover,
 .new-button:hover {
   color: #111;
   border-color: #ccc;
 }
 
-.history-button:focus-visible,
 .new-button:focus-visible {
   outline: none;
   border-color: #111;
-}
-
-/* Native Popover API — see the .info-popover comment above for why
-   top/right are set and bottom/left pinned to auto. Wider and taller than
-   .info-popover (up to 50 history entries) with internal scrolling instead
-   of growing past the viewport. */
-.history-popover {
-  position: fixed;
-  top: 64px;
-  right: 24px;
-  bottom: auto;
-  left: auto;
-  margin: 0;
-  padding: 16px 18px;
-  width: min(360px, calc(100vw - 48px));
-  max-height: min(480px, calc(100vh - 96px));
-  overflow-y: auto;
-  border: none;
-  border-radius: 12px;
-  background: #fff;
-  color: #333;
-  font-size: 13px;
-  line-height: 1.6;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
-}
-
-.history-empty {
-  color: #888;
-  margin: 0 0 4px;
-}
-
-.history-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.history-item:last-of-type {
-  border-bottom: none;
-}
-
-.history-item-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.history-item-actions {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.history-item-actions button {
-  padding: 3px 8px;
-  font-size: 12px;
-  font-family: inherit;
-  color: #888;
-  background: transparent;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.history-item-actions button:hover {
-  color: #111;
-  border-color: #ccc;
-}
-
-.history-clear-all {
-  margin-top: 12px;
-  width: 100%;
-  padding: 8px;
-  font-size: 12px;
-  font-family: inherit;
-  color: #b23a2e;
-  background: transparent;
-  border: 1px solid #f0d9d6;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.history-clear-all:hover {
-  background: #fdf2f1;
 }
 
 /* Native Popover API (popover/popovertarget) handles open/close, ESC, and
@@ -261,10 +172,189 @@
   margin-top: 4px;
 }
 
-.app-input {
+/* "Clear all history" — a shared-device privacy control, so it lives in the
+   info popover rather than the carousel itself. */
+.info-clear-all {
+  width: 100%;
+  margin: 4px 0 10px;
+  padding: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #b23a2e;
+  background: transparent;
+  border: 1px solid #f0d9d6;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.info-clear-all:hover {
+  background: #fdf2f1;
+}
+
+/* ---- History carousel ------------------------------------------------
+   Three fixed slots — side preview, center (editable) card, side preview —
+   laid out with flexbox rather than iterated, so the DOM never depends on
+   how many lists exist (see components/App.tsx). Side slots get a fixed
+   width so switching between a preview / the "+ new" ghost / the "no
+   earlier lists" placeholder never shifts the center card. */
+.carousel {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.carousel-slot-side {
+  flex: 0 0 180px;
+  width: 180px;
+}
+
+.carousel-slot-center {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.center-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.center-card-title {
+  font-size: 13px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.center-card-delete {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.center-card-delete:hover {
+  color: #b23a2e;
+  border-color: #f0d9d6;
+}
+
+.carousel-position {
+  font-size: 12px;
+  color: #bbb;
+  text-align: center;
+  margin: 0;
+}
+
+.carousel-placeholder {
+  padding: 14px 12px;
+  font-size: 12px;
+  color: #ccc;
+  font-style: italic;
+  text-align: center;
+}
+
+.carousel-preview {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+  text-align: left;
+  font-family: inherit;
+  color: #888;
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.carousel-preview:hover {
+  color: #111;
+  border-color: #ccc;
+  background: #fafafa;
+}
+
+.carousel-preview:focus-visible {
+  outline: none;
+  border-color: #111;
+}
+
+.carousel-preview-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.carousel-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.carousel-preview-table td {
+  padding: 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 80px;
+}
+
+.carousel-new-ghost {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 96px;
+  padding: 12px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 12px;
+  color: #ccc;
+  background: transparent;
+  border: 1px dashed #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.carousel-new-ghost:hover {
+  color: #888;
+  border-color: #bbb;
+}
+
+.carousel-new-ghost-plus {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Below the width where prev/center/next comfortably fit side by side,
+   stack them instead — this app is PC-first (no swipe gesture), but the
+   carousel should still degrade to something usable rather than
+   overflowing. */
+@media (max-width: 760px) {
+  .carousel {
+    flex-direction: column;
+  }
+
+  .carousel-slot-side {
+    width: 100%;
+    flex: 1 1 auto;
+  }
 }
 
 .input-error {

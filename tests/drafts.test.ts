@@ -1,40 +1,47 @@
 // Exercises the real IndexedDB code path (db.ts + drafts.ts) against an
 // in-memory IndexedDB implementation, since vitest's default environment has
-// no `indexedDB` global. This is the one integration-style test in the
-// storage layer; schema.ts's pure serialize/deserialize logic is covered
-// exhaustively in draftSchema.test.ts without needing IndexedDB at all.
+// no `indexedDB` global. drafts.ts is now read-only (loadDraft) — the legacy
+// draft slot is written only by pre-carousel builds and read here so
+// migrateLegacyDraft can fold it into a list; the write is simulated with a
+// direct idbPut of a serializeDraft record. schema.ts's pure serialize/
+// deserialize logic is covered exhaustively in draftSchema.test.ts.
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test } from 'vitest'
-import { loadDraft, saveDraft } from '../src/lib/storage/drafts'
+import { loadDraft } from '../src/lib/storage/drafts'
+import { idbDel, idbPut } from '../src/lib/storage/db'
+import { serializeDraft } from '../src/lib/storage/schema'
+import type { Pair } from '../src/lib/types'
+
+const STORE = 'drafts'
+const KEY = 'current'
+
+// Writes a legacy draft record the way a pre-carousel build would have — a
+// serialized Draft under the 'current' key of the 'drafts' store.
+async function writeLegacyDraft(pairs: Pair[]): Promise<void> {
+  await idbPut(STORE, serializeDraft(pairs, Date.now()), KEY)
+}
 
 afterEach(async () => {
   // Clear the single draft slot so tests don't leak state into each other.
-  await saveDraft([])
+  await idbDel(STORE, KEY)
 })
 
-describe('loadDraft / saveDraft', () => {
-  test('loadDraft resolves null when nothing has been saved', async () => {
+describe('loadDraft', () => {
+  test('resolves null when nothing has been written', async () => {
     await expect(loadDraft()).resolves.toBeNull()
   })
 
-  test('round-trips pairs written by saveDraft', async () => {
+  test('returns the pairs of a stored legacy draft', async () => {
     const pairs = [
       { front: 'Apple', back: 'りんご' },
       { front: 'Banana', back: 'ばなな' },
     ]
-    await saveDraft(pairs)
+    await writeLegacyDraft(pairs)
     await expect(loadDraft()).resolves.toEqual(pairs)
   })
 
-  test('saving replaces the previous draft rather than merging', async () => {
-    await saveDraft([{ front: 'Apple', back: 'りんご' }])
-    await saveDraft([{ front: 'Banana', back: 'ばなな' }])
-    await expect(loadDraft()).resolves.toEqual([{ front: 'Banana', back: 'ばなな' }])
-  })
-
-  test('saving an empty pairs list clears any existing draft', async () => {
-    await saveDraft([{ front: 'Apple', back: 'りんご' }])
-    await saveDraft([])
+  test('resolves null for a malformed / wrong-version stored value', async () => {
+    await idbPut(STORE, { v: 2, pairs: [], updatedAt: 1 }, KEY)
     await expect(loadDraft()).resolves.toBeNull()
   })
 })

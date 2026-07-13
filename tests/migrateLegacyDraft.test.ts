@@ -5,14 +5,26 @@
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test } from 'vitest'
 import { clearActiveListId, getActiveListId, setActiveListId } from '../src/lib/storage/active'
-import { loadDraft, saveDraft } from '../src/lib/storage/drafts'
+import { loadDraft } from '../src/lib/storage/drafts'
+import { idbDel, idbPut } from '../src/lib/storage/db'
 import { clearAllLists, listSaved } from '../src/lib/storage/lists'
 import { migrateLegacyDraft } from '../src/lib/storage/migrate'
+import { serializeDraft } from '../src/lib/storage/schema'
+import type { Pair } from '../src/lib/types'
+
+const DRAFT_STORE = 'drafts'
+const DRAFT_KEY = 'current'
+
+// Simulates the legacy write path (retired with the carousel): a serialized
+// Draft under the 'current' key, exactly what a pre-carousel build persisted.
+async function writeLegacyDraft(pairs: Pair[]): Promise<void> {
+  await idbPut(DRAFT_STORE, serializeDraft(pairs, Date.now()), DRAFT_KEY)
+}
 
 afterEach(async () => {
   await clearActiveListId()
   await clearAllLists()
-  await saveDraft([])
+  await idbDel(DRAFT_STORE, DRAFT_KEY)
 })
 
 describe('migrateLegacyDraft', () => {
@@ -21,7 +33,7 @@ describe('migrateLegacyDraft', () => {
       { front: 'Apple', back: 'りんご' },
       { front: 'Banana', back: 'ばなな' },
     ]
-    await saveDraft(pairs)
+    await writeLegacyDraft(pairs)
 
     const newId = await migrateLegacyDraft()
 
@@ -38,7 +50,7 @@ describe('migrateLegacyDraft', () => {
   })
 
   test('is idempotent: a second call does nothing once an active list is set', async () => {
-    await saveDraft([{ front: 'Apple', back: 'りんご' }])
+    await writeLegacyDraft([{ front: 'Apple', back: 'りんご' }])
     const firstId = await migrateLegacyDraft()
     const secondResult = await migrateLegacyDraft()
 
@@ -53,7 +65,7 @@ describe('migrateLegacyDraft', () => {
     // attempt) — the active pointer takes precedence and the draft is left
     // untouched.
     await setActiveListId('already-active')
-    await saveDraft([{ front: 'Apple', back: 'りんご' }])
+    await writeLegacyDraft([{ front: 'Apple', back: 'りんご' }])
 
     const result = await migrateLegacyDraft()
 
@@ -73,7 +85,7 @@ describe('migrateLegacyDraft', () => {
   })
 
   test('resolves null when the legacy draft is present but empty', async () => {
-    await saveDraft([]) // saveDraft([]) itself deletes the slot, so this is the same as "absent"
+    await writeLegacyDraft([]) // an empty-pairs draft is treated the same as "absent"
     const result = await migrateLegacyDraft()
     expect(result).toBeNull()
     await expect(getActiveListId()).resolves.toBeNull()

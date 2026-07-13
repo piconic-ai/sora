@@ -1,13 +1,12 @@
 'use client'
 
-import { createEffect, createMemo, createSignal, onCleanup, onMount } from '@barefootjs/client'
+import { createEffect, createMemo, createSignal } from '@barefootjs/client'
 import { parseInput } from '../src/lib/parse'
 import { messages } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import type { Pair } from '../src/lib/types'
 import { resolveKeyAction } from '../src/lib/tableNav'
 import type { Col } from '../src/lib/tableNav'
-import { loadDraft, saveDraft } from '../src/lib/storage/drafts'
 
 interface Row {
   id: number
@@ -23,13 +22,18 @@ interface WordTableProps {
   breakIndices: number[]
   onChange: (pairs: Pair[]) => void
   locale: string
-  // Imperative "load this / clear to this" request from App (history's
-  // "read" and "new list" actions). `nonce` is a monotonically increasing
-  // counter, not the payload itself: the effect below only reacts to a
-  // *change* in nonce, which is what lets the same pairs (e.g. []) be
-  // requested twice in a row and still take effect both times, and lets the
-  // initial `null` (no request yet) be ignored rather than clearing the
-  // table on mount.
+  // Imperative "load this / clear to this" request from App (the carousel's
+  // paging, "new list", and initial-load actions — see components/App.tsx).
+  // `nonce` is a monotonically increasing counter, not the payload itself:
+  // the effect below only reacts to a *change* in nonce, which is what lets
+  // the same pairs (e.g. []) be requested twice in a row and still take
+  // effect both times, and lets the initial `null` (no request yet) be
+  // ignored rather than clearing the table on mount.
+  //
+  // WordTable itself holds no persistence state — it is a pure controlled
+  // editor: pairs flow in via loadRequest and flow out via onChange. All
+  // autosave (IndexedDB, debouncing, flush-on-hide) lives in App.tsx, which
+  // owns which SavedList is active and when it gets written.
   loadRequest?: { pairs: Pair[]; nonce: number } | null
 }
 
@@ -54,16 +58,6 @@ function ensureTrailingBlank(rows: Row[]): Row[] {
   }
   return rows
 }
-
-// True only for the untouched initial table (the single trailing blank row
-// with nothing typed into it yet). Guards draft restore: if the user has
-// already started typing before the async loadDraft() resolves, their input
-// wins and the restored draft is discarded rather than clobbering it.
-function isPristine(rows: Row[]): boolean {
-  return rows.length === 1 && rows[0].front === '' && rows[0].back === ''
-}
-
-const DRAFT_SAVE_DEBOUNCE_MS = 500
 
 // Focuses the input in `col` (0 = front, 1 = back) inside `tr`, if both
 // exist, and moves the caret to the end of its value.
@@ -91,95 +85,24 @@ export function WordTable(props: WordTableProps) {
     return rows().map((row) => (row.front.trim() !== '' || row.back.trim() !== '' ? ++pairIndex : -1))
   })
 
-  // Draft autosave: debounced so rapid keystrokes coalesce into one write
-  // instead of hitting IndexedDB on every keystroke. `latestPairs` +
-  // `flushSave` let pagehide/visibilitychange save the most recent value
-  // immediately, bypassing the timer, when the page is about to go away.
-  let saveTimer: ReturnType<typeof setTimeout> | null = null
-  let latestPairs: Pair[] = []
-
-  // Set by the loadRequest effect below the first time it applies a request.
-  // Guards the draft restore below: loadRequest only fires from an explicit
-  // user action ("New" / history's "Load"), so once one has landed it must
-  // win over the async draft restore, even if the restore's isPristine()
-  // check would otherwise still pass (e.g. "New" resets the table back to a
-  // single blank row, which *is* pristine) — otherwise a "New"/"Load" click
-  // that races ahead of the still-in-flight loadDraft() would be silently
-  // undone the moment that draft resolves.
-  let loadRequestApplied = false
-
-  const flushSave = () => {
-    // Only flush a *pending* save. Without this guard, a pagehide/hidden that
-    // fires before the user has edited anything (e.g. right after load, while
-    // the async restore is still in flight) would call saveDraft([]) and
-    // delete a previously-stored draft — permanent data loss.
-    if (saveTimer === null) return
-    clearTimeout(saveTimer)
-    saveTimer = null
-    void saveDraft(latestPairs)
-  }
-
-  const scheduleSave = (pairs: Pair[]) => {
-    latestPairs = pairs
-    if (saveTimer !== null) clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => {
-      saveTimer = null
-      void saveDraft(pairs)
-    }, DRAFT_SAVE_DEBOUNCE_MS)
-  }
-
   const emit = (rs: Row[]) => {
     const pairs = rs
       .filter((r) => r.front.trim() !== '' || r.back.trim() !== '')
       .map((r) => ({ front: r.front, back: r.back }))
     props.onChange(pairs)
-    scheduleSave(pairs)
   }
 
-  // Draft restore (PR1) + save-on-exit listeners. Runs once on mount, client
-  // side only — see isPristine above for why a restore loses to the user's
-  // own input, and drafts.ts/db.ts for why a missing/broken IndexedDB just
-  // resolves to "no draft" instead of throwing.
-  onMount(() => {
-    const flushOnHide = () => flushSave()
-    const flushOnVisibilityChange = () => {
-      if (document.hidden) flushSave()
-    }
-    window.addEventListener('pagehide', flushOnHide)
-    document.addEventListener('visibilitychange', flushOnVisibilityChange)
-
-    onCleanup(() => {
-      window.removeEventListener('pagehide', flushOnHide)
-      document.removeEventListener('visibilitychange', flushOnVisibilityChange)
-      if (saveTimer !== null) clearTimeout(saveTimer)
-    })
-
-    void (async () => {
-      const pairs = await loadDraft()
-      if (loadRequestApplied) return
-      if (!pairs || pairs.length === 0) return
-      if (!isPristine(rows())) return
-      if (loadRequestApplied) return
-      const restored = ensureTrailingBlank(pairs.map((p) => ({ id: nextRowId++, front: p.front, back: p.back })))
-      setRows(restored)
-      emit(restored)
-    })()
-  })
-
-  // Imperative "load this / clear to this" request from App (the history
-  // popover's "Load" button and the "New" button — see WordTableProps.
-  // loadRequest above). Reacts only to a *change* in nonce, so the initial
-  // `null` (no request yet) is ignored, and the same payload (e.g. []) can be
-  // requested again later with a fresh nonce and still take effect. Unlike
-  // the draft restore above, this is unconditional — loadRequest only ever
-  // fires from an explicit user action, so there's no in-flight typing it
-  // could clobber the way an unconditional draft restore could.
+  // Imperative "load this / clear to this" request from App (see
+  // WordTableProps.loadRequest above). Reacts only to a *change* in nonce,
+  // so the initial `null` (no request yet) is ignored, and the same payload
+  // (e.g. []) can be requested again later with a fresh nonce and still take
+  // effect — this is what lets paging back and forth, or "New" twice in a
+  // row, always land the requested content.
   let lastNonce: number | null = null
   createEffect(() => {
     const req = props.loadRequest
     if (!req || req.nonce === lastNonce) return
     lastNonce = req.nonce
-    loadRequestApplied = true
     const restored = ensureTrailingBlank(req.pairs.map((p) => ({ id: nextRowId++, front: p.front, back: p.back })))
     setRows(restored)
     emit(restored)
