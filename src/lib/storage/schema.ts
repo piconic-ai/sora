@@ -56,16 +56,22 @@ export interface SavedList {
   id: string
   pairs: Pair[]
   createdAt: number
+  updatedAt: number
 }
 
-export function serializeList(id: string, pairs: Pair[], createdAt: number): SavedList {
-  return { v: LIST_VERSION, id, pairs: normalizePairs(pairs), createdAt }
+export function serializeList(id: string, pairs: Pair[], createdAt: number, updatedAt: number): SavedList {
+  return { v: LIST_VERSION, id, pairs: normalizePairs(pairs), createdAt, updatedAt }
 }
 
 // Same discard-rather-than-throw contract as deserializeDraft: a version
 // mismatch or malformed shape (hand-edited/corrupted IndexedDB content)
 // returns null so listSaved() can silently drop unreadable entries instead
 // of crashing the whole history popover.
+//
+// `updatedAt` is validated the same way as `createdAt`, but missing/invalid
+// values fall back to `createdAt` rather than rejecting the whole entry —
+// this keeps pre-"document mode" lists (saved before updatedAt existed)
+// readable after the upgrade instead of silently vanishing from history.
 export function deserializeList(raw: unknown): SavedList | null {
   if (typeof raw !== 'object' || raw === null) return null
   const d = raw as Record<string, unknown>
@@ -76,12 +82,21 @@ export function deserializeList(raw: unknown): SavedList | null {
   if (!d.pairs.every(isPair)) return null
   if (typeof d.createdAt !== 'number' || !Number.isFinite(d.createdAt)) return null
 
-  return { v: LIST_VERSION, id: d.id, pairs: normalizePairs(d.pairs as Pair[]), createdAt: d.createdAt }
+  const updatedAt =
+    typeof d.updatedAt === 'number' && Number.isFinite(d.updatedAt) ? d.updatedAt : d.createdAt
+
+  return {
+    v: LIST_VERSION,
+    id: d.id,
+    pairs: normalizePairs(d.pairs as Pair[]),
+    createdAt: d.createdAt,
+    updatedAt,
+  }
 }
 
-// Duplicate-save detection: saveList() skips writing a new snapshot when the
-// current pairs are identical to any already-saved list, so history never
-// accumulates duplicate entries.
+// Redundant-write detection: updateList() skips writing when the incoming
+// pairs are identical to what's already stored, so autosave can fire on every
+// keystroke without churning IndexedDB with no-op writes.
 export function pairsEqual(a: Pair[], b: Pair[]): boolean {
   if (a.length !== b.length) return false
   return a.every((p, i) => p.front === b[i].front && p.back === b[i].back)

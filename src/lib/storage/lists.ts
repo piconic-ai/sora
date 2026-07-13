@@ -1,50 +1,63 @@
 import type { Pair } from '../types'
 import { idbClear, idbDel, idbGet, idbGetAll, idbPut } from './db'
+import { generateId } from './id'
 import { type SavedList, deserializeList, pairsEqual, serializeList } from './schema'
 
 const STORE = 'lists'
-const MAX_LISTS = 50
+export const MAX_LISTS = 50
 
-// `crypto.randomUUID()` is only defined in secure contexts (HTTPS or
-// localhost) — calling it over plain HTTP (e.g. a LAN IP during local
-// testing) throws a TypeError. Fall back to a non-cryptographic but
-// sufficiently-unique id in that case, matching db.ts's fail-soft policy of
-// never letting storage plumbing throw.
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+// Creates a brand-new document-mode list: a fresh URL-safe id, createdAt ==
+// updatedAt == now. No dedup and no MAX_LISTS eviction here — the carousel's
+// eviction policy lives in its caller (App.tsx's createNewList), not in
+// "create a list" itself.
+//
+// `overrides` lets a caller pin `id`/`createdAt` instead of generating them
+// here. This exists for the carousel's "new card" flow (App.tsx): a fresh
+// card is assigned an id and a createdAt the moment it's created in memory —
+// which fixes its position in the creation-order carousel and the URL it's
+// reachable at — but is only written to IndexedDB once the user types its
+// first pair. Writing it then with a *new* id/createdAt would silently move
+// it and change its URL, so the first real write reuses the id/createdAt
+// that were already handed out. `updatedAt` is always "now" (the moment of
+// the actual write), regardless of overrides.
+export async function createList(
+  pairs: Pair[],
+  overrides?: { id?: string; createdAt?: number },
+): Promise<SavedList> {
+  const now = Date.now()
+  const id = overrides?.id ?? generateId()
+  const createdAt = overrides?.createdAt ?? now
+  const entry = serializeList(id, pairs, createdAt, now)
+  await idbPut(STORE, entry)
+  return entry
 }
 
-// Automatic history snapshot, taken on print and on "new list" — see
-// components/App.tsx. Fire-and-forget from the caller's point of view (every
-// db.ts primitive already fails soft), so a broken/unavailable IndexedDB
-// just means history silently doesn't accumulate.
-//
-// `generateId()` / `Date.now()` are read here, at the edge of the pure
-// schema layer, rather than in schema.ts's serializeList — keeping
-// serializeList a pure function of its arguments is what makes it trivially
-// testable.
-export async function saveList(pairs: Pair[]): Promise<void> {
-  if (pairs.length === 0) return
+// In-place update of an existing document-mode list: pairs change, updatedAt
+// advances to now, but `id`/`createdAt` — and therefore its fixed position in
+// the carousel's creation-order — are preserved. A no-op if `id` doesn't
+// exist (e.g. it was deleted from another tab/carousel position in the
+// meantime) or if `pairs` is unchanged from what's already stored, so callers
+// can call this on every keystroke/blur without worrying about redundant
+// writes or resurrecting a deleted list.
+export async function updateList(id: string, pairs: Pair[]): Promise<void> {
+  const existing = await getList(id)
+  if (!existing) return
+  if (pairsEqual(existing.pairs, pairs)) return
 
-  // Duplicate-save detection: skip writing a new snapshot if its content
-  // matches *any* existing saved list, not just the most recent one — the
-  // requirement is "never store a duplicate", not just "never store a
-  // duplicate of the last print".
-  const existing = await listSaved()
-  if (existing.some((item) => pairsEqual(item.pairs, pairs))) return
-
-  const entry = serializeList(generateId(), pairs, Date.now())
+  const entry = serializeList(id, pairs, existing.createdAt, Date.now())
   await idbPut(STORE, entry)
+}
 
-  // Cap at MAX_LISTS, oldest first. `existing` is newest-first and doesn't
-  // yet include `entry`, so the total after this write is existing.length +
-  // 1, and the oldest surplus lives at the tail of `existing`.
-  const total = existing.length + 1
-  if (total > MAX_LISTS) {
-    const overflow = existing.slice(-(total - MAX_LISTS))
-    await Promise.all(overflow.map((item) => idbDel(STORE, item.id)))
-  }
+// Single-transaction, no-read overwrite of a list record — the fast path for
+// the carousel's "flush on page hide" (App.tsx). Unlike updateList/createList
+// it does no getList round-trip and no pairsEqual dedup: it just puts the
+// record in one IndexedDB transaction, which is what a pagehide/visibility-
+// change handler needs so the most recent edit is durable before the tab goes
+// away (a multi-step read-then-write can lose the race with an unloading
+// page). The caller supplies a fully-formed SavedList (id/createdAt preserved,
+// updatedAt already advanced).
+export async function putListDirect(list: SavedList): Promise<void> {
+  await idbPut(STORE, list)
 }
 
 // All saved lists, newest first. Entries that fail deserializeList's

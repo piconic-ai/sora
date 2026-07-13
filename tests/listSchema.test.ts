@@ -2,25 +2,25 @@ import { describe, expect, test } from 'vitest'
 import { LIST_VERSION, deserializeList, pairsEqual, serializeList } from '../src/lib/storage/schema'
 
 describe('serializeList / deserializeList round trip', () => {
-  test('round-trips id, pairs and createdAt', () => {
+  test('round-trips id, pairs, createdAt and updatedAt', () => {
     const pairs = [
       { front: 'Apple', back: 'りんご' },
       { front: 'Banana', back: 'ばなな' },
     ]
-    const list = serializeList('list-1', pairs, 12345)
-    expect(list).toEqual({ v: LIST_VERSION, id: 'list-1', pairs, createdAt: 12345 })
+    const list = serializeList('list-1', pairs, 12345, 67890)
+    expect(list).toEqual({ v: LIST_VERSION, id: 'list-1', pairs, createdAt: 12345, updatedAt: 67890 })
     expect(deserializeList(list)).toEqual(list)
   })
 
   test('round-trips an empty pairs list', () => {
-    const list = serializeList('list-2', [], 1)
+    const list = serializeList('list-2', [], 1, 1)
     expect(deserializeList(list)).toEqual(list)
   })
 })
 
 describe('serializeList', () => {
   test('coerces non-string front/back to strings', () => {
-    const list = serializeList('list-3', [{ front: 42, back: null } as never], 1)
+    const list = serializeList('list-3', [{ front: 42, back: null } as never], 1, 1)
     expect(list.pairs).toEqual([{ front: '42', back: '' }])
   })
 })
@@ -73,6 +73,30 @@ describe('deserializeList rejects invalid input', () => {
     expect(deserializeList({ v: 1, id: 'a', pairs: [], createdAt: Number.NaN })).toBeNull()
     expect(deserializeList({ v: 1, id: 'a', pairs: [], createdAt: Number.POSITIVE_INFINITY })).toBeNull()
     expect(deserializeList({ v: 1, id: 'a', pairs: [], createdAt: Number.NEGATIVE_INFINITY })).toBeNull()
+  })
+})
+
+describe('deserializeList backfills updatedAt for backward compatibility', () => {
+  test('a pre-carousel entry with no updatedAt at all falls back to createdAt', () => {
+    const list = deserializeList({ v: 1, id: 'a', pairs: [], createdAt: 500 })
+    expect(list).toEqual({ v: LIST_VERSION, id: 'a', pairs: [], createdAt: 500, updatedAt: 500 })
+  })
+
+  test('an updatedAt of the wrong type falls back to createdAt', () => {
+    const list = deserializeList({ v: 1, id: 'a', pairs: [], createdAt: 500, updatedAt: '999' })
+    expect(list?.updatedAt).toBe(500)
+  })
+
+  test('an updatedAt of NaN or Infinity falls back to createdAt', () => {
+    expect(deserializeList({ v: 1, id: 'a', pairs: [], createdAt: 500, updatedAt: Number.NaN })?.updatedAt).toBe(500)
+    expect(
+      deserializeList({ v: 1, id: 'a', pairs: [], createdAt: 500, updatedAt: Number.POSITIVE_INFINITY })?.updatedAt,
+    ).toBe(500)
+  })
+
+  test('a valid updatedAt distinct from createdAt is preserved, not overwritten', () => {
+    const list = deserializeList({ v: 1, id: 'a', pairs: [], createdAt: 500, updatedAt: 800 })
+    expect(list).toEqual({ v: LIST_VERSION, id: 'a', pairs: [], createdAt: 500, updatedAt: 800 })
   })
 })
 

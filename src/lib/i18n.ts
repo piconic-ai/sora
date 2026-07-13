@@ -25,12 +25,23 @@ export interface Messages {
   // Privacy note appended to the info popover (history feature): clarifies
   // that saved lists never leave the device.
   infoPrivacyNote: string
-  // History (autosaved lists) feature.
-  history: string
+  // Saved-list sidebar (autosaved, editable lists — see components/App.tsx).
   newList: string
-  historyEmpty: string
-  loadList: string
-  deleteList: string
+  // aria-label for the sidebar's list region.
+  listsLabel: string
+  // aria-label for each list's delete (✕) button.
+  deleteThisList: string
+  // Shown via window.confirm before deleting a non-empty list — a list can
+  // hold dozens of pairs and the delete is irreversible, so it needs explicit
+  // confirmation.
+  confirmDeleteThisList: string
+  confirmClearAll: string
+  // Shown via window.confirm when creating a new list would push the saved
+  // count past the MAX_LISTS cap (src/lib/storage/lists.ts) — evicting the
+  // oldest list needs explicit confirmation rather than doing it silently.
+  confirmEvictOldest: string
+  // "Clear all history" lives in the info popover (a shared-device privacy
+  // control), not the sidebar itself.
   clearAllLists: string
 }
 
@@ -68,11 +79,12 @@ export const messages: Record<Locale, Messages> = {
     infoNote: '「そら」は「そらで覚える（諳んじる）」から。',
     infoContactIntro: 'ご質問・ご感想は kobaken まで：',
     infoPrivacyNote: 'データはこの端末のブラウザ内にのみ保存されます。',
-    history: '履歴',
     newList: '新規作成',
-    historyEmpty: '履歴はまだありません',
-    loadList: '読み込む',
-    deleteList: '削除',
+    listsLabel: 'リスト一覧',
+    deleteThisList: 'このリストを削除',
+    confirmDeleteThisList: 'このリストを削除しますか？',
+    confirmClearAll: 'すべてのリストを削除しますか？この操作は取り消せません。',
+    confirmEvictOldest: '保存できるリストは50件までです。最も古いリストを削除して新規作成しますか？',
     clearAllLists: '履歴をすべて削除',
   },
   en: {
@@ -90,11 +102,12 @@ export const messages: Record<Locale, Messages> = {
     infoNote: '"Sora" comes from the Japanese "そらで覚える" — to learn something by heart.',
     infoContactIntro: 'Questions or feedback? Reach out to kobaken:',
     infoPrivacyNote: 'Your lists are saved only in this browser, on this device.',
-    history: 'History',
     newList: 'New',
-    historyEmpty: 'No history yet',
-    loadList: 'Load',
-    deleteList: 'Delete',
+    listsLabel: 'Lists',
+    deleteThisList: 'Delete this list',
+    confirmDeleteThisList: 'Delete this list?',
+    confirmClearAll: 'Delete every list? This cannot be undone.',
+    confirmEvictOldest: 'You can only keep 50 lists. Delete the oldest one and create a new list?',
     clearAllLists: 'Clear all history',
   },
 }
