@@ -305,12 +305,13 @@
   align-items: flex-start;
   gap: 24px;
   /* Lets a short list's sidebar divider (.list-sidebar's border-right)
-     reach the bottom of the viewport even when the sidebar's own content
-     is much shorter than that. 120px ≈ .print-root's padding-top (56px) +
-     the header's height (~24px) + the .app flex-column gap above the
-     workspace (20px) + .print-root's padding-bottom (96px) minus a bit of
-     slack; adjust here if the header or paddings change height. */
-  min-height: calc(100vh - 120px);
+     run down the page even when the sidebar's own content is much shorter.
+     The offset is everything vertical outside the workspace, so the page
+     fits the viewport without forcing a scrollbar: .print-root's padding-top
+     (56px) + the header (~26px) + the .app flex gap above the workspace
+     (20px) + .print-root's padding-bottom (96px) ≈ 200px. (Reset to 0 on the
+     narrow drawer layout below, where the sidebar isn't a flex column.) */
+  min-height: calc(100vh - 200px);
 }
 
 .list-sidebar {
@@ -546,6 +547,14 @@
    the header's .sidebar-open button; closed via its own .sidebar-collapse
    button or .sidebar-scrim. */
 @media (max-width: 720px) {
+  /* The full-height-divider min-height only makes sense in the wide two-
+     column layout. Here the sidebar is a fixed drawer with no border, so the
+     wide min-height would just force the (editor-only) workspace taller than
+     its content and add a pointless vertical scroll. */
+  .workspace {
+    min-height: 0;
+  }
+
   .list-sidebar {
     position: fixed;
     top: 0;
