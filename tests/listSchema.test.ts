@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { LIST_VERSION, deserializeList, pairsEqual, serializeList } from '../src/lib/storage/schema'
+import { LIST_VERSION, deserializeList, normalizeTitle, pairsEqual, serializeList } from '../src/lib/storage/schema'
 
 describe('serializeList / deserializeList round trip', () => {
   test('round-trips id, pairs, createdAt and updatedAt', () => {
@@ -22,6 +22,67 @@ describe('serializeList', () => {
   test('coerces non-string front/back to strings', () => {
     const list = serializeList('list-3', [{ front: 42, back: null } as never], 1, 1)
     expect(list.pairs).toEqual([{ front: '42', back: '' }])
+  })
+
+  test('omits the title key entirely when no title is given', () => {
+    const list = serializeList('list-3', [], 1, 1)
+    expect('title' in list).toBe(false)
+  })
+})
+
+describe('normalizeTitle', () => {
+  test('returns the trimmed string for non-blank input', () => {
+    expect(normalizeTitle('  My List  ')).toBe('My List')
+    expect(normalizeTitle('Verbs')).toBe('Verbs')
+  })
+
+  test('returns undefined for empty or whitespace-only input', () => {
+    expect(normalizeTitle('')).toBeUndefined()
+    expect(normalizeTitle('   ')).toBeUndefined()
+    expect(normalizeTitle('\t\n')).toBeUndefined()
+  })
+})
+
+describe('serializeList / deserializeList title', () => {
+  test('round-trips a custom title', () => {
+    const list = serializeList('t-1', [{ front: 'a', back: 'b' }], 1, 2, 'My List')
+    expect(list.title).toBe('My List')
+    expect(deserializeList(list)).toEqual(list)
+  })
+
+  test('normalizes (trims) the title on serialize', () => {
+    const list = serializeList('t-2', [], 1, 2, '  Trimmed  ')
+    expect(list.title).toBe('Trimmed')
+  })
+
+  test('a blank/whitespace title is dropped on serialize (no title key)', () => {
+    const list = serializeList('t-3', [], 1, 2, '   ')
+    expect('title' in list).toBe(false)
+  })
+
+  test('deserialize reads old records (no title field) as having no title', () => {
+    const list = deserializeList({ v: 1, id: 't-4', pairs: [], createdAt: 1, updatedAt: 2 })
+    expect(list?.title).toBeUndefined()
+    expect('title' in (list as object)).toBe(false)
+  })
+
+  test('deserialize drops a non-string title', () => {
+    expect(deserializeList({ v: 1, id: 't-5', pairs: [], createdAt: 1, updatedAt: 2, title: 42 })?.title).toBeUndefined()
+    expect(
+      deserializeList({ v: 1, id: 't-6', pairs: [], createdAt: 1, updatedAt: 2, title: null })?.title,
+    ).toBeUndefined()
+  })
+
+  test('deserialize drops a whitespace-only title', () => {
+    expect(
+      deserializeList({ v: 1, id: 't-7', pairs: [], createdAt: 1, updatedAt: 2, title: '   ' })?.title,
+    ).toBeUndefined()
+  })
+
+  test('deserialize keeps a valid non-blank title', () => {
+    expect(
+      deserializeList({ v: 1, id: 't-8', pairs: [], createdAt: 1, updatedAt: 2, title: 'Nouns' })?.title,
+    ).toBe('Nouns')
   })
 })
 
