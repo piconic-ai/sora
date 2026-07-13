@@ -25,23 +25,22 @@ export interface Messages {
   // Privacy note appended to the info popover (history feature): clarifies
   // that saved lists never leave the device.
   infoPrivacyNote: string
-  // History carousel (autosaved, editable lists navigated as prev/current/
-  // next cards — see components/App.tsx).
+  // Saved-list sidebar (autosaved, editable lists — see components/App.tsx).
   newList: string
-  prevListLabel: string
-  nextListLabel: string
-  noPrevList: string
+  // aria-label for the sidebar's list region.
+  listsLabel: string
+  // aria-label for each list's delete (✕) button.
   deleteThisList: string
-  // Shown via window.confirm before deleting a non-empty list (the center
-  // card's delete button) — a list can hold dozens of pairs and the delete
-  // is irreversible, so it needs explicit confirmation.
+  // Shown via window.confirm before deleting a non-empty list — a list can
+  // hold dozens of pairs and the delete is irreversible, so it needs explicit
+  // confirmation.
   confirmDeleteThisList: string
   // Shown via window.confirm when creating a new list would push the saved
   // count past the MAX_LISTS cap (src/lib/storage/lists.ts) — evicting the
   // oldest list needs explicit confirmation rather than doing it silently.
   confirmEvictOldest: string
   // "Clear all history" lives in the info popover (a shared-device privacy
-  // control), not the carousel itself.
+  // control), not the sidebar itself.
   clearAllLists: string
 }
 
@@ -80,9 +79,7 @@ export const messages: Record<Locale, Messages> = {
     infoContactIntro: 'ご質問・ご感想は kobaken まで：',
     infoPrivacyNote: 'データはこの端末のブラウザ内にのみ保存されます。',
     newList: '新規作成',
-    prevListLabel: '前のリストへ',
-    nextListLabel: '次のリストへ',
-    noPrevList: 'これより前はありません',
+    listsLabel: 'リスト一覧',
     deleteThisList: 'このリストを削除',
     confirmDeleteThisList: 'このリストを削除しますか？',
     confirmEvictOldest: '保存できるリストは50件までです。最も古いリストを削除して新規作成しますか？',
@@ -104,9 +101,7 @@ export const messages: Record<Locale, Messages> = {
     infoContactIntro: 'Questions or feedback? Reach out to kobaken:',
     infoPrivacyNote: 'Your lists are saved only in this browser, on this device.',
     newList: 'New',
-    prevListLabel: 'Previous list',
-    nextListLabel: 'Next list',
-    noPrevList: 'No earlier lists',
+    listsLabel: 'Lists',
     deleteThisList: 'Delete this list',
     confirmDeleteThisList: 'Delete this list?',
     confirmEvictOldest: 'You can only keep 50 lists. Delete the oldest one and create a new list?',

@@ -1,8 +1,8 @@
-// Pure helpers for the history carousel (components/App.tsx). Kept
-// dependency-free of signals/DOM/IndexedDB so the index arithmetic and URL
-// parsing that drive paging can be unit-tested without a browser or storage
-// mocks — the stateful wiring (lists signal, IndexedDB calls, location/
-// history) stays in App.tsx.
+// Pure helpers for the saved-list navigation (components/App.tsx's sidebar).
+// Kept dependency-free of signals/DOM/IndexedDB so the index arithmetic and
+// URL parsing that drive selection can be unit-tested without a browser or
+// storage mocks — the stateful wiring (lists signal, IndexedDB calls,
+// location/history) stays in App.tsx.
 
 // Parses the list id out of a `/l/{id}` pathname, or null for anything else
 // (including a bare `/l/` with no id, and the root `/`). A trailing slash

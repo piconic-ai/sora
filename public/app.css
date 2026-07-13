@@ -8,10 +8,9 @@
   place-items: initial;
   padding: 56px 24px 96px;
   text-align: left;
-  /* Wide enough for the 3-slot carousel (side preview + center card + side
-     preview) rather than the single-column width of the old popover-based
-     history UI. */
-  max-width: 920px;
+  /* Wide enough for the sidebar (220px) + editor side by side with room to
+     breathe. */
+  max-width: 860px;
   margin: 0 auto;
   box-sizing: border-box;
   font-family:
@@ -98,16 +97,20 @@
   color: #888;
 }
 
+/* Full-width "New" button at the top of the sidebar. */
 .new-button {
-  margin-left: 6px;
-  padding: 3px 10px;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
   font-family: inherit;
   line-height: 1.4;
-  color: #888;
+  color: #444;
   background: transparent;
   border: 1px solid #e5e5e5;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -115,6 +118,7 @@
 .new-button:hover {
   color: #111;
   border-color: #ccc;
+  background: #fafafa;
 }
 
 .new-button:focus-visible {
@@ -191,24 +195,117 @@
   background: #fdf2f1;
 }
 
-/* ---- History carousel ------------------------------------------------
-   Three fixed slots — side preview, center (editable) card, side preview —
-   laid out with flexbox rather than iterated, so the DOM never depends on
-   how many lists exist (see components/App.tsx). Side slots get a fixed
-   width so switching between a preview / the "+ new" ghost / the "no
-   earlier lists" placeholder never shifts the center card. */
-.carousel {
+/* ---- Saved-list sidebar + editor -------------------------------------
+   A two-column workspace: a fixed-width list sidebar on the left, the
+   editor filling the rest. The sidebar renders a newest-first view of the
+   saved lists (see components/App.tsx's sidebarLists) as a single-level
+   list; the editor shows the active one. */
+.workspace {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
+  gap: 24px;
 }
 
-.carousel-slot-side {
-  flex: 0 0 180px;
-  width: 180px;
+.list-sidebar {
+  flex: 0 0 220px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-right: 1px solid #eee;
+  padding-right: 20px;
+  box-sizing: border-box;
 }
 
-.carousel-slot-center {
+/* Cap the scroll region to the viewport so a long list scrolls inside the
+   sidebar rather than growing the page. */
+.list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: calc(100vh - 180px);
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 6px;
+}
+
+.list-item.is-active {
+  background: #f2f2f2;
+}
+
+.list-item-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  color: #666;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-item:hover {
+  background: #f6f6f6;
+}
+
+.list-item.is-active .list-item-select {
+  color: #111;
+  font-weight: 600;
+}
+
+.list-item-select:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #111;
+}
+
+/* The per-item delete (✕) stays hidden until the row is hovered/focused so
+   the sidebar reads as a clean list, not a wall of buttons. */
+.list-item-delete {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  color: #bbb;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.list-item:hover .list-item-delete,
+.list-item-delete:focus-visible {
+  opacity: 1;
+}
+
+.list-item-delete:hover {
+  color: #b23a2e;
+  background: #fdf2f1;
+}
+
+.new-button-plus {
+  margin-right: 6px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.editor-main {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -216,144 +313,33 @@
   gap: 12px;
 }
 
-.center-card-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.center-card-title {
+.editor-title {
   font-size: 13px;
   color: #888;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.center-card-delete {
-  flex-shrink: 0;
-  padding: 3px 8px;
-  font-size: 12px;
-  font-family: inherit;
-  color: #888;
-  background: transparent;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.center-card-delete:hover {
-  color: #b23a2e;
-  border-color: #f0d9d6;
-}
-
-.carousel-position {
-  font-size: 12px;
-  color: #bbb;
-  text-align: center;
   margin: 0;
-}
-
-.carousel-placeholder {
-  padding: 14px 12px;
-  font-size: 12px;
-  color: #ccc;
-  font-style: italic;
-  text-align: center;
-}
-
-.carousel-preview {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  box-sizing: border-box;
-  text-align: left;
-  font-family: inherit;
-  color: #888;
-  background: transparent;
-  border: 1px solid #e5e5e5;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.carousel-preview:hover {
-  color: #111;
-  border-color: #ccc;
-  background: #fafafa;
-}
-
-.carousel-preview:focus-visible {
-  outline: none;
-  border-color: #111;
-}
-
-.carousel-preview-title {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.carousel-preview-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-  color: #aaa;
-}
-
-.carousel-preview-table td {
-  padding: 2px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 80px;
-}
-
-.carousel-new-ghost {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  min-height: 96px;
-  padding: 12px;
-  box-sizing: border-box;
-  font-family: inherit;
-  font-size: 12px;
-  color: #ccc;
-  background: transparent;
-  border: 1px dashed #ddd;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.carousel-new-ghost:hover {
-  color: #888;
-  border-color: #bbb;
-}
-
-.carousel-new-ghost-plus {
-  font-size: 22px;
-  line-height: 1;
-}
-
-/* Below the width where prev/center/next comfortably fit side by side,
-   stack them instead — this app is PC-first (no swipe gesture), but the
-   carousel should still degrade to something usable rather than
-   overflowing. */
-@media (max-width: 760px) {
-  .carousel {
+/* Narrow screens: stack the sidebar above the editor rather than side by
+   side (PC-first, but shouldn't break on a phone). */
+@media (max-width: 720px) {
+  .workspace {
     flex-direction: column;
   }
 
-  .carousel-slot-side {
+  .list-sidebar {
     width: 100%;
     flex: 1 1 auto;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+    padding-right: 0;
+    padding-bottom: 12px;
+  }
+
+  .list-items {
+    max-height: 30vh;
   }
 }
 

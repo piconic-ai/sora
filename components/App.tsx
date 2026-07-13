@@ -8,7 +8,7 @@ import { DEFAULTS } from '../src/lib/constants'
 import { historyItemTitle, messages, pageMeterCaption } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
-import { adjustIndexAfterRemoval, buildListPath, parseListIdFromPath, shouldConfirmBeforeNewList } from '../src/lib/carousel'
+import { adjustIndexAfterRemoval, buildListPath, parseListIdFromPath, shouldConfirmBeforeNewList } from '../src/lib/listnav'
 import { getActiveListId, setActiveListId } from '../src/lib/storage/active'
 import { generateId } from '../src/lib/storage/id'
 import {
@@ -45,8 +45,8 @@ const popoverTrigger: Record<string, string> = { popovertarget: 'sora-info' }
 const SAVE_DEBOUNCE_MS = 500
 
 // Builds the in-memory-only placeholder for a brand-new, still-empty
-// carousel card: a real id and createdAt are assigned immediately (fixing
-// its position and its /l/{id} URL), but it is never written to
+// list: a real id and createdAt are assigned immediately (fixing its
+// creation-order position and its /l/{id} URL), but it is never written to
 // IndexedDB until it holds its first non-empty pair — see createList's
 // `overrides` param and doPersist below.
 function emptyCard(): SavedList {
@@ -58,10 +58,11 @@ export function App(props: AppProps) {
   const [pairs, setPairs] = createSignal<Pair[]>([])
   const [locale, setLocale] = createSignal<Locale>((props.locale as Locale) ?? 'ja')
 
-  // The carousel: every saved (or not-yet-saved) list, oldest first, fixed
-  // in that order regardless of editing — see docs on `navigate`/
-  // `createNewList` below for how the order is maintained. `activeIndex`
-  // is which of them the center card is currently showing/editing.
+  // Every saved (or not-yet-saved) list, held in creation order (oldest
+  // first) and fixed in that order regardless of editing — see docs on
+  // `navigate`/`createNewList` below for how the order is maintained.
+  // `activeIndex` is which of them the editor is currently showing/editing.
+  // (The sidebar renders a newest-first *view* of this; see sidebarLists.)
   //
   // Both start as the "nothing loaded yet" state so the very first client
   // render matches what the server rendered (no lists fetched during SSR) —
@@ -95,8 +96,21 @@ export function App(props: AppProps) {
   let userInteracted = false
 
   const activeList = createMemo(() => lists()[activeIndex()] ?? null)
-  const prevList = createMemo(() => lists()[activeIndex() - 1] ?? null)
-  const nextList = createMemo(() => lists()[activeIndex() + 1] ?? null)
+
+  // The sidebar's view of `lists`. `lists` is held in creation order (oldest
+  // first) — the order the state machine relies on for index math — but the
+  // sidebar shows it newest-first, so a freshly created list appears at the
+  // top, directly under the New button. Each entry carries a precomputed
+  // `active` flag and the memo reads activeList(), so switching the active
+  // list (which doesn't change `lists` itself) still recomputes and moves the
+  // highlight — keeping the reactive work to a single-level `.map()` in the
+  // render (nested/index-keyed loops are avoided; see barefoot #2218).
+  const sidebarLists = createMemo(() => {
+    const activeId = activeList()?.id ?? null
+    return [...lists()]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((item) => ({ item, active: item.id === activeId }))
+  })
 
   const layout = createMemo(() => computeLayout(pairs(), DEFAULTS))
   const pageFill = createMemo(() => computePageFill(pairs().length, layout().capacity.pairsPerPage))
@@ -225,27 +239,27 @@ export function App(props: AppProps) {
     return synced
   }
 
-  // Points the carousel at `next`: updates the active-list pointer, the
-  // URL, and pushes its pairs into WordTable. Does not touch `lists`/
-  // `activeIndex` — callers set those first, since where `next` sits in
-  // the array differs per caller (paging vs. a freshly appended card).
+  // Points the editor at `next`: updates the active-list pointer, the URL,
+  // and pushes its pairs into WordTable. Does not touch `lists`/`activeIndex`
+  // — callers set those first, since where `next` sits in the array differs
+  // per caller (selecting an existing list vs. a freshly appended one).
   const openList = (next: SavedList) => {
     void setActiveListId(next.id)
     history.replaceState(null, '', buildListPath(next.id))
     setLoadRequest({ pairs: next.pairs, nonce: ++loadNonce })
   }
 
-  const focusCenterInput = () => {
+  const focusEditorInput = () => {
     requestAnimationFrame(() => {
-      document.querySelector<HTMLInputElement>('.carousel-slot-center .word-table input')?.focus()
+      document.querySelector<HTMLInputElement>('.editor-main .word-table input')?.focus()
     })
   }
 
-  // Pages to `toIndex` (a prev/next preview click). Steps: settle the card
-  // being left (commitActiveEdits), correct `toIndex` if that card
-  // evaporated out from under it, clamp into bounds (recreating a single
-  // empty card if the carousel would otherwise be left with none), then
-  // switch.
+  // Switches the editor to the list at `toIndex` (a sidebar item click, via
+  // selectList). Steps: settle the list being left (commitActiveEdits),
+  // correct `toIndex` if that list evaporated out from under it (empty and
+  // unsaved), clamp into bounds (recreating a single empty list if none
+  // remain), then switch.
   const navigate = (toIndex: number) => {
     const fromIndex = activeIndex()
     const fromId = activeList()?.id ?? null
@@ -267,7 +281,7 @@ export function App(props: AppProps) {
     setLists(ls)
     setActiveIndex(target)
     openList(ls[target])
-    focusCenterInput()
+    focusEditorInput()
   }
 
   // Appends a fresh empty card and switches to it — the "+ New" ghost card
@@ -314,14 +328,47 @@ export function App(props: AppProps) {
     setLists(ls)
     setActiveIndex(ls.length - 1)
     openList(fresh)
-    focusCenterInput()
+    focusEditorInput()
   }
 
-  // Deletes the currently active card outright (its own header button) —
-  // distinct from navigate's "empty cards evaporate" behavior, this
-  // removes the card unconditionally, whatever it contains. Moves to the
-  // next (newer) card if there is one, else the previous (older) one, else
-  // creates a fresh empty card.
+  // Selects the list with `id` from the sidebar. Resolves it to its index in
+  // the creation-ordered `lists` (the sidebar shows a newest-first *view*, so
+  // the clicked id must be looked up, not used positionally) and hands off to
+  // navigate, which commits the list being left (evaporating it if empty) and
+  // opens the target.
+  const selectList = (id: string) => {
+    if (id === activeList()?.id) return
+    const idx = lists().findIndex((l) => l.id === id)
+    if (idx >= 0) navigate(idx)
+  }
+
+  // Deletes a specific list from the sidebar's per-item ✕. If it's the active
+  // one, defer to deleteCurrentList (which moves the editor to a neighbour).
+  // Otherwise remove it without disturbing the editor: drop it from `lists`,
+  // tombstone + delete it, and shift activeIndex left if the removed item sat
+  // before the active one so the same list stays active.
+  const deleteListById = (id: string) => {
+    const current = activeList()
+    if (id === current?.id) {
+      deleteCurrentList()
+      return
+    }
+    const removeIndex = lists().findIndex((l) => l.id === id)
+    if (removeIndex < 0) return
+    if (!window.confirm(t().confirmDeleteThisList)) return
+
+    deletedIds.add(id)
+    void deleteList(id)
+
+    const ls = lists().filter((_, i) => i !== removeIndex)
+    setLists(ls)
+    if (removeIndex < activeIndex()) setActiveIndex(activeIndex() - 1)
+  }
+
+  // Deletes the currently active list outright. Distinct from navigate's
+  // "empty lists evaporate" behavior, this removes the list unconditionally,
+  // whatever it contains, then moves the editor to the next (newer) list if
+  // there is one, else the previous (older) one, else a fresh empty list.
   const deleteCurrentList = () => {
     const current = activeList()
     if (!current) return
@@ -350,12 +397,12 @@ export function App(props: AppProps) {
     setLists(ls)
     setActiveIndex(target)
     openList(ls[target])
-    focusCenterInput()
+    focusEditorInput()
   }
 
-  // "Clear all history" (moved into the info popover — see render below).
-  // Wipes every saved list and leaves the carousel with a single fresh
-  // empty card, since there is nothing left to show.
+  // "Clear all history" (lives in the info popover — see render below).
+  // Wipes every saved list and leaves a single fresh empty list, since there
+  // is nothing left to show.
   const handleClearAllLists = async () => {
     cancelPendingSave()
     // Tombstone every id so any save that was already in flight when the wipe
@@ -372,11 +419,11 @@ export function App(props: AppProps) {
   //
   // 1. Fold any pre-carousel legacy draft into a list (idempotent, no-op
   //    after the first run).
-  // 2. Load every saved list, oldest first (the carousel's fixed order).
+  // 2. Load every saved list, oldest first (the creation order `lists` holds).
   // 3. Pick which one is active: the URL's /l/{id} if it names a real
   //    list, else the last-active pointer, else the most recent, else (no
-  //    lists at all) a fresh empty in-memory card.
-  // 4. Point the carousel and WordTable at it, and fix the URL to match.
+  //    lists at all) a fresh empty in-memory list.
+  // 4. Point the sidebar/editor at it, and fix the URL to match.
   const initialize = async () => {
     await migrateLegacyDraft()
 
@@ -459,9 +506,6 @@ export function App(props: AppProps) {
           <option value="ja">日本語</option>
           <option value="en">English</option>
         </select>
-        <button type="button" className="new-button" onClick={createNewList}>
-          {t().newList}
-        </button>
         <button type="button" className="info-button" aria-label={t().infoLabel} {...popoverTrigger}>
           <span aria-hidden="true">ⓘ</span>
         </button>
@@ -503,48 +547,45 @@ export function App(props: AppProps) {
           </span>
         </p>
       </div>
-      <div className="carousel no-print">
-        <div className="carousel-slot carousel-slot-side">
-          {prevList() ? (
-            <button
-              type="button"
-              className="carousel-preview"
-              aria-label={t().prevListLabel}
-              onClick={() => navigate(activeIndex() - 1)}
-            >
-              <span className="carousel-preview-title">
-                {historyItemTitle(locale(), prevList()!.pairs, prevList()!.createdAt)}
-              </span>
-              <table className="carousel-preview-table">
-                <tbody>
-                  {prevList()!.pairs.slice(0, 5).map((pair, i) => (
-                    <tr key={i}>
-                      <td>{pair.front}</td>
-                      <td>{pair.back}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </button>
-          ) : (
-            <p className="carousel-placeholder">{t().noPrevList}</p>
-          )}
-        </div>
-
-        <div className="carousel-slot carousel-slot-center">
-          <div className="center-card-header">
-            <span className="center-card-title">
-              {activeList() ? historyItemTitle(locale(), activeList()!.pairs, activeList()!.createdAt) : ''}
-            </span>
-            <button type="button" className="center-card-delete" onClick={deleteCurrentList}>
-              {t().deleteThisList}
-            </button>
+      <div className="workspace no-print">
+        <aside className="list-sidebar" aria-label={t().listsLabel}>
+          <button type="button" className="new-button" onClick={createNewList}>
+            <span className="new-button-plus" aria-hidden="true">+</span>
+            {t().newList}
+          </button>
+          <div className="list-items" role="list">
+            {sidebarLists().map((entry) => (
+              <div className={entry.active ? 'list-item is-active' : 'list-item'} role="listitem" key={entry.item.id}>
+                <button
+                  type="button"
+                  className="list-item-select"
+                  aria-current={entry.active ? 'true' : undefined}
+                  onClick={() => selectList(entry.item.id)}
+                >
+                  {historyItemTitle(locale(), entry.item.pairs, entry.item.createdAt)}
+                </button>
+                <button
+                  type="button"
+                  className="list-item-delete"
+                  aria-label={t().deleteThisList}
+                  onClick={() => deleteListById(entry.item.id)}
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
+            ))}
           </div>
+        </aside>
+
+        <main className="editor-main">
+          <p className="editor-title no-print">
+            {activeList() ? historyItemTitle(locale(), activeList()!.pairs, activeList()!.createdAt) : ''}
+          </p>
           <WordTable breakIndices={breakIndices()} onChange={handleTableChange} locale={locale()} loadRequest={loadRequest()} />
           {pairs().length === 0 ? (
-            <p className="hint">{t().hint}</p>
+            <p className="hint no-print">{t().hint}</p>
           ) : (
-            <div className="page-meter">
+            <div className="page-meter no-print">
               <div className="page-meter-track">
                 <div
                   className={pageFill().isFull ? 'page-meter-fill is-full' : 'page-meter-fill'}
@@ -556,50 +597,17 @@ export function App(props: AppProps) {
           )}
           <button
             type="button"
-            className="print-button"
+            className="print-button no-print"
             disabled={layout().pages.length === 0}
             onClick={() => window.print()}
           >
             {t().print}
           </button>
-          <p className="carousel-position">
-            {activeIndex() + 1} / {Math.max(lists().length, 1)}
-          </p>
           <details className="howto no-print">
             <summary>{t().howTo}</summary>
             <video src="/howto.webm" controls muted loop />
           </details>
-        </div>
-
-        <div className="carousel-slot carousel-slot-side">
-          {nextList() ? (
-            <button
-              type="button"
-              className="carousel-preview"
-              aria-label={t().nextListLabel}
-              onClick={() => navigate(activeIndex() + 1)}
-            >
-              <span className="carousel-preview-title">
-                {historyItemTitle(locale(), nextList()!.pairs, nextList()!.createdAt)}
-              </span>
-              <table className="carousel-preview-table">
-                <tbody>
-                  {nextList()!.pairs.slice(0, 5).map((pair, i) => (
-                    <tr key={i}>
-                      <td>{pair.front}</td>
-                      <td>{pair.back}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </button>
-          ) : (
-            <button type="button" className="carousel-new-ghost" aria-label={t().newList} onClick={createNewList}>
-              <span className="carousel-new-ghost-plus" aria-hidden="true">+</span>
-              <span>{t().newList}</span>
-            </button>
-          )}
-        </div>
+        </main>
       </div>
       <PrintSheets layout={layout()} settings={DEFAULTS} />
     </div>

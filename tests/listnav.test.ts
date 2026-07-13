@@ -4,7 +4,7 @@ import {
   buildListPath,
   parseListIdFromPath,
   shouldConfirmBeforeNewList,
-} from '../src/lib/carousel'
+} from '../src/lib/listnav'
 
 describe('parseListIdFromPath', () => {
   test('extracts the id from /l/{id}', () => {
