@@ -1,4 +1,5 @@
 import type { PageFill } from './pageMeter'
+import type { SavedList } from './storage/schema'
 import type { Pair } from './types'
 
 export type Locale = 'ja' | 'en'
@@ -32,8 +33,13 @@ export interface Messages {
   newList: string
   // aria-label for the sidebar's list region.
   listsLabel: string
-  // aria-label for each list's delete (✕) button.
+  // aria-label for each list's delete button (now inside the ⋮ menu).
   deleteThisList: string
+  // "Rename" — the ⋮ menu's rename item, and the aria-label of the inline
+  // rename input.
+  renameListLabel: string
+  // aria-label for each list's ⋮ (more-actions) menu button.
+  listItemMenu: string
   // Shown via window.confirm before deleting a non-empty list — a list can
   // hold dozens of pairs and the delete is irreversible, so it needs explicit
   // confirmation.
@@ -94,6 +100,8 @@ export const messages: Record<Locale, Messages> = {
     newList: '新規作成',
     listsLabel: 'リスト一覧',
     deleteThisList: 'このリストを削除',
+    renameListLabel: '名前を変更',
+    listItemMenu: '項目メニュー',
     confirmDeleteThisList: 'このリストを削除しますか？',
     confirmClearAll: 'すべてのリストを削除しますか？この操作は取り消せません。',
     confirmEvictOldest: '保存できるリストは50件までです。最も古いリストを削除して新規作成しますか？',
@@ -122,6 +130,8 @@ export const messages: Record<Locale, Messages> = {
     newList: 'New',
     listsLabel: 'Lists',
     deleteThisList: 'Delete this list',
+    renameListLabel: 'Rename',
+    listItemMenu: 'List actions',
     confirmDeleteThisList: 'Delete this list?',
     confirmClearAll: 'Delete every list? This cannot be undone.',
     confirmEvictOldest: 'You can only keep 50 lists. Delete the oldest one and create a new list?',
@@ -170,4 +180,12 @@ export function historyItemTitle(locale: Locale, pairs: Pair[], createdAt: numbe
 
   if (rest === 0) return `${label} · ${dateLabel}`
   return locale === 'ja' ? `${label} ほか${rest}語 · ${dateLabel}` : `${label} +${rest} · ${dateLabel}`
+}
+
+// The label shown for a saved list in the sidebar: a user-set custom `title`
+// wins (verbatim, so it's locale-independent), otherwise it falls back to the
+// locale-dependent auto-generated label. Centralizes the "title ?? auto" rule
+// so every display site (and its locale behavior) stays consistent.
+export function displayListTitle(locale: Locale, list: SavedList): string {
+  return list.title ?? historyItemTitle(locale, list.pairs, list.createdAt)
 }

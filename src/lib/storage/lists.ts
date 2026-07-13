@@ -1,7 +1,7 @@
 import type { Pair } from '../types'
 import { idbClear, idbDel, idbGet, idbGetAll, idbPut } from './db'
 import { generateId } from './id'
-import { type SavedList, deserializeList, pairsEqual, serializeList } from './schema'
+import { type SavedList, deserializeList, normalizeTitle, pairsEqual, serializeList } from './schema'
 
 const STORE = 'lists'
 export const MAX_LISTS = 50
@@ -20,14 +20,18 @@ export const MAX_LISTS = 50
 // it and change its URL, so the first real write reuses the id/createdAt
 // that were already handed out. `updatedAt` is always "now" (the moment of
 // the actual write), regardless of overrides.
+//
+// `overrides.title` carries a custom name set before the card's first real
+// write (App's inline rename can fire while the card is still memory-only), so
+// that title survives into the first persisted record.
 export async function createList(
   pairs: Pair[],
-  overrides?: { id?: string; createdAt?: number },
+  overrides?: { id?: string; createdAt?: number; title?: string },
 ): Promise<SavedList> {
   const now = Date.now()
   const id = overrides?.id ?? generateId()
   const createdAt = overrides?.createdAt ?? now
-  const entry = serializeList(id, pairs, createdAt, now)
+  const entry = serializeList(id, pairs, createdAt, now, overrides?.title)
   await idbPut(STORE, entry)
   return entry
 }
@@ -44,7 +48,25 @@ export async function updateList(id: string, pairs: Pair[]): Promise<void> {
   if (!existing) return
   if (pairsEqual(existing.pairs, pairs)) return
 
-  const entry = serializeList(id, pairs, existing.createdAt, Date.now())
+  // Preserve the custom title across a pairs update — serializeList rebuilds
+  // the whole record from scratch, so without threading existing.title back
+  // through, every autosave would silently wipe a renamed list's name.
+  const entry = serializeList(id, pairs, existing.createdAt, Date.now(), existing.title)
+  await idbPut(STORE, entry)
+}
+
+// Sets (or clears) a list's custom title without touching its pairs. A no-op
+// if `id` doesn't exist (deleted elsewhere in the meantime) — App additionally
+// skips calling this for tombstoned ids so a rename can't resurrect a record.
+// `updatedAt` advances; `id`/`createdAt`/`pairs` are preserved. An empty/blank
+// title clears the name (normalizeTitle -> undefined), reverting to the
+// auto-generated label.
+export async function renameList(id: string, rawTitle: string): Promise<void> {
+  const existing = await getList(id)
+  if (!existing) return
+
+  const title = normalizeTitle(rawTitle)
+  const entry = serializeList(id, existing.pairs, existing.createdAt, Date.now(), title)
   await idbPut(STORE, entry)
 }
 

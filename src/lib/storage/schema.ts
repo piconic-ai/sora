@@ -44,11 +44,12 @@ export function deserializeDraft(raw: unknown): Draft | null {
   return { v: DRAFT_VERSION, pairs: normalizePairs(d.pairs as Pair[]), updatedAt: d.updatedAt }
 }
 
-// A saved history entry — an automatic snapshot of the word list taken on
-// print / "new list". Unlike Draft, it has an `id` (the IDB keyPath for the
-// 'lists' store) and no title: display titles are derived on the fly from
-// `pairs` + `createdAt` (see i18n.ts's historyItemTitle) rather than stored,
-// so a locale switch immediately relabels every history entry.
+// A saved history entry — a document-mode word list. It has an `id` (the IDB
+// keyPath for the 'lists' store) and an optional user-set `title`. When
+// `title` is absent, the display label is derived on the fly from `pairs` +
+// `createdAt` (see i18n.ts's displayListTitle / historyItemTitle) so a locale
+// switch immediately relabels every untitled entry; a custom `title` is shown
+// verbatim and is therefore locale-independent.
 export const LIST_VERSION = 1
 
 export interface SavedList {
@@ -57,10 +58,35 @@ export interface SavedList {
   pairs: Pair[]
   createdAt: number
   updatedAt: number
+  // Optional user-set custom name. Adding this is backward-compatible (no
+  // LIST_VERSION bump): pre-title records simply have no `title` key, and
+  // deserializeList treats a missing/blank/non-string value as undefined.
+  title?: string
 }
 
-export function serializeList(id: string, pairs: Pair[], createdAt: number, updatedAt: number): SavedList {
-  return { v: LIST_VERSION, id, pairs: normalizePairs(pairs), createdAt, updatedAt }
+// The single place raw title text is turned into a stored value: trim, and
+// treat an all-whitespace result as "no title" (undefined). Used by both the
+// write path (serializeList / renameList) and App's inline-rename commit so
+// clearing the field always falls back to the auto-generated label.
+export function normalizeTitle(raw: string): string | undefined {
+  const trimmed = raw.trim()
+  return trimmed === '' ? undefined : trimmed
+}
+
+// `title` is optional and normalized on the way in — an undefined or
+// all-whitespace title is omitted entirely (no `title` key) so an untitled
+// list serializes exactly as it did before this field existed.
+export function serializeList(
+  id: string,
+  pairs: Pair[],
+  createdAt: number,
+  updatedAt: number,
+  title?: string,
+): SavedList {
+  const entry: SavedList = { v: LIST_VERSION, id, pairs: normalizePairs(pairs), createdAt, updatedAt }
+  const normalized = title === undefined ? undefined : normalizeTitle(title)
+  if (normalized !== undefined) entry.title = normalized
+  return entry
 }
 
 // Same discard-rather-than-throw contract as deserializeDraft: a version
@@ -85,13 +111,19 @@ export function deserializeList(raw: unknown): SavedList | null {
   const updatedAt =
     typeof d.updatedAt === 'number' && Number.isFinite(d.updatedAt) ? d.updatedAt : d.createdAt
 
-  return {
+  const entry: SavedList = {
     v: LIST_VERSION,
     id: d.id,
     pairs: normalizePairs(d.pairs as Pair[]),
     createdAt: d.createdAt,
     updatedAt,
   }
+  // Backward-compatible + defensive: keep a stored title only when it's a
+  // non-blank string. Missing (pre-title records), non-string, or whitespace-
+  // only values all collapse to "no title" so display falls back to the
+  // auto-generated label.
+  if (typeof d.title === 'string' && d.title.trim() !== '') entry.title = d.title
+  return entry
 }
 
 // Redundant-write detection: updateList() skips writing when the incoming

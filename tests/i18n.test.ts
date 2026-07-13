@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { historyItemTitle, pageMeterCaption, pickLocale, resolveLocale } from '../src/lib/i18n'
+import { displayListTitle, historyItemTitle, pageMeterCaption, pickLocale, resolveLocale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
+import type { SavedList } from '../src/lib/storage/schema'
 import type { Pair } from '../src/lib/types'
 
 describe('pickLocale', () => {
@@ -130,5 +131,31 @@ describe('historyItemTitle', () => {
   test('en: a blank first front falls back to "(untitled)"', () => {
     const pairs: Pair[] = [{ front: '', back: 'りんご' }]
     expect(historyItemTitle('en', pairs, createdAt)).toBe('(untitled) · 1/5')
+  })
+})
+
+describe('displayListTitle', () => {
+  const createdAt = new Date(2026, 0, 5).getTime() // Jan 5
+  const pairs: Pair[] = [
+    { front: 'Apple', back: 'りんご' },
+    { front: 'Banana', back: 'ばなな' },
+  ]
+  const base: SavedList = { v: 1, id: 'x', pairs, createdAt, updatedAt: createdAt }
+
+  test('shows a custom title verbatim, regardless of locale', () => {
+    const titled: SavedList = { ...base, title: 'My Fruits' }
+    expect(displayListTitle('ja', titled)).toBe('My Fruits')
+    expect(displayListTitle('en', titled)).toBe('My Fruits')
+  })
+
+  test('falls back to the auto-generated label when there is no title', () => {
+    expect(displayListTitle('ja', base)).toBe('Apple ほか1語 · 1/5')
+    expect(displayListTitle('en', base)).toBe('Apple +1 · 1/5')
+  })
+
+  test('an empty-pairs untitled list uses the auto-generated empty label', () => {
+    const empty: SavedList = { v: 1, id: 'y', pairs: [], createdAt, updatedAt: createdAt }
+    expect(displayListTitle('ja', empty)).toBe('空のリスト · 1/5')
+    expect(displayListTitle('en', empty)).toBe('Empty list · 1/5')
   })
 })

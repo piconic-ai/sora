@@ -5,7 +5,7 @@ import { PrintSheets } from './PrintSheets'
 import { WordTable } from './WordTable'
 import { computeLayout } from '../src/lib/layout'
 import { DEFAULTS } from '../src/lib/constants'
-import { historyItemTitle, messages, pageMeterCaption } from '../src/lib/i18n'
+import { displayListTitle, historyItemTitle, messages, pageMeterCaption } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
 import { adjustIndexAfterRemoval, buildListPath, parseListIdFromPath, shouldConfirmBeforeNewList } from '../src/lib/listnav'
@@ -19,10 +19,11 @@ import {
   getList,
   listSaved,
   putListDirect,
+  renameList,
   updateList,
 } from '../src/lib/storage/lists'
 import { migrateLegacyDraft } from '../src/lib/storage/migrate'
-import { LIST_VERSION, serializeList, type SavedList } from '../src/lib/storage/schema'
+import { LIST_VERSION, normalizeTitle, serializeList, type SavedList } from '../src/lib/storage/schema'
 import type { Pair } from '../src/lib/types'
 
 interface AppProps {
@@ -80,6 +81,51 @@ export function App(props: AppProps) {
   const [sidebarOpen, setSidebarOpen] = createSignal(true)
   const isNarrowViewport = () => window.matchMedia('(max-width: 720px)').matches
 
+  // Per-list-item UI state for the sidebar's ⋮ menu and inline rename. Held as
+  // the id of the single open menu / list being renamed (or null). Folded into
+  // the `sidebarLists` memo below (alongside `active`) so the render stays a
+  // single-level `.map()` — see #2218 in the memory notes. Never persisted:
+  // both reset on any card-switching/mutating action and on outside click/ESC.
+  const [menuOpenId, setMenuOpenId] = createSignal<string | null>(null)
+  const [renamingId, setRenamingId] = createSignal<string | null>(null)
+
+  const closeMenus = () => {
+    setMenuOpenId(null)
+    setRenamingId(null)
+  }
+
+  // The ⋮ dropdown is position:fixed (so it escapes the sidebar's overflow
+  // clipping — see .list-item-menu in app.css), so JS has to place it under
+  // its button. Runs after the render that applies `is-open`, reads the
+  // button's viewport rect, and pins the menu just below it, right-aligned but
+  // clamped to stay on-screen.
+  const positionMenu = () => {
+    requestAnimationFrame(() => {
+      const menu = document.querySelector<HTMLElement>('.list-item-menu.is-open')
+      const btn = menu?.previousElementSibling as HTMLElement | null
+      if (!menu || !btn) return
+      const r = btn.getBoundingClientRect()
+      const menuH = menu.offsetHeight
+      // Prefer just below the button; flip above it when the dropdown would
+      // spill past the viewport bottom (the lowest sidebar rows), then clamp.
+      let top = r.bottom + 2
+      if (top + menuH > window.innerHeight - 8) top = r.top - menuH - 2
+      top = Math.max(8, top)
+      menu.style.top = `${Math.round(top)}px`
+      menu.style.left = `${Math.round(Math.max(8, r.right - menu.offsetWidth))}px`
+    })
+  }
+
+  const toggleMenu = (id: string) => {
+    if (menuOpenId() === id) {
+      setMenuOpenId(null)
+      return
+    }
+    setRenamingId(null) // never leave a rename open on another row
+    setMenuOpenId(id)
+    positionMenu()
+  }
+
   // Imperative "load this / clear to this" instruction forwarded to
   // WordTable — see WordTableProps.loadRequest for why it carries a
   // monotonic `nonce` rather than being applied from the payload alone.
@@ -116,9 +162,16 @@ export function App(props: AppProps) {
   // render (nested/index-keyed loops are avoided; see barefoot #2218).
   const sidebarLists = createMemo(() => {
     const activeId = activeList()?.id ?? null
+    const menuId = menuOpenId()
+    const renameId = renamingId()
     return [...lists()]
       .sort((a, b) => b.createdAt - a.createdAt)
-      .map((item) => ({ item, active: item.id === activeId }))
+      .map((item) => ({
+        item,
+        active: item.id === activeId,
+        menuOpen: item.id === menuId,
+        renaming: item.id === renameId,
+      }))
   })
 
   const layout = createMemo(() => computeLayout(pairs(), DEFAULTS))
@@ -145,7 +198,7 @@ export function App(props: AppProps) {
   // what keeps a fast double-click from racing a stale debounced write
   // against the switch.
   let saveTimer = null as ReturnType<typeof setTimeout> | null
-  let pending = null as { id: string; pairs: Pair[]; createdAt: number } | null
+  let pending = null as { id: string; pairs: Pair[]; createdAt: number; title?: string } | null
 
   // The debounced-save writer. Empty pairs are a deletion, not a skip: if the
   // user clears a list down to nothing while staying on the card, its stored
@@ -156,17 +209,20 @@ export function App(props: AppProps) {
   // createdAt already assigned in memory (see emptyCard/createList's
   // `overrides`). The create path bails on a tombstoned id so a save that
   // raced a delete can't resurrect the record.
-  const doPersist = async (p: { id: string; pairs: Pair[]; createdAt: number }) => {
+  const doPersist = async (p: { id: string; pairs: Pair[]; createdAt: number; title?: string }) => {
     if (p.pairs.length === 0) {
       await deleteList(p.id)
       return
     }
     const existing = await getList(p.id)
     if (existing) {
+      // updateList preserves the stored title itself; the create path (first
+      // real write of a still-memory-only card) must carry the in-memory title
+      // through, or a name set before the card was ever persisted is lost.
       await updateList(p.id, p.pairs)
     } else {
       if (deletedIds.has(p.id)) return
-      await createList(p.pairs, { id: p.id, createdAt: p.createdAt })
+      await createList(p.pairs, { id: p.id, createdAt: p.createdAt, title: p.title })
     }
   }
 
@@ -195,11 +251,11 @@ export function App(props: AppProps) {
       return
     }
     if (deletedIds.has(p.id)) return
-    void putListDirect(serializeList(p.id, p.pairs, p.createdAt, Date.now()))
+    void putListDirect(serializeList(p.id, p.pairs, p.createdAt, Date.now(), p.title))
   }
 
-  const scheduleSave = (id: string, pairsToSave: Pair[], createdAt: number) => {
-    pending = { id, pairs: pairsToSave, createdAt }
+  const scheduleSave = (id: string, pairsToSave: Pair[], createdAt: number, title?: string) => {
+    pending = { id, pairs: pairsToSave, createdAt, title }
     if (saveTimer !== null) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
       const p = pending
@@ -219,7 +275,7 @@ export function App(props: AppProps) {
     const current = activeList()
     if (!current) return
     setLists(lists().map((l) => (l.id === current.id ? { ...l, pairs: newPairs } : l)))
-    scheduleSave(current.id, newPairs, current.createdAt)
+    scheduleSave(current.id, newPairs, current.createdAt, current.title)
   }
 
   // ---- Leaving the current card --------------------------------------
@@ -244,7 +300,7 @@ export function App(props: AppProps) {
       return synced.filter((l) => l.id !== current.id)
     }
 
-    void doPersist({ id: current.id, pairs: currentPairs, createdAt: current.createdAt })
+    void doPersist({ id: current.id, pairs: currentPairs, createdAt: current.createdAt, title: current.title })
     return synced
   }
 
@@ -270,6 +326,7 @@ export function App(props: AppProps) {
   // unsaved), clamp into bounds (recreating a single empty list if none
   // remain), then switch.
   const navigate = (toIndex: number) => {
+    closeMenus()
     const fromIndex = activeIndex()
     const fromId = activeList()?.id ?? null
 
@@ -304,6 +361,7 @@ export function App(props: AppProps) {
   // (evaporating an empty current card) can never itself land back on the
   // cap and prompt a confirm the user didn't expect.
   const createNewList = () => {
+    closeMenus()
     userInteracted = true
     let ls = commitActiveEdits()
     setLists(ls)
@@ -355,10 +413,79 @@ export function App(props: AppProps) {
     // already-active item (a common "go back to the editor" gesture), so it
     // runs before the same-id early return below.
     if (isNarrowViewport()) setSidebarOpen(false)
-    if (id === activeList()?.id) return
+    if (id === activeList()?.id) {
+      closeMenus()
+      return
+    }
     const idx = lists().findIndex((l) => l.id === id)
     if (idx < 0) return
     navigate(idx)
+  }
+
+  // ---- Inline rename (sidebar ⋮ menu → "Rename") ---------------------
+  //
+  // Opens the inline editor for a list: both the select button and a hidden
+  // <input> are always rendered per row (see the sidebar render); flipping
+  // `renamingId` toggles which is shown via CSS, so no DOM structure changes
+  // inside the reactive `.map()`. The input is *uncontrolled* — its value is
+  // seeded here from the current title (or left blank so the placeholder shows
+  // the auto-generated name), after the render has applied `is-renaming`.
+  const startRename = (id: string) => {
+    setMenuOpenId(null)
+    setRenamingId(id)
+    const list = lists().find((l) => l.id === id)
+    const initial = list?.title ?? ''
+    requestAnimationFrame(() => {
+      const input = document.querySelector<HTMLInputElement>('.list-item.is-renaming .list-item-rename-input')
+      if (!input) return
+      input.value = initial
+      input.focus()
+      input.select()
+    })
+  }
+
+  // Commits (or clears) a rename. The `renamingId() !== id` guard makes this
+  // idempotent across the Enter-then-blur and Escape-then-blur sequences:
+  // Enter/Escape both null out `renamingId` before the resulting blur fires,
+  // so the trailing blur-commit no-ops. An empty value clears the title
+  // (normalizeTitle -> undefined), reverting to the auto-generated label.
+  const commitRename = (id: string, rawValue: string) => {
+    if (renamingId() !== id) return
+    setRenamingId(null)
+
+    const title = normalizeTitle(rawValue)
+    setLists(lists().map((l) => (l.id === id ? { ...l, title } : l)))
+    // Keep any in-flight debounced save's title in sync so it can't overwrite
+    // the new name when it lands (create path carries pending.title; the
+    // update path preserves the stored title updated below).
+    if (pending && pending.id === id) pending.title = title
+
+    // Persist only real records; a still-memory-only card (getList === null)
+    // carries the title into its first write via pending/doPersist's create
+    // path. Tombstoned ids are never written back.
+    if (deletedIds.has(id)) return
+    void (async () => {
+      const existing = await getList(id)
+      if (existing) await renameList(id, rawValue)
+    })()
+  }
+
+  const handleRenameKeyDown = (id: string, e: KeyboardEvent) => {
+    // Keep Enter/Escape (and every other key) from reaching the document-level
+    // menu handlers or the editor — this input owns them while it's focused.
+    e.stopPropagation()
+    // Never act on the Enter that confirms an IME composition, nor the Escape
+    // that cancels one — otherwise typing a Japanese list name would commit
+    // half-converted text or discard the rename mid-composition (same guard as
+    // WordTable's editor; see its handleKeyDown).
+    if (e.isComposing || (e as { keyCode?: number }).keyCode === 229) return
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      commitRename(id, (e.target as HTMLInputElement).value)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setRenamingId(null) // cancel — the ensuing blur-commit no-ops (see commitRename's guard)
+    }
   }
 
   // Deletes a specific list from the sidebar's per-item ✕. If it's the active
@@ -367,6 +494,7 @@ export function App(props: AppProps) {
   // tombstone + delete it, and shift activeIndex left if the removed item sat
   // before the active one so the same list stays active.
   const deleteListById = (id: string) => {
+    closeMenus()
     const current = activeList()
     if (id === current?.id) {
       deleteCurrentList()
@@ -389,6 +517,7 @@ export function App(props: AppProps) {
   // whatever it contains, then moves the editor to the next (newer) list if
   // there is one, else the previous (older) one, else a fresh empty list.
   const deleteCurrentList = () => {
+    closeMenus()
     const current = activeList()
     if (!current) return
     // Confirm only when there's content to lose — deleting an untouched empty
@@ -423,6 +552,7 @@ export function App(props: AppProps) {
   // Wipes every saved list and leaves a single fresh empty list, since there
   // is nothing left to show.
   const handleClearAllLists = async () => {
+    closeMenus()
     // Destructive and irreversible (every list, not just the current one), so
     // confirm — mirroring the per-item delete.
     if (!window.confirm(t().confirmClearAll)) return
@@ -501,9 +631,37 @@ export function App(props: AppProps) {
     window.addEventListener('pagehide', flushOnHide)
     document.addEventListener('visibilitychange', flushOnVisibilityChange)
 
+    // Dismiss an open ⋮ menu on any click outside its wrapper. Clicks on the
+    // menu button or its items live inside `.list-item-menu-wrap`, so they're
+    // ignored here and handled by their own onClick instead.
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Element | null
+      if (target?.closest('.list-item-menu-wrap')) return
+      setMenuOpenId(null)
+    }
+    // ESC closes an open menu. While renaming, the input's own keydown handler
+    // stops propagation, so this never fires for the rename Escape (which
+    // cancels the edit instead).
+    const onDocKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpenId(null)
+    }
+    // The open menu is position:fixed and pinned to its button's rect; a scroll
+    // (of the list or the page) or a resize moves the button out from under it,
+    // so just close it rather than chase the anchor. `capture` so a scroll of
+    // the inner `.list-items` container (scroll doesn't bubble) is still seen.
+    const onScrollOrResize = () => setMenuOpenId(null)
+    document.addEventListener('click', onDocClick)
+    document.addEventListener('keydown', onDocKeyDown)
+    document.addEventListener('scroll', onScrollOrResize, true)
+    window.addEventListener('resize', onScrollOrResize)
+
     onCleanup(() => {
       window.removeEventListener('pagehide', flushOnHide)
       document.removeEventListener('visibilitychange', flushOnVisibilityChange)
+      document.removeEventListener('click', onDocClick)
+      document.removeEventListener('keydown', onDocKeyDown)
+      document.removeEventListener('scroll', onScrollOrResize, true)
+      window.removeEventListener('resize', onScrollOrResize)
       cancelPendingSave()
     })
 
@@ -601,23 +759,65 @@ export function App(props: AppProps) {
           </button>
           <div className="list-items" role="list">
             {sidebarLists().map((entry) => (
-              <div className={entry.active ? 'list-item is-active' : 'list-item'} role="listitem" key={entry.item.id}>
+              <div
+                className={
+                  entry.renaming
+                    ? entry.active
+                      ? 'list-item is-active is-renaming'
+                      : 'list-item is-renaming'
+                    : entry.active
+                      ? 'list-item is-active'
+                      : 'list-item'
+                }
+                role="listitem"
+                key={entry.item.id}
+              >
                 <button
                   type="button"
                   className="list-item-select"
                   aria-current={entry.active ? 'true' : undefined}
                   onClick={() => selectList(entry.item.id)}
                 >
-                  {historyItemTitle(locale(), entry.item.pairs, entry.item.createdAt)}
+                  {displayListTitle(locale(), entry.item)}
                 </button>
-                <button
-                  type="button"
-                  className="list-item-delete"
-                  aria-label={t().deleteThisList}
-                  onClick={() => deleteListById(entry.item.id)}
-                >
-                  <span aria-hidden="true">×</span>
-                </button>
+                <input
+                  type="text"
+                  className="list-item-rename-input"
+                  aria-label={t().renameListLabel}
+                  placeholder={historyItemTitle(locale(), entry.item.pairs, entry.item.createdAt)}
+                  onKeyDown={(e) => handleRenameKeyDown(entry.item.id, e as KeyboardEvent)}
+                  onBlur={(e) => commitRename(entry.item.id, (e.target as HTMLInputElement).value)}
+                />
+                <div className="list-item-menu-wrap">
+                  <button
+                    type="button"
+                    className="list-item-menu-btn"
+                    aria-haspopup="menu"
+                    aria-expanded={entry.menuOpen}
+                    aria-label={t().listItemMenu}
+                    onClick={() => toggleMenu(entry.item.id)}
+                  >
+                    <span aria-hidden="true">⋮</span>
+                  </button>
+                  <div className={entry.menuOpen ? 'list-item-menu is-open' : 'list-item-menu'} role="menu">
+                    <button
+                      type="button"
+                      className="list-item-menu-item"
+                      role="menuitem"
+                      onClick={() => startRename(entry.item.id)}
+                    >
+                      {t().renameListLabel}
+                    </button>
+                    <button
+                      type="button"
+                      className="list-item-menu-item is-danger"
+                      role="menuitem"
+                      onClick={() => deleteListById(entry.item.id)}
+                    >
+                      {t().deleteThisList}
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

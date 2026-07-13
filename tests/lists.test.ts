@@ -18,6 +18,7 @@ import {
   getList,
   listSaved,
   putListDirect,
+  renameList,
   updateList,
 } from '../src/lib/storage/lists'
 import { serializeList } from '../src/lib/storage/schema'
@@ -231,5 +232,81 @@ describe('updateList', () => {
     await expect(getList(b.id)).resolves.toEqual(b)
     const updatedA = await getList(a.id)
     expect(updatedA?.pairs).toEqual([{ front: 'Apricot', back: 'あんず' }])
+  })
+
+  // The title-preservation trap: serializeList rebuilds the whole record, so
+  // without threading the stored title back through, an autosave (pairs
+  // update) would silently wipe a renamed list's custom name.
+  test('preserves a custom title across a pairs update', async () => {
+    const created = await createList([{ front: 'Apple', back: 'りんご' }], { id: 'titled', title: 'Fruits' })
+    expect(created.title).toBe('Fruits')
+
+    await updateList('titled', [{ front: 'Apple', back: 'りんご' }, { front: 'Banana', back: 'ばなな' }])
+
+    const updated = await getList('titled')
+    expect(updated?.title).toBe('Fruits')
+    expect(updated?.pairs).toHaveLength(2)
+  })
+})
+
+describe('createList with a title override', () => {
+  test('persists the title on the first real write', async () => {
+    const list = await createList([{ front: 'Apple', back: 'りんご' }], { id: 'c-titled', title: 'Fruits' })
+    expect(list.title).toBe('Fruits')
+    await expect(getList('c-titled')).resolves.toMatchObject({ title: 'Fruits' })
+  })
+
+  test('a blank title override is dropped (no title key)', async () => {
+    const list = await createList([{ front: 'Apple', back: 'りんご' }], { id: 'c-blank', title: '   ' })
+    expect(list.title).toBeUndefined()
+  })
+})
+
+describe('putListDirect preserves a title (flush-path regression)', () => {
+  test('a fully-formed record carrying a title round-trips through putListDirect', async () => {
+    const rec = serializeList('flush-titled', [{ front: 'Apple', back: 'りんご' }], 1000, 2000, 'Fruits')
+    await putListDirect(rec)
+    await expect(getList('flush-titled')).resolves.toMatchObject({ title: 'Fruits' })
+  })
+})
+
+describe('renameList', () => {
+  test('sets a custom title, preserving pairs/id/createdAt and advancing updatedAt', async () => {
+    let now = 1000
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+
+    const created = await createList([{ front: 'Apple', back: 'りんご' }], { id: 'r-1' })
+    now = 2000
+    await renameList('r-1', 'My Fruits')
+
+    const renamed = await getList('r-1')
+    expect(renamed).toEqual({
+      v: 1,
+      id: 'r-1',
+      pairs: [{ front: 'Apple', back: 'りんご' }],
+      createdAt: created.createdAt,
+      updatedAt: 2000,
+      title: 'My Fruits',
+    })
+  })
+
+  test('an empty/blank title clears the stored title', async () => {
+    await createList([{ front: 'Apple', back: 'りんご' }], { id: 'r-2', title: 'Fruits' })
+    await renameList('r-2', '   ')
+
+    const cleared = await getList('r-2')
+    expect(cleared?.title).toBeUndefined()
+    expect(cleared?.pairs).toEqual([{ front: 'Apple', back: 'りんご' }])
+  })
+
+  test('trims the title', async () => {
+    await createList([{ front: 'Apple', back: 'りんご' }], { id: 'r-3' })
+    await renameList('r-3', '  Spaced  ')
+    await expect(getList('r-3')).resolves.toMatchObject({ title: 'Spaced' })
+  })
+
+  test('is a no-op for an id that does not exist', async () => {
+    await renameList('does-not-exist', 'Ghost')
+    expect(await listSaved()).toHaveLength(0)
   })
 })
