@@ -427,6 +427,15 @@
     z-index: 10;
     background: rgba(17, 17, 17, 0.35);
   }
+
+  /* Before client JS marks itself ready (App's onMount adds .js-ready), keep
+     the drawer + scrim hidden so a phone-width first paint doesn't flash them
+     open over a dark scrim — SSR always renders sidebarOpen=true and onMount
+     corrects it to false only after hydration. */
+  html:not(.js-ready) .list-sidebar,
+  html:not(.js-ready) .sidebar-scrim {
+    display: none;
+  }
 }
 
 .input-error {
