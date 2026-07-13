@@ -474,6 +474,11 @@ export function App(props: AppProps) {
     // Keep Enter/Escape (and every other key) from reaching the document-level
     // menu handlers or the editor — this input owns them while it's focused.
     e.stopPropagation()
+    // Never act on the Enter that confirms an IME composition, nor the Escape
+    // that cancels one — otherwise typing a Japanese list name would commit
+    // half-converted text or discard the rename mid-composition (same guard as
+    // WordTable's editor; see its handleKeyDown).
+    if (e.isComposing || (e as { keyCode?: number }).keyCode === 229) return
     if (e.key === 'Enter') {
       e.preventDefault()
       commitRename(id, (e.target as HTMLInputElement).value)
