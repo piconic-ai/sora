@@ -379,15 +379,17 @@ body {
   transform-style: preserve-3d;
   animation: flip5 var(--T) linear infinite;
 }
+/* めくりは下端が持ち上がって奥へ返る向き（正のrotateX）。
+   蛇腹の折り目が表コマの下端にあるため、下側からめくると裏が現れる */
 @keyframes flip5 {
-  0%, 81% { transform: rotateX(-10deg); animation-timing-function: ease-in-out; }
-  85% { transform: rotateX(-5deg); animation-timing-function: ease-in-out; }
-  86.7% { transform: rotateX(-7deg); animation-timing-function: ease-in-out; }
-  91.3% { transform: rotateX(-186deg); animation-timing-function: ease-in-out; }
-  92.3% { transform: rotateX(-183deg); animation-timing-function: ease-in-out; }
-  94% { transform: rotateX(-184deg); animation-timing-function: ease-in-out; }
-  98% { transform: rotateX(-354deg); animation-timing-function: ease-in-out; }
-  99.4%, 100% { transform: rotateX(-352deg); }
+  0%, 81% { transform: rotateX(10deg); animation-timing-function: ease-in-out; }
+  85% { transform: rotateX(5deg); animation-timing-function: ease-in-out; }
+  86.7% { transform: rotateX(7deg); animation-timing-function: ease-in-out; }
+  91.3% { transform: rotateX(186deg); animation-timing-function: ease-in-out; }
+  92.3% { transform: rotateX(183deg); animation-timing-function: ease-in-out; }
+  94% { transform: rotateX(184deg); animation-timing-function: ease-in-out; }
+  98% { transform: rotateX(354deg); animation-timing-function: ease-in-out; }
+  99.4%, 100% { transform: rotateX(352deg); }
 }
 .cf, .cb {
   position: absolute; inset: 0;
