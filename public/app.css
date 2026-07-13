@@ -344,19 +344,24 @@
   box-shadow: inset 0 0 0 1px #111;
 }
 
-/* The per-item delete (✕) stays hidden until the row is hovered/focused so
-   the sidebar reads as a clean list, not a wall of buttons. */
-.list-item-delete {
+/* Per-item ⋮ (more-actions) button. Like the old delete ✕ it stays hidden
+   until the row is hovered/focused — or its menu is open — so the sidebar
+   reads as a clean list rather than a wall of buttons. */
+.list-item-menu-wrap {
+  position: relative;
   flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.list-item-menu-btn {
   width: 22px;
   height: 22px;
-  margin-right: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1;
-  color: #bbb;
+  color: #999;
   background: transparent;
   border: none;
   border-radius: 4px;
@@ -364,14 +369,99 @@
   opacity: 0;
 }
 
-.list-item:hover .list-item-delete,
-.list-item-delete:focus-visible {
+.list-item:hover .list-item-menu-btn,
+.list-item-menu-btn:focus-visible,
+.list-item-menu-btn[aria-expanded='true'] {
   opacity: 1;
 }
 
-.list-item-delete:hover {
+.list-item-menu-btn:hover,
+.list-item-menu-btn[aria-expanded='true'] {
+  color: #111;
+  background: #ececec;
+}
+
+.list-item-menu-btn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #111;
+}
+
+/* Dropdown menu (Rename / Delete) for the open row. Positioned `fixed` and
+   placed under its ⋮ button by JS (App's positionMenu) rather than absolutely
+   inside the row: the sidebar's `.list-items` is an `overflow-y: auto` scroll
+   container, which would clip an absolutely-positioned dropdown on the lower
+   rows. The off-screen default keeps it from flashing at 0,0 before JS sets
+   the real coordinates. */
+.list-item-menu {
+  display: none;
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  z-index: 30;
+  min-width: 148px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.list-item-menu.is-open {
+  display: block;
+}
+
+.list-item-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  color: #333;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.list-item-menu-item:hover {
+  background: #f4f4f4;
+}
+
+.list-item-menu-item.is-danger {
   color: #b23a2e;
+}
+
+.list-item-menu-item.is-danger:hover {
   background: #fdf2f1;
+}
+
+/* Inline rename editor: shares the row with the select button, which is
+   swapped out for it while `is-renaming` is set (App's renamingId). Kept in
+   the DOM at all times so toggling rename never changes the row's structure
+   inside the reactive .map(). */
+.list-item-rename-input {
+  display: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 7px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #111;
+  background: #fff;
+  border: 1px solid #111;
+  border-radius: 6px;
+  outline: none;
+}
+
+.list-item.is-renaming .list-item-select,
+.list-item.is-renaming .list-item-menu-wrap {
+  display: none;
+}
+
+.list-item.is-renaming .list-item-rename-input {
+  display: block;
 }
 
 .new-button-plus {
