@@ -177,7 +177,7 @@
 }
 
 /* "Clear all history" — a shared-device privacy control, so it lives in the
-   info popover rather than the carousel itself. */
+   info popover rather than the sidebar itself. */
 .info-clear-all {
   width: 100%;
   margin: 4px 0 10px;

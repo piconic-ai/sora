@@ -9,7 +9,7 @@ const app = new Hono()
 
 app.use('*', renderer)
 
-// Same app shell for `/` and `/l/:id` — the carousel is entirely
+// Same app shell for `/` and `/l/:id` — the list state is entirely
 // client-driven, so the `:id` param is never read here. The client reads it
 // from `location.pathname` on mount (see components/App.tsx's initialize)
 // to pick which saved list to open; an unknown/missing id there just falls

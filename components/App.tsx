@@ -284,8 +284,8 @@ export function App(props: AppProps) {
     focusEditorInput()
   }
 
-  // Appends a fresh empty card and switches to it — the "+ New" ghost card
-  // and the header's New button both call this.
+  // Appends a fresh empty card and switches to it — the sidebar's New button
+  // calls this.
   //
   // Invariant this relies on: `lists().length` never exceeds MAX_LISTS,
   // because this is the *only* place a card is ever added, and it always
@@ -404,6 +404,9 @@ export function App(props: AppProps) {
   // Wipes every saved list and leaves a single fresh empty list, since there
   // is nothing left to show.
   const handleClearAllLists = async () => {
+    // Destructive and irreversible (every list, not just the current one), so
+    // confirm — mirroring the per-item delete.
+    if (!window.confirm(t().confirmClearAll)) return
     cancelPendingSave()
     // Tombstone every id so any save that was already in flight when the wipe
     // lands can't recreate a record clearAllLists just removed.

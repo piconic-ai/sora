@@ -35,6 +35,7 @@ export interface Messages {
   // hold dozens of pairs and the delete is irreversible, so it needs explicit
   // confirmation.
   confirmDeleteThisList: string
+  confirmClearAll: string
   // Shown via window.confirm when creating a new list would push the saved
   // count past the MAX_LISTS cap (src/lib/storage/lists.ts) — evicting the
   // oldest list needs explicit confirmation rather than doing it silently.
@@ -82,6 +83,7 @@ export const messages: Record<Locale, Messages> = {
     listsLabel: 'リスト一覧',
     deleteThisList: 'このリストを削除',
     confirmDeleteThisList: 'このリストを削除しますか？',
+    confirmClearAll: 'すべてのリストを削除しますか？この操作は取り消せません。',
     confirmEvictOldest: '保存できるリストは50件までです。最も古いリストを削除して新規作成しますか？',
     clearAllLists: '履歴をすべて削除',
   },
@@ -104,6 +106,7 @@ export const messages: Record<Locale, Messages> = {
     listsLabel: 'Lists',
     deleteThisList: 'Delete this list',
     confirmDeleteThisList: 'Delete this list?',
+    confirmClearAll: 'Delete every list? This cannot be undone.',
     confirmEvictOldest: 'You can only keep 50 lists. Delete the oldest one and create a new list?',
     clearAllLists: 'Clear all history',
   },
