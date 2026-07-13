@@ -683,16 +683,18 @@ export function App(props: AppProps) {
   return (
     <div className="app">
       <header className="app-header no-print">
-        <button
-          type="button"
-          className="sidebar-toggle"
-          aria-expanded={sidebarOpen()}
-          aria-controls="list-sidebar"
-          aria-label={t().sidebarToggleLabel}
-          onClick={() => setSidebarOpen(!sidebarOpen())}
-        >
-          <span aria-hidden="true">☰</span>
-        </button>
+        {!sidebarOpen() ? (
+          <button
+            type="button"
+            className="sidebar-open"
+            aria-expanded={sidebarOpen()}
+            aria-controls="list-sidebar"
+            aria-label={t().sidebarToggleLabel}
+            onClick={() => setSidebarOpen(true)}
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+        ) : null}
         <h1>Sora</h1>
         <p className="app-tagline">{t().tagline}</p>
         <select
@@ -753,6 +755,16 @@ export function App(props: AppProps) {
           <div className="sidebar-scrim" aria-hidden="true" onClick={() => setSidebarOpen(false)} />
         )}
         <aside id="list-sidebar" className="list-sidebar" aria-label={t().listsLabel}>
+          <button
+            type="button"
+            className="sidebar-collapse"
+            aria-expanded={sidebarOpen()}
+            aria-controls="list-sidebar"
+            aria-label={t().sidebarToggleLabel}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
           <button type="button" className="new-button" onClick={createNewList}>
             <span className="new-button-plus" aria-hidden="true">+</span>
             {t().newList}
