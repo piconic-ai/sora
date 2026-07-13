@@ -730,20 +730,25 @@
 }
 
 .howto-steps {
-  margin: 0 0 24px;
+  margin: 0;
   padding-left: 22px;
   font-size: 15px;
   line-height: 1.7;
   color: #333;
+  /* uno.css のリセット（ol { list-style: none }）を打ち消して手順番号を出す */
+  list-style: decimal;
 }
 
 .howto-steps li + li {
   margin-top: 10px;
 }
 
+/* YouTube embed (16:9) at the top of the page */
 .howto-video {
   display: block;
   width: 100%;
-  max-width: 480px;
+  aspect-ratio: 16 / 9;
+  border: 0;
   outline: 1px solid #eee;
+  margin: 0 0 24px;
 }
