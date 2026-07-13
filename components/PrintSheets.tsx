@@ -15,27 +15,27 @@ const TICK_MM = 2
 
 // Sheets are rendered by hand-building an HTML string and assigning it via
 // innerHTML (in the createEffect below) rather than through BarefootJS's
-// JSX/list-rendering system.
+// JSX list-rendering system.
 //
-// Moving this to JSX list rendering was re-attempted on @barefootjs 0.18.5
-// (which fixed issue #2189, the loop-index reference bug in event handlers)
-// but is still blocked by two distinct, upstream-confirmed compiler bugs:
+// The two bugs that originally forced this (piconic-ai/barefootjs#2218,
+// nested-`.map()` index ReferenceError; #2219, SVG inner-loop wrong
+// namespace) were both fixed in @barefootjs 0.18.7 — verified here: the JSX
+// version's SVG `<line>` ticks render in the correct namespace and the
+// depth-2 pages>bands>panels grid renders on first paint. But converting is
+// still blocked by a further, distinct compiler bug:
 //
-//   - piconic-ai/barefootjs#2218 — a nested `.map()` whose inner loop keys
-//     or attrs by positional index emits `(item) => String(indexVar)` with
-//     `indexVar` out of scope, throwing `ReferenceError: <index> is not
-//     defined` the moment a page renders. Verified in-browser: typing one
-//     word pair crashed hydration and no `.sheet` was ever created.
-//   - piconic-ai/barefootjs#2219 — the fold/cut tick `<line>`s live in an
-//     inner reactive loop, which clones via HTML `template.innerHTML` and
-//     so creates the SVG in the wrong namespace (silently invisible).
+//   - piconic-ai/barefootjs#2264 — at nesting depth 2 (pages > bands >
+//     panels), a reactive *text child* of the innermost element gets no
+//     update effect (its attrs do), so an edited panel keeps showing the old
+//     word. Verified in the compiled client JS: zero textContent effects are
+//     emitted for the panel text at that depth, vs one for an equivalent
+//     single-level loop.
 //
-// A workaround exists (flatten bands+panels into one list with item-derived
-// keys, render ticks as `<div>`s) but it needs a print.css rewrite and is
-// deferred until the upstream fixes land. So the innerHTML approach stays.
-// It reuses `computeSheetGeometry` (a pure, unit-tested function in
-// ../src/lib/sheetGeometry.ts) so the geometry math is shared and tested;
-// only the DOM-construction step here is manual.
+// So the innerHTML approach stays until #2264 lands (at which point this
+// becomes a straightforward nested-`.map()` over a view-model — see the
+// design in #2264). It reuses `computeSheetGeometry` (a pure, unit-tested
+// function in ../src/lib/sheetGeometry.ts) so the geometry math is shared and
+// tested; only the DOM-construction step here is manual.
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
