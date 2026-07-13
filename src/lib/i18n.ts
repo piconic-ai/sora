@@ -54,11 +54,14 @@ export interface Messages {
   clearAllLists: string
   // aria-label for the header's sidebar open/close toggle button.
   sidebarToggleLabel: string
-  // The three fold/cut/fold steps on the standalone /how-to page (see
-  // docs/DESIGN.md §2 for the reference procedure this text summarizes).
+  // The five steps on the standalone /how-to page, matching the beats of
+  // the how-to video embedded there (docs/DESIGN.md §2 is the reference
+  // procedure). Deliberately paper-size-agnostic — no A4 wording.
   howToStep1: string
   howToStep2: string
   howToStep3: string
+  howToStep4: string
+  howToStep5: string
   // aria-label for the "← Sora" link back to the app from /how-to.
   howToBackLabel: string
 }
@@ -107,9 +110,11 @@ export const messages: Record<Locale, Messages> = {
     confirmEvictOldest: '保存できるリストは50件までです。最も古いリストを削除して新規作成しますか？',
     clearAllLists: '履歴をすべて削除',
     sidebarToggleLabel: 'サイドバーの開閉',
-    howToStep1: '横に折る：単語が書けるくらいの高さで、紙を上から下へアコーディオン状に折ります。',
-    howToStep2: '縦に切る：折ったまま縦に等分して切り分け、細い帯にします。',
-    howToStep3: '蛇腹に折る：各帯を蛇腹に折りたたむと、1コマずつめくれる単語帳になります。',
+    howToStep1: '表面と裏面の単語ペアを入力します。',
+    howToStep2: '用紙1枚に印刷します。',
+    howToStep3: '横の折り線に沿って蛇腹（アコーディオン）に折ります。',
+    howToStep4: '縦の線に沿って切り、細い帯に分けます。',
+    howToStep5: 'めくって答えを確認 — そらでおぼえましょう。',
     howToBackLabel: 'Soraに戻る',
   },
   en: {
@@ -137,9 +142,11 @@ export const messages: Record<Locale, Messages> = {
     confirmEvictOldest: 'You can only keep 50 lists. Delete the oldest one and create a new list?',
     clearAllLists: 'Clear all history',
     sidebarToggleLabel: 'Toggle list sidebar',
-    howToStep1: 'Fold across: accordion-fold the paper from top to bottom, in bands tall enough to fit a word.',
-    howToStep2: 'Cut into strips: while still folded, cut it into equal vertical strips.',
-    howToStep3: 'Fold into an accordion: fold each strip back and forth so it flips open one word at a time.',
+    howToStep1: 'Type word pairs — front and back',
+    howToStep2: 'Print on a single sheet',
+    howToStep3: 'Accordion-fold along the horizontal lines',
+    howToStep4: 'Cut along the vertical lines into strips',
+    howToStep5: 'Flip to check the answer — learn by heart',
     howToBackLabel: 'Back to Sora',
   },
 }

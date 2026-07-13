@@ -19,12 +19,21 @@ export function HowToPage(props: HowToPageProps) {
         ← Sora
       </a>
       <h1>{t.howTo}</h1>
+      <iframe
+        className="howto-video"
+        src="https://www.youtube-nocookie.com/embed/WBR2XpbVRKk"
+        title={t.howTo}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        loading="lazy"
+      />
       <ol className="howto-steps">
         <li>{t.howToStep1}</li>
         <li>{t.howToStep2}</li>
         <li>{t.howToStep3}</li>
+        <li>{t.howToStep4}</li>
+        <li>{t.howToStep5}</li>
       </ol>
-      <video className="howto-video" src="/howto.webm" controls muted loop />
     </div>
   )
 }
