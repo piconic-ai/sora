@@ -2,6 +2,21 @@
    (main { display:grid; place-items:center }) はサンプルCounter用のセンタリング
    レイアウトなので、.print-root ではブロックレイアウトに戻す。 */
 
+/* Design tokens. Quiet stationery: ink on paper, hairline rules, and the
+   piconic brand green reserved for one job — marking the *live editing
+   action* (focused input, filled page, active list) — so it stays a sharp
+   accent rather than a theme color. */
+:root {
+  --ink: #111;
+  --ink-2: #555;
+  --ink-3: #8a8a8a;
+  --hairline: #e5e5e5;
+  --hairline-soft: #eee;
+  --brand: #00b769;
+  --paper: #fff;
+  --paper-tint: #fafafa;
+}
+
 .print-root {
   display: block;
   min-height: auto;
@@ -47,21 +62,22 @@
   justify-content: center;
   font-size: 14px;
   line-height: 1;
-  color: #888;
+  color: var(--ink-3);
   background: transparent;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
 
 .sidebar-open:hover {
-  color: #111;
+  color: var(--ink);
   border-color: #ccc;
 }
 
 .sidebar-open:focus-visible {
   outline: none;
-  border-color: #111;
+  border-color: var(--brand);
 }
 
 /* "piconic sora" wordmark: the green piconic logo mark followed by the
@@ -84,14 +100,20 @@
 
 .app-wordmark {
   font-weight: 500;
-  color: rgba(31, 35, 40, 0.5);
+  letter-spacing: 0.01em;
+  color: rgba(31, 35, 40, 0.55);
   transform: translateY(-1px);
 }
 
+/* Tagline sits behind a hairline divider — an editorial byline, not a
+   second heading. */
 .app-tagline {
-  color: #888;
+  color: var(--ink-3);
   font-size: 12px;
+  letter-spacing: 0.02em;
   margin: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--hairline);
 }
 
 /* While the sidebar is closed the header shows only the toggle button (plus
@@ -105,30 +127,32 @@
 
 .lang-select {
   margin-left: auto;
-  padding: 3px 6px;
+  height: 24px;
+  padding: 0 6px;
   font-size: 12px;
   font-family: inherit;
-  color: #888;
+  color: var(--ink-3);
   background: transparent;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
   cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .lang-select:hover {
-  color: #111;
+  color: var(--ink);
   border-color: #ccc;
 }
 
 .lang-select:focus {
   outline: none;
-  border-color: #111;
+  border-color: var(--brand);
 }
 
 .info-button {
   margin-left: 6px;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -136,29 +160,30 @@
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
-  color: #888;
+  color: var(--ink-3);
   background: transparent;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--hairline);
   border-radius: 50%;
   cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .info-button:hover {
-  color: #111;
+  color: var(--ink);
   border-color: #ccc;
 }
 
 .info-button:focus-visible {
   outline: none;
-  border-color: #111;
+  border-color: var(--brand);
 }
 
 /* "?" link to the standalone /how-to page — same tone as .info-button, just
    an <a> (real navigation, not a popover) so it needs no popover attrs. */
 .help-button {
   margin-left: 6px;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -166,22 +191,23 @@
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
-  color: #888;
+  color: var(--ink-3);
   background: transparent;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--hairline);
   border-radius: 50%;
   text-decoration: none;
   cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .help-button:hover {
-  color: #111;
+  color: var(--ink);
   border-color: #ccc;
 }
 
 .help-button:focus-visible {
   outline: none;
-  border-color: #111;
+  border-color: var(--brand);
 }
 
 .info-privacy {
@@ -203,21 +229,22 @@
   justify-content: center;
   font-size: 14px;
   line-height: 1;
-  color: #888;
+  color: var(--ink-3);
   background: transparent;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .sidebar-collapse:hover {
-  color: #111;
+  color: var(--ink);
   border-color: #ccc;
 }
 
 .sidebar-collapse:focus-visible {
   outline: none;
-  border-color: #111;
+  border-color: var(--brand);
 }
 
 /* Panel-toggle glyph shared by both toggle buttons (.sidebar-open in the
@@ -262,21 +289,22 @@
   line-height: 1.4;
   color: #444;
   background: transparent;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
 
 .new-button:hover {
-  color: #111;
+  color: var(--ink);
   border-color: #ccc;
-  background: #fafafa;
+  background: var(--paper-tint);
 }
 
 .new-button:focus-visible {
   outline: none;
-  border-color: #111;
+  border-color: var(--brand);
 }
 
 /* Native Popover API (popover/popovertarget) handles open/close, ESC, and
@@ -293,13 +321,13 @@
   margin: 0;
   padding: 20px 22px;
   width: min(320px, calc(100vw - 48px));
-  border: none;
+  border: 1px solid #f0f0f0;
   border-radius: 12px;
   background: #fff;
   color: #333;
   font-size: 13px;
   line-height: 1.7;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
 .info-popover p {
@@ -418,16 +446,20 @@
   align-items: center;
   gap: 2px;
   border-radius: 6px;
+  transition: background-color 0.15s;
 }
 
+/* Active list: a slim brand-green tick on the left edge, echoing the input
+   focus underline — green always means "this is where you're working". */
 .list-item.is-active {
-  background: #f2f2f2;
+  background: #f4f4f4;
+  box-shadow: inset 2px 0 0 var(--brand);
 }
 
 .list-item-select {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 7px 8px;
+  padding: 7px 8px 7px 10px;
   font-size: 13px;
   font-family: inherit;
   text-align: left;
@@ -446,13 +478,13 @@
 }
 
 .list-item.is-active .list-item-select {
-  color: #111;
+  color: var(--ink);
   font-weight: 600;
 }
 
 .list-item-select:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 1px #111;
+  box-shadow: inset 0 0 0 1px var(--brand);
 }
 
 /* Per-item ⋮ (more-actions) button. Like the old delete ✕ it stays hidden
@@ -559,9 +591,9 @@
   padding: 6px 7px;
   font-size: 13px;
   font-family: inherit;
-  color: #111;
+  color: var(--ink);
   background: #fff;
-  border: 1px solid #111;
+  border: 1px solid var(--brand);
   border-radius: 6px;
   outline: none;
 }
@@ -592,7 +624,7 @@
 .editor-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   width: 100%;
   max-width: 760px;
   margin: 0 auto;
@@ -670,32 +702,41 @@
   text-align: left;
 }
 
+/* Column captions: small, letterspaced, quiet — labels on stationery. */
 .word-table thead th {
-  font-size: 12px;
-  color: #999;
+  font-size: 11px;
+  color: var(--ink-3);
   font-weight: 500;
+  letter-spacing: 0.08em;
+  padding-bottom: 8px;
 }
 
 .word-table input {
   width: 100%;
   box-sizing: border-box;
-  padding: 6px 2px;
+  padding: 7px 2px;
   font-size: 15px;
   font-family: inherit;
   color: inherit;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--hairline);
   outline: none;
+  transition: border-color 0.15s;
 }
 
+/* The one place brand green appears in the editor: under the words being
+   typed right now. */
 .word-table input:focus {
-  border-bottom-color: #111;
+  border-bottom-color: var(--brand);
 }
 
+/* Page boundary: a dashed cut line, like the trim marks on a paper
+   pattern — quieter than a solid rule but unmistakably "the sheet ends
+   here". */
 .word-table .wt-page-break td {
-  border-bottom: 2px solid #111;
-  padding-bottom: 10px;
+  border-bottom: 1px dashed #a3a3a3;
+  padding-bottom: 12px;
 }
 
 .hint {
@@ -708,47 +749,62 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-top: 4px;
 }
 
 .page-meter-track {
-  height: 6px;
-  background: #eee;
-  border-radius: 3px;
+  height: 4px;
+  background: var(--hairline-soft);
+  border-radius: 2px;
   overflow: hidden;
 }
 
 .page-meter-fill {
   height: 100%;
-  background: #111;
-  border-radius: 3px;
-  transition: width 0.2s;
+  background: #383838;
+  border-radius: 2px;
+  transition: width 0.3s ease, background-color 0.3s ease;
 }
 
+/* A full page is a printable page — reward it with the brand green. */
 .page-meter-fill.is-full {
-  background: #2e7d32;
+  background: var(--brand);
 }
 
 .page-meter-caption {
-  font-size: 13px;
-  color: #888;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  letter-spacing: 0.01em;
   margin: 0;
 }
 
 .print-button {
   align-self: center;
-  margin-top: 8px;
-  padding: 10px 28px;
+  margin-top: 12px;
+  padding: 10px 36px;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.02em;
   color: #fff;
-  background: #111;
+  background: var(--ink);
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.print-button:hover:not(:disabled) {
+  background: #000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+.print-button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 
 .print-button:disabled {
-  background: #ccc;
+  background: #d6d6d6;
   cursor: not-allowed;
 }
 
