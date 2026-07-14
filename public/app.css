@@ -64,10 +64,28 @@
   border-color: #111;
 }
 
-.app-header h1 {
-  font-size: 18px;
-  font-weight: 600;
+/* "piconic sora" wordmark: the green piconic logo mark followed by the
+   lowercase product name, mirroring piconic koma's header. */
+.app-title {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 450;
+}
+
+.app-logo {
+  display: block;
+  flex-shrink: 0;
+  height: 18px;
+  width: auto;
+}
+
+.app-wordmark {
+  font-weight: 500;
+  color: rgba(31, 35, 40, 0.5);
+  transform: translateY(-1px);
 }
 
 .app-tagline {
@@ -80,7 +98,7 @@
    the right-aligned lang/info/help controls) — the "Sora" wordmark and
    tagline are dropped at any screen width, since the name already lives in
    the info popover. App.tsx toggles .logo-hidden from !sidebarOpen(). */
-.app-header.logo-hidden h1,
+.app-header.logo-hidden .app-title,
 .app-header.logo-hidden .app-tagline {
   display: none;
 }
