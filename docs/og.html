@@ -1,0 +1,135 @@
+<!doctype html>
+<!-- Template for public/og.png (the OG / Twitter preview card).
+     To regenerate: copy this file into public/ temporarily while
+     `npm run dev` is running, open it in a browser at a 2400x1260
+     viewport, and save a full-viewport PNG screenshot as
+     public/og.png. -->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<style>
+  /* OG card, authored at 2x (2400x1260) for a crisp 1200x630 render. */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 2400px;
+    height: 1260px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #f5f6f5 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', Meiryo, sans-serif;
+  }
+
+  /* ---- left: wordmark + tagline ---- */
+  .left {
+    position: absolute;
+    left: 220px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 44px;
+  }
+  .logo { display: block; height: 150px; width: auto; }
+  .sora {
+    font-size: 140px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: rgba(31, 35, 40, 0.55);
+    transform: translateY(-8px);
+  }
+  .tagline {
+    margin-top: 64px;
+    font-size: 50px;
+    letter-spacing: 0.02em;
+    color: #9a9a9a;
+  }
+  .tagline .sep { margin: 0 24px; color: #c9c9c9; }
+
+  /* ---- right: the printed sheet ---- */
+  .sheet {
+    position: absolute;
+    right: 200px;
+    top: 150px;
+    width: 900px;
+    height: 1400px; /* bleeds off the card's bottom edge */
+    background: #fff;
+    border: 2px solid #ececec;
+    box-shadow:
+      0 40px 120px rgba(0, 0, 0, 0.13),
+      0 8px 24px rgba(0, 0, 0, 0.05);
+    transform: rotate(-2deg);
+    transform-origin: top center;
+  }
+  /* panels: 3 bands x rows, flap margin on top — same anatomy as the
+     real print sheet (see PrintSheets.tsx) */
+  .panel {
+    position: absolute;
+    width: 300px;
+    height: 310px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111;
+  }
+  .front { font-size: 66px; }
+  .back { font-size: 58px; }
+  /* fold dots at fold-row x cut-line intersections, like the app */
+  .dot {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #111;
+    transform: translate(-50%, -50%);
+  }
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="title">
+      <svg class="logo" viewBox="55 48 390 104" xmlns="http://www.w3.org/2000/svg" aria-label="piconic"><g fill="#00b769"><path d="M136.32,53.25c-3.1,0-5.62,2.49-5.62,5.56,0,3.07,2.52,5.56,5.62,5.56,3.1,0,5.62-2.49,5.62-5.56s-2.52-5.56-5.62-5.56Z"/><rect x="132.05" y="75.12" width="8.53" height="49.65"/><path d="M371.34,52.88c-3.1,0-5.62,2.49-5.62,5.56s2.52,5.56,5.62,5.56c3.1,0,5.62-2.49,5.62-5.56s-2.52-5.56-5.62-5.56Z"/><rect x="367.08" y="75.12" width="8.53" height="49.65"/><path d="M248.89,74.52c-14.02,0-25.14,11.41-25.14,25.42s11.12,25.42,25.14,25.42,25.14-11.4,25.14-25.42-11.12-25.42-25.14-25.42ZM248.89,116.28c-9.01,0-16.62-7.33-16.62-16.33s7.61-16.33,16.62-16.33,16.62,7.33,16.62,16.33-7.61,16.33-16.62,16.33Z"/><path d="M199.11,111.56c-3.02,2.92-7.14,4.72-11.61,4.72-9.01,0-16.62-7.33-16.62-16.33s7.61-16.33,16.62-16.33c4.47,0,8.59,1.81,11.61,4.72l6.28-6.28c-4.54-4.65-10.85-7.53-17.89-7.53-14.02,0-25.14,11.41-25.14,25.42s11.12,25.42,25.14,25.42c7.05,0,13.36-2.88,17.89-7.53l-6.28-6.28Z"/><path d="M434.13,111.56c-3.02,2.92-7.14,4.72-11.61,4.72-9.01,0-16.62-7.33-16.62-16.33s7.61-16.33,16.62-16.33c4.47,0,8.59,1.81,11.61,4.72l6.28-6.28c-4.54-4.65-10.85-7.53-17.89-7.53-14.02,0-25.14,11.41-25.14,25.42s11.12,25.42,25.14,25.42c7.05,0,13.36-2.88,17.89-7.53l-6.28-6.28Z"/><path d="M319.49,74.52c-14.02,0-25.14,11.41-25.14,25.42h0v24.83h8.53v-24.83c0-9.01,7.61-16.33,16.62-16.33s16.62,7.33,16.62,16.33v24.83h8.53v-24.83h0c0-14.02-11.12-25.42-25.14-25.42Z"/><path d="M85,74.52c-14.02,0-25.14,11.41-25.14,25.42v46.78h8.53v-27.7c4.41,3.93,10.2,6.34,16.62,6.34,14.02,0,25.14-11.4,25.14-25.42s-11.12-25.42-25.14-25.42ZM85,116.28c-9.01,0-16.62-7.33-16.62-16.33s7.61-16.33,16.62-16.33,16.62,7.33,16.62,16.33-7.61,16.33-16.62,16.33Z"/></g></svg>
+      <span class="sora">sora</span>
+    </div>
+    <p class="tagline">そらで覚える<span class="sep">・</span>Learn by heart</p>
+  </div>
+
+  <div class="sheet" id="sheet"></div>
+
+  <script>
+    // Sheet anatomy (mirrors PrintSheets.tsx): 3 bands, flap margin on
+    // top, panels stacked per band, fold dots at every fold-row x
+    // cut-line intersection.
+    const sheet = document.getElementById('sheet');
+    const BAND_W = 300, PANEL_H = 310, GRID_TOP = 120;
+    const BANDS = 3, ROWS = 4; // rows enough to bleed past the crop
+
+    // panels: band 0 carries the Hello / こんにちは pair
+    const words = { '0,0': ['front', 'Hello'], '0,1': ['back', 'こんにちは'] };
+    for (let b = 0; b < BANDS; b++) {
+      for (let r = 0; r < ROWS; r++) {
+        const w = words[b + ',' + r];
+        if (!w) continue;
+        const el = document.createElement('div');
+        el.className = 'panel ' + w[0];
+        el.style.left = b * BAND_W + 'px';
+        el.style.top = GRID_TOP + r * PANEL_H + 'px';
+        el.textContent = w[1];
+        sheet.appendChild(el);
+      }
+    }
+    // dots: interior band boundaries x every fold row (incl. grid top)
+    for (let b = 1; b < BANDS; b++) {
+      for (let r = 0; r <= ROWS; r++) {
+        const d = document.createElement('div');
+        d.className = 'dot';
+        d.style.left = b * BAND_W + 'px';
+        d.style.top = GRID_TOP + r * PANEL_H + 'px';
+        sheet.appendChild(d);
+      }
+    }
+  </script>
+</body>
+</html>
