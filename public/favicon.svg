@@ -5,6 +5,6 @@
     stroke-width="4.5"
     stroke-linecap="round"
     stroke-linejoin="round"
-    d="M5 3 L27 9 L5 15 L27 21 L5 27 L27 31"
+    d="M5 21 L16 9 L27 21"
   />
 </svg>
