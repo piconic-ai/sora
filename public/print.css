@@ -59,6 +59,13 @@
   stroke-width: 0.3mm;
 }
 
+/* Fold-guide dots at each fold-row × cut-line intersection (see
+   PrintSheets.tsx) — cut in half by the strip cuts, they leave a fold
+   mark on both resulting strip edges. */
+.sheet .marks circle {
+  fill: #000;
+}
+
 .sheet .marks text {
   fill: #000;
   font-size: 3mm;
