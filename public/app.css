@@ -47,13 +47,13 @@
   gap: 10px;
 }
 
-/* Header-left icon button that reopens the list sidebar (.workspace's
-   sidebar-closed modifier below). Only rendered while the sidebar is
-   closed (see components/App.tsx) — when it's open, the sidebar's own
-   .sidebar-collapse button lives at its top instead, so the header next to
-   "Sora" never shows a toggle that could read as a logo. Same visual
-   language as .info-button. */
+/* Reopens the list sidebar. Rendered as the workspace's first column while
+   the sidebar is closed (see components/App.tsx), which lands it at the
+   exact screen position of the sidebar's own .sidebar-collapse button —
+   the two toggles share one spot, so open/close never requires moving the
+   mouse. */
 .sidebar-open {
+  flex-shrink: 0;
   width: 24px;
   height: 24px;
   padding: 0;
@@ -213,13 +213,14 @@
   color: #888;
 }
 
-/* Collapses the sidebar (moved here, above "New", from the header — a
-   header-left ☰ read as a logo next to "Sora"; see components/App.tsx).
-   Right-aligned and icon-sized so it reads as a subtle affordance rather
-   than a second primary action competing with "New" below it; the
+/* Collapses the sidebar. Sits at the sidebar's top-LEFT edge, above "New",
+   so it occupies the same screen position as .sidebar-open (the workspace-
+   left reopen button shown while closed) — toggling back and forth keeps
+   the cursor in one place. Icon-sized so it reads as a subtle affordance
+   rather than a second primary action competing with "New" below it; the
    sidebar's own flex `gap` (10px) already spaces it from .new-button. */
 .sidebar-collapse {
-  align-self: flex-end;
+  align-self: flex-start;
   width: 24px;
   height: 24px;
   padding: 0;

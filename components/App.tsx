@@ -683,18 +683,6 @@ export function App(props: AppProps) {
   return (
     <div className="app">
       <header className={sidebarOpen() ? 'app-header no-print' : 'app-header no-print logo-hidden'}>
-        {!sidebarOpen() ? (
-          <button
-            type="button"
-            className="sidebar-open"
-            aria-expanded={sidebarOpen()}
-            aria-controls="list-sidebar"
-            aria-label={t().sidebarToggleLabel}
-            onClick={() => setSidebarOpen(true)}
-          >
-            <span className="sidebar-toggle-icon" aria-hidden="true" />
-          </button>
-        ) : null}
         <h1 className="app-title">
           <svg className="app-logo" viewBox="55 48 390 104" xmlns="http://www.w3.org/2000/svg" aria-label="piconic">
             <g fill="#00b769">
@@ -766,6 +754,22 @@ export function App(props: AppProps) {
         </p>
       </div>
       <div className={sidebarOpen() ? 'workspace no-print' : 'workspace no-print sidebar-closed'}>
+        {/* Reopen button, rendered where the sidebar's own collapse button
+            sits while open (workspace top-left) — the two toggles share one
+            screen position, so opening and closing never requires moving
+            the mouse. */}
+        {!sidebarOpen() ? (
+          <button
+            type="button"
+            className="sidebar-open"
+            aria-expanded={sidebarOpen()}
+            aria-controls="list-sidebar"
+            aria-label={t().sidebarToggleLabel}
+            onClick={() => setSidebarOpen(true)}
+          >
+            <span className="sidebar-toggle-icon" aria-hidden="true" />
+          </button>
+        ) : null}
         {sidebarOpen() && (
           <div className="sidebar-scrim" aria-hidden="true" onClick={() => setSidebarOpen(false)} />
         )}
