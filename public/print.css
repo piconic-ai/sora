@@ -54,11 +54,6 @@
   pointer-events: none;
 }
 
-.sheet .marks line {
-  stroke: #000;
-  stroke-width: 0.3mm;
-}
-
 /* Fold-guide dots at each fold-row × cut-line intersection (see
    PrintSheets.tsx) — cut in half by the strip cuts, they leave a fold
    mark on both resulting strip edges. */

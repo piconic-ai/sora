@@ -11,7 +11,6 @@ interface PrintSheetsProps {
   settings: Settings
 }
 
-const TICK_MM = 2
 // Fold-guide dot radius. 0.4mm prints as a subtle ~0.8mm dot — visible
 // while folding, unobtrusive on the finished card.
 const DOT_R_MM = 0.4
@@ -46,7 +45,7 @@ function escapeHtml(s: string): string {
 function renderSheetHtml(page: PageLayout, settings: Settings): string {
   const panelsPerBand = page.bands[0]?.panels.length ?? 0
   const geo = computeSheetGeometry(settings, panelsPerBand)
-  const { usableY0, usableY1, bandWidth, gridTop, foldRows, cutBands } = geo
+  const { bandWidth, gridTop, foldRows, cutBands } = geo
 
   const bandsHtml = page.bands
     .map(
@@ -64,28 +63,19 @@ function renderSheetHtml(page: PageLayout, settings: Settings): string {
     )
     .join('')
 
-  // Fold guides: a dot at every fold-row × cut-line intersection. Cutting
-  // the sheet into strips slices each dot in half, leaving a mark on both
-  // strips' edges at every fold position — each strip carries its own fold
-  // guides, no ruler needed. (The strips' outer edges get no dots; the
-  // opposite edge's marks suffice for folding.)
+  // The only printed marks: a dot at every fold-row × cut-line
+  // intersection. The dot columns show where to cut the sheet into strips,
+  // and cutting slices each dot in half, leaving a mark on both strips'
+  // edges at every fold position — each strip carries its own fold guides,
+  // no ruler needed. (No marks at the paper edges: printers often clip
+  // them, depending on the printable-area settings.)
   const foldDotsHtml = cutBands
     .map((x) => foldRows.map((y) => `<circle cx="${x}" cy="${y}" r="${DOT_R_MM}" />`).join(''))
     .join('')
 
-  // Cut guides: short vertical ticks at the top/bottom edges marking where
-  // to start each strip cut.
-  const cutTicksHtml = cutBands
-    .map(
-      (x) =>
-        `<line x1="${x}" y1="${usableY0}" x2="${x}" y2="${usableY0 + TICK_MM}" />` +
-        `<line x1="${x}" y1="${usableY1 - TICK_MM}" x2="${x}" y2="${usableY1}" />`,
-    )
-    .join('')
-
   return `<div class="sheet" style="--bands:${settings.bands}; --panel-h:${settings.panelHeightMm}mm; --font-pt:${settings.fontSizePt}pt; --sheet-margin:${settings.marginMm}mm; --grid-top:${gridTop}mm;">
     <div class="bands">${bandsHtml}</div>
-    <svg class="marks" viewBox="0 0 ${A4.widthMm} ${A4.heightMm}" preserveAspectRatio="none">${foldDotsHtml}${cutTicksHtml}</svg>
+    <svg class="marks" viewBox="0 0 ${A4.widthMm} ${A4.heightMm}" preserveAspectRatio="none">${foldDotsHtml}</svg>
   </div>`
 }
 
