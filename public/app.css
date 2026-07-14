@@ -573,6 +573,15 @@
     max-height: none;
   }
 
+  /* On narrow screens the header collapses to just the sidebar-toggle
+     button (plus the right-aligned lang/info/help controls); the "Sora"
+     wordmark and tagline are dropped — the name already lives in the info
+     popover, and the row is too tight to carry a logo next to the toggle. */
+  .app-header h1,
+  .app-tagline {
+    display: none;
+  }
+
   .sidebar-scrim {
     display: block;
     position: fixed;

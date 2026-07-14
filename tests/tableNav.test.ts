@@ -196,12 +196,11 @@ describe('resolveKeyAction: Backspace', () => {
     ).toBe('moveToFrontCell')
   })
 
-  // Backspace on an empty front cell mirrors Enter's forward move
-  // (front -> back -> next-row-front) in reverse: it steps back into the
-  // previous row's back cell regardless of what either of this row's cells
-  // hold — the same way col-1's moveToFrontCell above ignores rowEmpty.
-  // Row deletion is Delete's job now (see the 'Delete' describe block
-  // below); Backspace only ever moves focus.
+  // Backspace on an empty front cell whose row is NOT fully empty mirrors
+  // Enter's forward move (front -> back -> next-row-front) in reverse: it
+  // steps back into the previous row's back cell. Only when the whole row is
+  // empty does it delete the row instead (see the deleteRowFocusPrev tests
+  // below).
   test('moves to the previous row back cell even when the back cell still has content', () => {
     expect(
       resolveKeyAction(
@@ -225,7 +224,10 @@ describe('resolveKeyAction: Backspace', () => {
     ).toBe('none')
   })
 
-  test('moves to the previous row back cell from an empty middle row (not first, not last)', () => {
+  // On an otherwise-empty middle row (not first, not last), Backspace in the
+  // front cell removes the row entirely and steps back into the previous
+  // row's back cell — the row is genuinely gone, not just left behind.
+  test('deletes an empty middle row (not first, not last) and focuses the previous back cell', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -238,15 +240,13 @@ describe('resolveKeyAction: Backspace', () => {
           isLastRow: false,
         }),
       ),
-    ).toBe('movePrevCell')
+    ).toBe('deleteRowFocusPrev')
   })
 
-  // Unlike the old deleteRowFocusPrev behavior, Backspace never deletes a
-  // row anymore, so the trailing blank "ghost row" (see WordTable's
-  // ensureTrailingBlank) is not a special case here: moving focus out of it
-  // is harmless since nothing is removed. Only isFirstRow (no previous row
-  // to move into) blocks the move.
-  test('moves to the previous row back cell from the trailing ghost row (isLastRow) too', () => {
+  // The trailing blank "ghost row" (see WordTable's ensureTrailingBlank) must
+  // never be deleted — it is the always-present place to type the next pair.
+  // Backspace out of it only moves focus to the previous row's back cell.
+  test('moves to the previous row back cell from the trailing ghost row (isLastRow) without deleting it', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -386,7 +386,7 @@ describe('resolveKeyAction: modifier keys defer to OS/browser shortcuts', () => 
           col: 0,
           caretAtStart: true,
           cellEmpty: true,
-          rowEmpty: true,
+          rowEmpty: false,
           isFirstRow: false,
           isLastRow: false,
           shiftKey: true,

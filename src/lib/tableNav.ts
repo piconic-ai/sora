@@ -20,6 +20,7 @@ export type Action =
   | 'moveNextCell'
   | 'movePrevCell'
   | 'deleteRowFocusNext'
+  | 'deleteRowFocusPrev'
   | 'moveToFrontCell'
 
 export interface KeyActionInput {
@@ -106,12 +107,14 @@ export function resolveKeyAction(input: KeyActionInput): Action {
     case 'Backspace':
       if (!(caretAtStart && cellEmpty)) return 'none'
       if (col === 1) return 'moveToFrontCell'
-      // col === 0 (front cell): mirror Enter's forward move
-      // (front -> back -> next-row-front) in reverse — Backspace on an
-      // empty front cell steps back into the previous row's back cell,
-      // regardless of what that row's cells hold. isFirstRow: no previous
-      // row to move into. Row deletion is Delete's job now (see the
-      // 'Delete' case below) — Backspace never removes a row.
+      // col === 0 (front cell): on an otherwise-empty row, Backspace removes
+      // the row entirely and steps back into the previous row's back cell —
+      // never the trailing ghost row (isLastRow), which must always remain.
+      if (rowEmpty && !isFirstRow && !isLastRow) return 'deleteRowFocusPrev'
+      // Otherwise mirror Enter's forward move (front -> back -> next-row-
+      // front) in reverse: Backspace on an empty front cell steps back into
+      // the previous row's back cell. isFirstRow: no previous row to move
+      // into.
       if (isFirstRow) return 'none'
       return 'movePrevCell'
 

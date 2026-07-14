@@ -248,6 +248,17 @@ export function WordTable(props: WordTableProps) {
         }
         break
       }
+      case 'deleteRowFocusPrev': {
+        const targetTr = trs[rowIndex - 1]
+        const targetKey = targetTr?.getAttribute('data-key') ?? null
+        deleteRowById(rowId)
+        if (targetKey !== null) {
+          requestAnimationFrame(() => {
+            focusCellIn(tbody.querySelector(`tr[data-key="${targetKey}"]`), 1)
+          })
+        }
+        break
+      }
       case 'none':
         break
     }
