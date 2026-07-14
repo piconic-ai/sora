@@ -76,6 +76,15 @@
   margin: 0;
 }
 
+/* While the sidebar is closed the header shows only the toggle button (plus
+   the right-aligned lang/info/help controls) — the "Sora" wordmark and
+   tagline are dropped at any screen width, since the name already lives in
+   the info popover. App.tsx toggles .logo-hidden from !sidebarOpen(). */
+.app-header.logo-hidden h1,
+.app-header.logo-hidden .app-tagline {
+  display: none;
+}
+
 .lang-select {
   margin-left: auto;
   padding: 3px 6px;
@@ -191,6 +200,36 @@
 .sidebar-collapse:focus-visible {
   outline: none;
   border-color: #111;
+}
+
+/* Panel-toggle glyph shared by both toggle buttons (.sidebar-open in the
+   header, .sidebar-collapse in the sidebar). Drawn as a CSS mask over a
+   currentColor fill — kept in the stylesheet rather than as inline <svg> so
+   it inherits the button's hover color for free and sidesteps BarefootJS's
+   SVG-namespace gap for markup created/destroyed by conditional rendering. */
+.sidebar-toggle-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Closed → the "expand" glyph (chevron pointing right, into the panel). */
+.sidebar-open .sidebar-toggle-icon {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cpolyline points%3D%222.5%2C4 5.5%2C8 2.5%2C12%22%2F%3E%3Cline x1%3D%228%22 y1%3D%224%22 x2%3D%2214%22 y2%3D%224%22%2F%3E%3Cline x1%3D%228%22 y1%3D%228%22 x2%3D%2214%22 y2%3D%228%22%2F%3E%3Cline x1%3D%228%22 y1%3D%2212%22 x2%3D%2214%22 y2%3D%2212%22%2F%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cpolyline points%3D%222.5%2C4 5.5%2C8 2.5%2C12%22%2F%3E%3Cline x1%3D%228%22 y1%3D%224%22 x2%3D%2214%22 y2%3D%224%22%2F%3E%3Cline x1%3D%228%22 y1%3D%228%22 x2%3D%2214%22 y2%3D%228%22%2F%3E%3Cline x1%3D%228%22 y1%3D%2212%22 x2%3D%2214%22 y2%3D%2212%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* Open → the "collapse" glyph (chevron pointing left, back toward the edge). */
+.sidebar-collapse .sidebar-toggle-icon {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cline x1%3D%222%22 y1%3D%224%22 x2%3D%228%22 y2%3D%224%22%2F%3E%3Cline x1%3D%222%22 y1%3D%228%22 x2%3D%228%22 y2%3D%228%22%2F%3E%3Cline x1%3D%222%22 y1%3D%2212%22 x2%3D%228%22 y2%3D%2212%22%2F%3E%3Cpolyline points%3D%2213.5%2C4 10.5%2C8 13.5%2C12%22%2F%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cline x1%3D%222%22 y1%3D%224%22 x2%3D%228%22 y2%3D%224%22%2F%3E%3Cline x1%3D%222%22 y1%3D%228%22 x2%3D%228%22 y2%3D%228%22%2F%3E%3Cline x1%3D%222%22 y1%3D%2212%22 x2%3D%228%22 y2%3D%2212%22%2F%3E%3Cpolyline points%3D%2213.5%2C4 10.5%2C8 13.5%2C12%22%2F%3E%3C%2Fsvg%3E");
 }
 
 /* Full-width "New" button at the top of the sidebar. */
@@ -571,15 +610,6 @@
 
   .list-items {
     max-height: none;
-  }
-
-  /* On narrow screens the header collapses to just the sidebar-toggle
-     button (plus the right-aligned lang/info/help controls); the "Sora"
-     wordmark and tagline are dropped — the name already lives in the info
-     popover, and the row is too tight to carry a logo next to the toggle. */
-  .app-header h1,
-  .app-tagline {
-    display: none;
   }
 
   .sidebar-scrim {

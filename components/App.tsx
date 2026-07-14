@@ -682,7 +682,7 @@ export function App(props: AppProps) {
 
   return (
     <div className="app">
-      <header className="app-header no-print">
+      <header className={sidebarOpen() ? 'app-header no-print' : 'app-header no-print logo-hidden'}>
         {!sidebarOpen() ? (
           <button
             type="button"
@@ -692,7 +692,7 @@ export function App(props: AppProps) {
             aria-label={t().sidebarToggleLabel}
             onClick={() => setSidebarOpen(true)}
           >
-            <span aria-hidden="true">☰</span>
+            <span className="sidebar-toggle-icon" aria-hidden="true" />
           </button>
         ) : null}
         <h1>Sora</h1>
@@ -763,7 +763,7 @@ export function App(props: AppProps) {
             aria-label={t().sidebarToggleLabel}
             onClick={() => setSidebarOpen(false)}
           >
-            <span aria-hidden="true">☰</span>
+            <span className="sidebar-toggle-icon" aria-hidden="true" />
           </button>
           <button type="button" className="new-button" onClick={createNewList}>
             <span className="new-button-plus" aria-hidden="true">+</span>
