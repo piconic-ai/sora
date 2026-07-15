@@ -63,11 +63,12 @@
      folds. Same silhouette as the favicon's chevron, turned upright. */
   .strip {
     position: absolute;
-    right: 260px;
-    top: 50%;
-    transform: translateY(-51%);
+    right: 280px;
+    top: 150px; /* the strip's start stays visible; the rest runs off-card */
     display: flex;
     flex-direction: column;
+    /* soft ambient lift that follows the zigzag silhouette */
+    filter: drop-shadow(0 24px 48px rgba(20, 24, 22, 0.14));
   }
   .face {
     width: 400px;
@@ -96,18 +97,6 @@
   .face .front { font-size: 64px; }
   .face .back { font-size: 46px; color: #34373a; }
 
-  /* soft ground shadow under the strip's bottom edge */
-  .strip-shadow {
-    position: absolute;
-    right: 240px;
-    top: 50%;
-    transform: translateY(440px);
-    width: 440px;
-    height: 34px;
-    border-radius: 50%;
-    background: rgba(20, 24, 22, 0.2);
-    filter: blur(20px);
-  }
 </style>
 </head>
 <body>
@@ -120,10 +109,11 @@
     <p class="desc">The flashcard maker you print on paper.</p>
   </div>
 
-  <div class="strip-shadow"></div>
   <div class="strip">
     <div class="face a"><span class="front">Hello</span></div>
     <div class="face b"><span class="back">こんにちは</span></div>
+    <div class="face a"></div>
+    <div class="face b"></div>
     <div class="face a"></div>
     <div class="face b"></div>
     <div class="face a"></div>
