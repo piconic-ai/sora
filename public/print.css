@@ -17,18 +17,17 @@
   font-family: var(--font-print);
 }
 
-/* Panels are a FLAT list in band-major order (see PrintSheets.tsx's
-   SheetVM comment) — grid-auto-flow: column stacks --rows panels down
-   each column before starting the next band, reproducing the old nested
-   bands > panels markup exactly. */
 .sheet .bands {
   display: grid;
   grid-template-columns: repeat(var(--bands), 1fr);
-  grid-template-rows: repeat(var(--rows, 1), var(--panel-h));
-  grid-auto-flow: column;
   height: 100%;
   padding-top: var(--grid-top, 0mm);
   box-sizing: border-box;
+}
+
+.sheet .band {
+  display: flex;
+  flex-direction: column;
 }
 
 .sheet .panel {

@@ -1,7 +1,7 @@
 'use client'
 
 import { createMemo } from '@barefootjs/client'
-import type { LayoutResult, Settings } from '../src/lib/types'
+import type { LayoutResult, PageLayout, Settings } from '../src/lib/types'
 import { A4 } from '../src/lib/constants'
 import { computeSheetGeometry } from '../src/lib/sheetGeometry'
 import { fitFontSizePt } from '../src/lib/fit'
@@ -16,27 +16,21 @@ interface PrintSheetsProps {
 const DOT_R_MM = 0.4
 
 // preserveAspectRatio is still missing from @barefootjs/jsx's <svg>
-// attribute types (noted in piconic-ai/barefootjs#2264). Spreading it from
-// a const object literal folds it statically into both the SSR and client
-// templates (a function-call spread would stay dynamic and drop from the
-// client template).
+// attribute types. Spreading it from a const object literal folds it
+// statically into both the SSR and client templates (a function-call spread
+// would stay dynamic and drop from the client template).
 const marksSvgAttrs: Record<string, string> = { preserveAspectRatio: 'none' }
 
-// Plain-data view model for one printed sheet, rendered as JSX loops since
-// @barefootjs 0.19.1 fixed piconic-ai/barefootjs#2264 (this component's
-// previous life was an innerHTML workaround — see git history).
-//
-// The panel list is deliberately FLAT (band-major order), not nested
-// bands > panels: this component is inlined into the App island, which
-// puts a bands loop's panel text at nesting depth 3 — one deeper than the
-// depth-2 case #2264 fixed — and its textContent update effect silently
-// vanishes again (piconic-ai/barefootjs#2282). A flat sheets > panels
-// shape keeps the reactive word text at depth 2, and CSS grid
-// (grid-auto-flow: column, see print.css's .sheet .bands) reproduces the
-// exact same column layout the nested markup had.
+// Plain-data view models for the printed sheets, rendered as nested JSX
+// loops (sheets > bands > panels). This deep-nested reactive text — a panel's
+// {panel.text} at loop depth 3 once this component is inlined into the App
+// island — is exactly what @barefootjs 0.20.0 fixed (piconic-ai/barefootjs
+// #2282); before that the innermost text child silently froze at its SSR
+// value, which is why this component spent 0.18.x on an innerHTML workaround
+// and 0.19.x on a flattened single-loop shape (see git history).
 interface SheetVM {
   styleVars: string
-  panels: PanelVM[]
+  bands: BandVM[]
   // Fold guides: a dot at every fold-row × cut-line intersection. The dot
   // columns show where to cut the sheet into strips, and cutting slices
   // each dot in half, leaving a mark on both strips' edges at every fold
@@ -44,6 +38,10 @@ interface SheetVM {
   // (No marks at the paper edges: printers often clip them, depending on
   // the printable-area settings.)
   dots: { x: number; y: number }[]
+}
+
+interface BandVM {
+  panels: PanelVM[]
 }
 
 interface PanelVM {
@@ -55,34 +53,32 @@ interface PanelVM {
   text: string
 }
 
-export function PrintSheets(props: PrintSheetsProps) {
-  // Lives inside the component (not module level): the client-JS inliner
-  // only traces imports referenced from the component body's closures, so a
-  // top-level helper calling computeSheetGeometry/fitFontSizePt ships to the
-  // browser without their definitions — ReferenceError at runtime
-  // (piconic-ai/barefootjs#2283).
-  const buildSheetVMs = (layout: LayoutResult, settings: Settings): SheetVM[] =>
-    layout.pages.map((page) => {
-      const panelsPerBand = page.bands[0]?.panels.length ?? 0
-      const geo = computeSheetGeometry(settings, panelsPerBand)
-      return {
-        styleVars: `--bands:${settings.bands}; --rows:${panelsPerBand}; --panel-h:${settings.panelHeightMm}mm; --font-pt:${settings.fontSizePt}pt; --sheet-margin:${settings.marginMm}mm; --grid-top:${geo.gridTop}mm;`,
-        panels: page.bands.flatMap((band) =>
-          band.panels.map((panel) => {
-            const fitted = panel.text
-              ? fitFontSizePt(panel.text, geo.bandWidth, settings.fontSizePt)
-              : settings.fontSizePt
-            return {
-              cls: panel.kind === 'empty' ? 'panel empty' : 'panel',
-              style: fitted !== settings.fontSizePt ? `font-size:${fitted}pt` : undefined,
-              text: panel.text,
-            }
-          }),
-        ),
-        dots: geo.cutBands.flatMap((x) => geo.foldRows.map((y) => ({ x, y }))),
-      }
-    })
+function buildSheetVM(page: PageLayout, settings: Settings): SheetVM {
+  const panelsPerBand = page.bands[0]?.panels.length ?? 0
+  const geo = computeSheetGeometry(settings, panelsPerBand)
+  return {
+    styleVars: `--bands:${settings.bands}; --panel-h:${settings.panelHeightMm}mm; --font-pt:${settings.fontSizePt}pt; --sheet-margin:${settings.marginMm}mm; --grid-top:${geo.gridTop}mm;`,
+    bands: page.bands.map((band) => ({
+      panels: band.panels.map((panel) => {
+        const fitted = panel.text
+          ? fitFontSizePt(panel.text, geo.bandWidth, settings.fontSizePt)
+          : settings.fontSizePt
+        return {
+          cls: panel.kind === 'empty' ? 'panel empty' : 'panel',
+          style: fitted !== settings.fontSizePt ? `font-size:${fitted}pt` : undefined,
+          text: panel.text,
+        }
+      }),
+    })),
+    dots: geo.cutBands.flatMap((x) => geo.foldRows.map((y) => ({ x, y }))),
+  }
+}
 
+function buildSheetVMs(layout: LayoutResult, settings: Settings): SheetVM[] {
+  return layout.pages.map((page) => buildSheetVM(page, settings))
+}
+
+export function PrintSheets(props: PrintSheetsProps) {
   const sheets = createMemo(() => buildSheetVMs(props.layout, props.settings))
 
   return (
@@ -90,9 +86,13 @@ export function PrintSheets(props: PrintSheetsProps) {
       {sheets().map((sheet, si) => (
         <div key={si} className="sheet" style={sheet.styleVars}>
           <div className="bands">
-            {sheet.panels.map((panel, pi) => (
-              <div key={pi} className={panel.cls} style={panel.style}>
-                {panel.text}
+            {sheet.bands.map((band, bi) => (
+              <div key={bi} className="band">
+                {band.panels.map((panel, pi) => (
+                  <div key={pi} className={panel.cls} style={panel.style}>
+                    {panel.text}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
