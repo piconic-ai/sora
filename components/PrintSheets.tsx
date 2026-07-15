@@ -30,10 +30,10 @@ const marksSvgAttrs: Record<string, string> = { preserveAspectRatio: 'none' }
 // bands > panels: this component is inlined into the App island, which
 // puts a bands loop's panel text at nesting depth 3 — one deeper than the
 // depth-2 case #2264 fixed — and its textContent update effect silently
-// vanishes again. A flat sheets > panels shape keeps the reactive word
-// text at depth 2, and CSS grid (grid-auto-flow: column, see print.css's
-// .sheet .bands) reproduces the exact same column layout the nested
-// markup had.
+// vanishes again (piconic-ai/barefootjs#2282). A flat sheets > panels
+// shape keeps the reactive word text at depth 2, and CSS grid
+// (grid-auto-flow: column, see print.css's .sheet .bands) reproduces the
+// exact same column layout the nested markup had.
 interface SheetVM {
   styleVars: string
   panels: PanelVM[]
@@ -59,8 +59,8 @@ export function PrintSheets(props: PrintSheetsProps) {
   // Lives inside the component (not module level): the client-JS inliner
   // only traces imports referenced from the component body's closures, so a
   // top-level helper calling computeSheetGeometry/fitFontSizePt ships to the
-  // browser without their definitions (ReferenceError at runtime; found the
-  // hard way after the 0.19.1 upgrade — candidate for a barefootjs issue).
+  // browser without their definitions — ReferenceError at runtime
+  // (piconic-ai/barefootjs#2283).
   const buildSheetVMs = (layout: LayoutResult, settings: Settings): SheetVM[] =>
     layout.pages.map((page) => {
       const panelsPerBand = page.bands[0]?.panels.length ?? 0
