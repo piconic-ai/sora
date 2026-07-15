@@ -24,7 +24,7 @@
   .left {
     position: absolute;
     left: 220px;
-    top: 150px; /* brand row sits on the strip's top edge line */
+    top: 580px; /* brand row sits on the strip's top edge line, near mid-card */
   }
   .title {
     display: flex;
@@ -37,9 +37,12 @@
     font-weight: 500;
     letter-spacing: 0.01em;
     color: rgba(31, 35, 40, 0.55);
+    /* measured: glyph-body center sits 0.123em below the logo's -- see
+       the probe/canvas measurement in the commit message */
+    transform: translateY(-0.123em);
   }
   .catch {
-    margin-top: 280px;
+    margin-top: 72px;
     font-size: 144px;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -62,7 +65,7 @@
   .strip {
     position: absolute;
     right: 280px;
-    top: 150px; /* the strip's start stays visible; the rest runs off-card */
+    top: 580px; /* the strip's start stays visible; the rest runs off-card */
     display: flex;
     flex-direction: column;
     /* soft ambient lift that follows the zigzag silhouette */
