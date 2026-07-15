@@ -59,8 +59,7 @@ function ensureTrailingBlank(rows: Row[]): Row[] {
   return rows
 }
 
-// Focuses the input in `col` (0 = front, 1 = back) inside `tr`, if both
-// exist, and moves the caret to the end of its value.
+// col 0 = front input, 1 = back input.
 function focusCellIn(tr: Element | null | undefined, col: Col) {
   if (!tr) return
   const input = tr.querySelectorAll('input')[col] as HTMLInputElement | undefined
@@ -109,8 +108,7 @@ export function WordTable(props: WordTableProps) {
   })
 
   // Invariant: there is always exactly one empty row at the end of the
-  // table, so there is always somewhere to type the next pair — this is
-  // what replaces the old "+ Add row" button. Enforced by
+  // table, so there is always somewhere to type the next pair. Enforced by
   // ensureTrailingBlank() in every code path below that produces a new
   // `rows` array (edit, paste, row deletion).
   const editCell = (id: number, field: 'front' | 'back', value: string) => {

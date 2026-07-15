@@ -351,8 +351,7 @@ export function App(props: AppProps) {
     focusEditorInput()
   }
 
-  // Appends a fresh empty card and switches to it — the sidebar's New button
-  // calls this.
+  // The sidebar's New button calls this.
   //
   // Invariant this relies on: `lists().length` never exceeds MAX_LISTS,
   // because this is the *only* place a card is ever added, and it always
@@ -634,11 +633,10 @@ export function App(props: AppProps) {
     document.documentElement.classList.add('js-ready')
     if (isNarrowViewport()) setSidebarOpen(false)
 
-    const flushOnHide = () => flushSave()
     const flushOnVisibilityChange = () => {
       if (document.hidden) flushSave()
     }
-    window.addEventListener('pagehide', flushOnHide)
+    window.addEventListener('pagehide', flushSave)
     document.addEventListener('visibilitychange', flushOnVisibilityChange)
 
     // Dismiss an open ⋮ menu on any click outside its wrapper. Clicks on the
@@ -666,7 +664,7 @@ export function App(props: AppProps) {
     window.addEventListener('resize', onScrollOrResize)
 
     onCleanup(() => {
-      window.removeEventListener('pagehide', flushOnHide)
+      window.removeEventListener('pagehide', flushSave)
       document.removeEventListener('visibilitychange', flushOnVisibilityChange)
       document.removeEventListener('click', onDocClick)
       document.removeEventListener('keydown', onDocKeyDown)

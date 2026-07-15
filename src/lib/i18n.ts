@@ -33,7 +33,7 @@ export interface Messages {
   newList: string
   // aria-label for the sidebar's list region.
   listsLabel: string
-  // aria-label for each list's delete button (now inside the ⋮ menu).
+  // aria-label for each list's delete button (inside the ⋮ menu).
   deleteThisList: string
   // "Rename" — the ⋮ menu's rename item, and the aria-label of the inline
   // rename input.

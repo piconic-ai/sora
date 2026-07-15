@@ -31,7 +31,7 @@ export const renderer = jsxRenderer(({ children, title, locale }) => {
         <meta property="og:locale" content={loc === 'ja' ? 'ja_JP' : 'en_US'} />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        {/* Link all three sheets so the browser fetches them in
+        {/* Link every sheet directly so the browser fetches them in
             parallel — chaining via styles.css @import would defer
             tokens/uno to a second round-trip and flash unstyled DOM.
             tokens.css first so CSS variables are defined before any

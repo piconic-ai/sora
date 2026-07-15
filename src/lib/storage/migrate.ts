@@ -21,7 +21,7 @@ const DRAFT_KEY = 'current'
 //   into a brand-new list (createList), makes that list the active one, then
 //   deletes the legacy draft slot so it can't be migrated again — and
 //   resolves to the new list's id. This is what protects a user's in-progress
-//   edit (see history #10/#12) from being silently lost by the model switch.
+//   edit from being silently lost by the model switch.
 // - If no active list is set and the legacy draft is missing/empty, just
 //   clears the (empty/absent) legacy slot and resolves to null — there's
 //   nothing worth preserving.
