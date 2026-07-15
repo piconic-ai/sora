@@ -769,6 +769,11 @@ export function App(props: AppProps) {
             </span>
           )}
         </p>
+        <p className="info-source">
+          <a href="https://github.com/piconic-ai/sora" target="_blank" rel="noopener">
+            {t().viewSource}
+          </a>
+        </p>
         <hr />
         <p className="info-contact">
           {t().infoContactIntro}

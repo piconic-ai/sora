@@ -29,6 +29,8 @@ export interface Messages {
   // Privacy note appended to the info popover (history feature): clarifies
   // that saved lists never leave the device.
   infoPrivacyNote: string
+  // Link text to the public source repo in the info popover.
+  viewSource: string
   // Saved-list sidebar (autosaved, editable lists — see components/App.tsx).
   newList: string
   // aria-label for the sidebar's list region.
@@ -100,6 +102,7 @@ export const messages: Record<Locale, Messages> = {
     infoNote: '「そら」は「そらで覚える（諳んじる）」から。',
     infoContactIntro: 'ご質問・ご感想は kobaken まで：',
     infoPrivacyNote: 'データはこの端末のブラウザ内にのみ保存されます。',
+    viewSource: 'GitHubでソースを見る',
     newList: '新規作成',
     listsLabel: 'リスト一覧',
     deleteThisList: 'このリストを削除',
@@ -132,6 +135,7 @@ export const messages: Record<Locale, Messages> = {
     infoNote: '"Sora" comes from the Japanese "そらで覚える" — to learn something by heart.',
     infoContactIntro: 'Questions or feedback? Reach out to kobaken:',
     infoPrivacyNote: 'Your lists are saved only in this browser, on this device.',
+    viewSource: 'View the source on GitHub',
     newList: 'New',
     listsLabel: 'Lists',
     deleteThisList: 'Delete this list',
