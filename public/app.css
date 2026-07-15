@@ -47,11 +47,15 @@
   gap: 10px;
 }
 
-/* Reopens the list sidebar. Rendered as the workspace's first column while
-   the sidebar is closed (see components/App.tsx), which lands it at the
-   exact screen position of the sidebar's own .sidebar-collapse button —
-   the two toggles share one spot, so open/close never requires moving the
-   mouse. */
+/* Reopens the list sidebar. Two renderings share this class (see
+   components/App.tsx), switched by the 720px media query below:
+   - .sidebar-open--inline: the workspace's first column, landing on the
+     exact screen position of the sidebar's own .sidebar-collapse button —
+     the two toggles share one spot, so open/close never requires moving
+     the mouse. Wide layouts only.
+   - .sidebar-open--header: sits in the header row (where the hidden logo
+     would be) on narrow layouts, where the sidebar is an overlay drawer
+     and the workspace column would waste width. */
 .sidebar-open {
   flex-shrink: 0;
   width: 24px;
@@ -78,6 +82,11 @@
 .sidebar-open:focus-visible {
   outline: none;
   border-color: var(--brand);
+}
+
+/* Wide layouts: the toggle lives in the workspace column. */
+.sidebar-open--header {
+  display: none;
 }
 
 /* "piconic sora" wordmark: the green piconic logo mark followed by the
@@ -663,6 +672,16 @@
 
   .list-items {
     max-height: none;
+  }
+
+  /* Narrow layouts: the toggle moves into the header row; the workspace
+     column version disappears so the editor gets the full width. */
+  .sidebar-open--header {
+    display: inline-flex;
+  }
+
+  .sidebar-open--inline {
+    display: none;
   }
 
   .sidebar-scrim {

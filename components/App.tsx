@@ -683,6 +683,23 @@ export function App(props: AppProps) {
   return (
     <div className="app">
       <header className={sidebarOpen() ? 'app-header no-print' : 'app-header no-print logo-hidden'}>
+        {/* Mobile-only reopen button (see app.css): on narrow layouts the
+            sidebar is an overlay drawer, so the toggle lives in the header
+            row instead of the workspace's left column. Same behavior as
+            the .sidebar-open--inline button below — only one of the two is
+            ever visible, switched by the 720px media query. */}
+        {!sidebarOpen() ? (
+          <button
+            type="button"
+            className="sidebar-open sidebar-open--header"
+            aria-expanded={sidebarOpen()}
+            aria-controls="list-sidebar"
+            aria-label={t().sidebarToggleLabel}
+            onClick={() => setSidebarOpen(true)}
+          >
+            <span className="sidebar-toggle-icon" aria-hidden="true" />
+          </button>
+        ) : null}
         <h1 className="app-title">
           <svg className="app-logo" viewBox="55 48 390 104" xmlns="http://www.w3.org/2000/svg" aria-label="piconic">
             <g fill="#00b769">
@@ -761,7 +778,7 @@ export function App(props: AppProps) {
         {!sidebarOpen() ? (
           <button
             type="button"
-            className="sidebar-open"
+            className="sidebar-open sidebar-open--inline"
             aria-expanded={sidebarOpen()}
             aria-controls="list-sidebar"
             aria-label={t().sidebarToggleLabel}
