@@ -15,7 +15,7 @@
     height: 1260px;
     overflow: hidden;
     position: relative;
-    background: linear-gradient(135deg, #ffffff 0%, #f4f5f4 100%);
+    background: linear-gradient(160deg, #ffffff 0%, #f3f4f3 100%);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
       'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', Meiryo, sans-serif;
   }
@@ -30,64 +30,77 @@
   .title {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 28px;
   }
-  .logo { display: block; height: 96px; width: auto; }
+  .logo { display: block; height: 88px; width: auto; }
   .sora {
-    font-size: 88px;
+    font-size: 80px;
     font-weight: 500;
     letter-spacing: 0.01em;
     color: rgba(31, 35, 40, 0.55);
-    transform: translateY(-5px);
+    transform: translateY(-4px);
   }
   .catch {
-    margin-top: 96px;
-    font-size: 148px;
-    font-weight: 650;
-    letter-spacing: -0.015em;
+    margin-top: 88px;
+    font-size: 144px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     line-height: 1;
     color: #16181a;
   }
   .desc {
-    margin-top: 56px;
-    font-size: 46px;
+    margin-top: 52px;
+    font-size: 44px;
     font-weight: 400;
     letter-spacing: 0.005em;
     color: #8f8f8f;
   }
 
-  /* ---- right: the printed sheet, straight, 4 bands ---- */
-  .sheet {
+  /* ---- right: an accordion-folded strip, standing on the page ----
+     The hero is the product's defining moment: the printed strip,
+     folded. Faces are alternately skewed rectangles; alternating light
+     picks out the folds. Same silhouette as the favicon's chevron. */
+  .strip {
     position: absolute;
-    right: 200px;
-    top: 110px;
-    width: 880px;
-    height: 1400px; /* bleeds off the card's bottom edge */
-    background: #fff;
-    border: 2px solid #ececec;
-    box-shadow:
-      0 32px 90px rgba(0, 0, 0, 0.12),
-      0 6px 20px rgba(0, 0, 0, 0.05);
+    right: 170px;
+    top: 50%;
+    transform: translateY(-54%);
+    display: flex;
   }
-  .panel {
-    position: absolute;
-    width: 220px;
-    height: 180px;
+  .face {
+    width: 195px;
+    height: 340px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #111;
+    color: #16181a;
   }
-  .front { font-size: 64px; }
-  .back { font-size: 44px; }
-  /* fold dots at fold-row x cut-line intersections, like the app */
-  .dot {
+  /* valley faces tilt away (darker), peak faces tilt toward (lighter) */
+  .face.a {
+    transform: skewY(-8deg);
+    background: linear-gradient(100deg, #ffffff 0%, #eeeeed 100%);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.06);
+  }
+  .face.b {
+    transform: skewY(8deg);
+    background: linear-gradient(80deg, #e6e6e5 0%, #f9f9f8 100%);
+    box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.05);
+  }
+  .face span { white-space: nowrap; }
+  .face .front { font-size: 60px; }
+  .face .back { font-size: 38px; color: #34373a; }
+
+  /* soft ground shadow beneath the standing strip */
+  .strip-shadow {
     position: absolute;
-    width: 11px;
-    height: 11px;
+    right: 175px;
+    top: 50%;
+    transform: translateY(168px);
+    width: 960px;
+    height: 40px;
     border-radius: 50%;
-    background: #111;
-    transform: translate(-50%, -50%);
+    background: rgba(20, 24, 22, 0.2);
+    filter: blur(22px);
   }
 </style>
 </head>
@@ -101,40 +114,13 @@
     <p class="desc">The flashcard maker you print on paper.</p>
   </div>
 
-  <div class="sheet" id="sheet"></div>
-
-  <script>
-    // Sheet anatomy (mirrors PrintSheets.tsx): 4 bands, flap margin on
-    // top, panels stacked per band, fold dots at every fold-row x
-    // cut-line intersection.
-    const sheet = document.getElementById('sheet');
-    const BAND_W = 220, PANEL_H = 180, GRID_TOP = 96;
-    const BANDS = 4, ROWS = 8; // rows enough to bleed past the crop
-
-    // panels: band 0 carries the Hello / こんにちは pair
-    const words = { '0,0': ['front', 'Hello'], '0,1': ['back', 'こんにちは'] };
-    for (let b = 0; b < BANDS; b++) {
-      for (let r = 0; r < ROWS; r++) {
-        const w = words[b + ',' + r];
-        if (!w) continue;
-        const el = document.createElement('div');
-        el.className = 'panel ' + w[0];
-        el.style.left = b * BAND_W + 'px';
-        el.style.top = GRID_TOP + r * PANEL_H + 'px';
-        el.textContent = w[1];
-        sheet.appendChild(el);
-      }
-    }
-    // dots: interior band boundaries x every fold row (incl. grid top)
-    for (let b = 1; b < BANDS; b++) {
-      for (let r = 0; r <= ROWS; r++) {
-        const d = document.createElement('div');
-        d.className = 'dot';
-        d.style.left = b * BAND_W + 'px';
-        d.style.top = GRID_TOP + r * PANEL_H + 'px';
-        sheet.appendChild(d);
-      }
-    }
-  </script>
+  <div class="strip-shadow"></div>
+  <div class="strip">
+    <div class="face a"><span class="front">Hello</span></div>
+    <div class="face b"><span class="back">こんにちは</span></div>
+    <div class="face a"></div>
+    <div class="face b"></div>
+    <div class="face a"></div>
+  </div>
 </body>
 </html>
