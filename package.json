@@ -10,15 +10,15 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@barefootjs/client": "^0.18.7",
-    "@barefootjs/hono": "^0.18.7",
-    "@barefootjs/jsx": "^0.18.7",
-    "@barefootjs/shared": "^0.18.7",
+    "@barefootjs/client": "^0.19.1",
+    "@barefootjs/hono": "^0.19.1",
+    "@barefootjs/jsx": "^0.19.1",
+    "@barefootjs/shared": "^0.19.1",
     "hono": "^4.6.0"
   },
   "devDependencies": {
-    "@barefootjs/cli": "^0.18.7",
-    "@barefootjs/test": "^0.18.7",
+    "@barefootjs/cli": "^0.19.1",
+    "@barefootjs/test": "^0.19.1",
     "@cloudflare/workers-types": "^4.20260702.1",
     "@types/node": "^22.0.0",
     "@unocss/cli": "^66.0.0",
