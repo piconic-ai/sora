@@ -11,32 +11,23 @@ interface PrintSheetsProps {
   settings: Settings
 }
 
-// Fold-guide dot radius. 0.4mm prints as a subtle ~0.8mm dot — visible
-// while folding, unobtrusive on the finished card.
+// 0.4mm, not larger: a ~0.8mm printed dot is enough to fold against yet
+// vanishes on the finished card.
 const DOT_R_MM = 0.4
 
-// preserveAspectRatio is still missing from @barefootjs/jsx's <svg>
-// attribute types. Spreading it from a const object literal folds it
-// statically into both the SSR and client templates (a function-call spread
-// would stay dynamic and drop from the client template).
+// Spread from a const literal, not inline or from a function call:
+// preserveAspectRatio isn't in @barefootjs/jsx's <svg> types yet, and only a
+// const-literal spread folds statically into the client template — a
+// function-call spread stays dynamic and drops out of it.
 const marksSvgAttrs: Record<string, string> = { preserveAspectRatio: 'none' }
 
-// Plain-data view models for the printed sheets, rendered as nested JSX
-// loops (sheets > bands > panels). This deep-nested reactive text — a panel's
-// {panel.text} at loop depth 3 once this component is inlined into the App
-// island — is exactly what @barefootjs 0.20.0 fixed (piconic-ai/barefootjs
-// #2282); before that the innermost text child silently froze at its SSR
-// value, which is why this component spent 0.18.x on an innerHTML workaround
-// and 0.19.x on a flattened single-loop shape (see git history).
 interface SheetVM {
   styleVars: string
   bands: BandVM[]
-  // Fold guides: a dot at every fold-row × cut-line intersection. The dot
-  // columns show where to cut the sheet into strips, and cutting slices
-  // each dot in half, leaving a mark on both strips' edges at every fold
-  // position — each strip carries its own fold guides, no ruler needed.
-  // (No marks at the paper edges: printers often clip them, depending on
-  // the printable-area settings.)
+  // A dot at every fold-row × cut-line intersection, not ticks at the paper
+  // edge: cutting the sheet into strips halves each dot onto both strip edges
+  // (so every strip keeps its own fold guides), while edge marks would land
+  // in the printer's clipped margin.
   dots: { x: number; y: number }[]
 }
 
@@ -46,9 +37,8 @@ interface BandVM {
 
 interface PanelVM {
   cls: string
-  // Only set when the text needs a smaller-than-default size to fit its
-  // band (see fitFontSizePt) — undefined otherwise, so the panel falls
-  // back to the sheet's --font-pt.
+  // undefined unless the word must shrink to fit its band — the panel then
+  // inherits the sheet's --font-pt rather than pinning a size.
   style: string | undefined
   text: string
 }
@@ -74,12 +64,8 @@ function buildSheetVM(page: PageLayout, settings: Settings): SheetVM {
   }
 }
 
-function buildSheetVMs(layout: LayoutResult, settings: Settings): SheetVM[] {
-  return layout.pages.map((page) => buildSheetVM(page, settings))
-}
-
 export function PrintSheets(props: PrintSheetsProps) {
-  const sheets = createMemo(() => buildSheetVMs(props.layout, props.settings))
+  const sheets = createMemo(() => props.layout.pages.map((page) => buildSheetVM(page, props.settings)))
 
   return (
     <div className="print-sheets">

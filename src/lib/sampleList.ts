@@ -1,20 +1,13 @@
 import type { Pair } from './types'
 
-// Seeded into history (see App.tsx's initialize/handleClearAllLists) whenever
-// there is zero saved history, so a first-time visitor — or someone who just
-// cleared everything — has a working example to open, edit, or print instead
-// of a blank table.
+// The sample seeded when saved history is empty (see App.tsx's initialize /
+// handleClearAllLists), so a first visit opens onto a working example rather
+// than a blank table.
 //
-// Content: the words and phrases an English speaker would actually want on a
-// first trip to Japan — greetings, polite basics, a few travel questions, the
-// dining expressions that are uniquely Japanese (いただきます / ごちそうさま /
-// 乾杯), and a couple of aesthetic adjectives — chosen so the Japanese script
-// itself (kanji where it reads beautifully) carries some of the language's
-// charm. `front` is English; `back` is "Japanese - romaji" (double-vowel
-// Hepburn, first word capitalized).
-//
-// Exactly 28 pairs — one full printed A4 sheet at the default layout
-// (computeCapacity: 4 bands × 7 pairs) — so a first print comes out complete.
+// Kept at exactly 28 pairs — one full A4 sheet at the default 4×7 layout
+// (computeCapacity) — so a first print comes out complete; don't add a 29th
+// without spilling onto a second page. `back` is "Japanese - romaji" in
+// double-vowel Hepburn (Ohayou, not Ohayō) to match the app's other copy.
 export const SAMPLE_TITLE = 'Japan Travel Phrases'
 
 export const SAMPLE_PAIRS: Pair[] = [
