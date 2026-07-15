@@ -24,6 +24,7 @@ import {
 } from '../src/lib/storage/lists'
 import { migrateLegacyDraft } from '../src/lib/storage/migrate'
 import { LIST_VERSION, normalizeTitle, serializeList, type SavedList } from '../src/lib/storage/schema'
+import { SAMPLE_PAIRS, SAMPLE_TITLE } from '../src/lib/sampleList'
 import type { Pair } from '../src/lib/types'
 
 interface AppProps {
@@ -549,8 +550,8 @@ export function App(props: AppProps) {
   }
 
   // "Clear all history" (lives in the info popover — see render below).
-  // Wipes every saved list and leaves a single fresh empty list, since there
-  // is nothing left to show.
+  // Wipes every saved list and reseeds the "Sample" list, same as a
+  // first-ever visit — never leave the sidebar with nothing to open.
   const handleClearAllLists = async () => {
     closeMenus()
     // Destructive and irreversible (every list, not just the current one), so
@@ -561,7 +562,7 @@ export function App(props: AppProps) {
     // lands can't recreate a record clearAllLists just removed.
     for (const l of lists()) deletedIds.add(l.id)
     await clearAllLists()
-    const fresh = emptyCard()
+    const fresh = await createList(SAMPLE_PAIRS, { title: SAMPLE_TITLE })
     setLists([fresh])
     setActiveIndex(0)
     openList(fresh)
@@ -579,7 +580,16 @@ export function App(props: AppProps) {
   const initialize = async () => {
     await migrateLegacyDraft()
 
-    const saved = await listSaved()
+    let saved = await listSaved()
+    // First-ever visit, or right after "clear all history": seed a titled
+    // "Sample" list so there's something to open/print instead of a blank
+    // table. Skipped if the user already started typing during this async
+    // window (userInteracted, checked below) — their in-progress content
+    // takes priority over an unrequested sample.
+    if (saved.length === 0 && !userInteracted) {
+      const sample = await createList(SAMPLE_PAIRS, { title: SAMPLE_TITLE })
+      saved = [sample]
+    }
     const asc = [...saved].sort((a, b) => a.createdAt - b.createdAt)
 
     // The user typed or clicked "New" during the async startup window. Their
