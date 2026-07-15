@@ -4,7 +4,7 @@
      `npm run dev` is running, open it in a browser at a 2400x1260
      viewport, and save a full-viewport PNG screenshot as
      public/og.png. -->
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -15,12 +15,12 @@
     height: 1260px;
     overflow: hidden;
     position: relative;
-    background: linear-gradient(135deg, #ffffff 0%, #f5f6f5 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f4f5f4 100%);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
       'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', Meiryo, sans-serif;
   }
 
-  /* ---- left: wordmark + tagline ---- */
+  /* ---- left: brand, catch copy, product description ---- */
   .left {
     position: absolute;
     left: 220px;
@@ -30,57 +30,61 @@
   .title {
     display: flex;
     align-items: center;
-    gap: 44px;
+    gap: 30px;
   }
-  .logo { display: block; height: 150px; width: auto; }
+  .logo { display: block; height: 96px; width: auto; }
   .sora {
-    font-size: 140px;
+    font-size: 88px;
     font-weight: 500;
     letter-spacing: 0.01em;
     color: rgba(31, 35, 40, 0.55);
-    transform: translateY(-8px);
+    transform: translateY(-5px);
   }
-  .tagline {
-    margin-top: 64px;
-    font-size: 50px;
-    letter-spacing: 0.02em;
-    color: #9a9a9a;
+  .catch {
+    margin-top: 96px;
+    font-size: 148px;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    line-height: 1;
+    color: #16181a;
   }
-  .tagline .sep { margin: 0 24px; color: #c9c9c9; }
+  .desc {
+    margin-top: 56px;
+    font-size: 46px;
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    color: #8f8f8f;
+  }
 
-  /* ---- right: the printed sheet ---- */
+  /* ---- right: the printed sheet, straight, 4 bands ---- */
   .sheet {
     position: absolute;
     right: 200px;
-    top: 150px;
-    width: 900px;
+    top: 110px;
+    width: 880px;
     height: 1400px; /* bleeds off the card's bottom edge */
     background: #fff;
     border: 2px solid #ececec;
     box-shadow:
-      0 40px 120px rgba(0, 0, 0, 0.13),
-      0 8px 24px rgba(0, 0, 0, 0.05);
-    transform: rotate(-2deg);
-    transform-origin: top center;
+      0 32px 90px rgba(0, 0, 0, 0.12),
+      0 6px 20px rgba(0, 0, 0, 0.05);
   }
-  /* panels: 3 bands x rows, flap margin on top — same anatomy as the
-     real print sheet (see PrintSheets.tsx) */
   .panel {
     position: absolute;
-    width: 300px;
-    height: 310px;
+    width: 220px;
+    height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #111;
   }
-  .front { font-size: 66px; }
-  .back { font-size: 58px; }
+  .front { font-size: 64px; }
+  .back { font-size: 44px; }
   /* fold dots at fold-row x cut-line intersections, like the app */
   .dot {
     position: absolute;
-    width: 13px;
-    height: 13px;
+    width: 11px;
+    height: 11px;
     border-radius: 50%;
     background: #111;
     transform: translate(-50%, -50%);
@@ -93,18 +97,19 @@
       <svg class="logo" viewBox="55 48 390 104" xmlns="http://www.w3.org/2000/svg" aria-label="piconic"><g fill="#00b769"><path d="M136.32,53.25c-3.1,0-5.62,2.49-5.62,5.56,0,3.07,2.52,5.56,5.62,5.56,3.1,0,5.62-2.49,5.62-5.56s-2.52-5.56-5.62-5.56Z"/><rect x="132.05" y="75.12" width="8.53" height="49.65"/><path d="M371.34,52.88c-3.1,0-5.62,2.49-5.62,5.56s2.52,5.56,5.62,5.56c3.1,0,5.62-2.49,5.62-5.56s-2.52-5.56-5.62-5.56Z"/><rect x="367.08" y="75.12" width="8.53" height="49.65"/><path d="M248.89,74.52c-14.02,0-25.14,11.41-25.14,25.42s11.12,25.42,25.14,25.42,25.14-11.4,25.14-25.42-11.12-25.42-25.14-25.42ZM248.89,116.28c-9.01,0-16.62-7.33-16.62-16.33s7.61-16.33,16.62-16.33,16.62,7.33,16.62,16.33-7.61,16.33-16.62,16.33Z"/><path d="M199.11,111.56c-3.02,2.92-7.14,4.72-11.61,4.72-9.01,0-16.62-7.33-16.62-16.33s7.61-16.33,16.62-16.33c4.47,0,8.59,1.81,11.61,4.72l6.28-6.28c-4.54-4.65-10.85-7.53-17.89-7.53-14.02,0-25.14,11.41-25.14,25.42s11.12,25.42,25.14,25.42c7.05,0,13.36-2.88,17.89-7.53l-6.28-6.28Z"/><path d="M434.13,111.56c-3.02,2.92-7.14,4.72-11.61,4.72-9.01,0-16.62-7.33-16.62-16.33s7.61-16.33,16.62-16.33c4.47,0,8.59,1.81,11.61,4.72l6.28-6.28c-4.54-4.65-10.85-7.53-17.89-7.53-14.02,0-25.14,11.41-25.14,25.42s11.12,25.42,25.14,25.42c7.05,0,13.36-2.88,17.89-7.53l-6.28-6.28Z"/><path d="M319.49,74.52c-14.02,0-25.14,11.41-25.14,25.42h0v24.83h8.53v-24.83c0-9.01,7.61-16.33,16.62-16.33s16.62,7.33,16.62,16.33v24.83h8.53v-24.83h0c0-14.02-11.12-25.42-25.14-25.42Z"/><path d="M85,74.52c-14.02,0-25.14,11.41-25.14,25.42v46.78h8.53v-27.7c4.41,3.93,10.2,6.34,16.62,6.34,14.02,0,25.14-11.4,25.14-25.42s-11.12-25.42-25.14-25.42ZM85,116.28c-9.01,0-16.62-7.33-16.62-16.33s7.61-16.33,16.62-16.33,16.62,7.33,16.62,16.33-7.61,16.33-16.62,16.33Z"/></g></svg>
       <span class="sora">sora</span>
     </div>
-    <p class="tagline">そらで覚える<span class="sep">・</span>Learn by heart</p>
+    <h1 class="catch">Learn by heart</h1>
+    <p class="desc">The flashcard maker you print on paper.</p>
   </div>
 
   <div class="sheet" id="sheet"></div>
 
   <script>
-    // Sheet anatomy (mirrors PrintSheets.tsx): 3 bands, flap margin on
+    // Sheet anatomy (mirrors PrintSheets.tsx): 4 bands, flap margin on
     // top, panels stacked per band, fold dots at every fold-row x
     // cut-line intersection.
     const sheet = document.getElementById('sheet');
-    const BAND_W = 300, PANEL_H = 310, GRID_TOP = 120;
-    const BANDS = 3, ROWS = 4; // rows enough to bleed past the crop
+    const BAND_W = 220, PANEL_H = 180, GRID_TOP = 96;
+    const BANDS = 4, ROWS = 8; // rows enough to bleed past the crop
 
     // panels: band 0 carries the Hello / こんにちは pair
     const words = { '0,0': ['front', 'Hello'], '0,1': ['back', 'こんにちは'] };
