@@ -44,13 +44,22 @@ export const renderer = jsxRenderer(({ children, title, locale }) => {
         <BfImportMap base={componentsBase} />
       </head>
       <body>
-        {children}
+        {/* The single [bf-region] the client router swaps between routes
+            (@barefootjs/router). `/` and `/how-to` differ entirely, so the
+            whole per-route subtree is the region; the shell (head, scripts,
+            router boot) stays mounted across a navigation. Hand-written as a
+            plain attribute because this Hono template isn't bf-compiled, so
+            <Region> wouldn't lower here. */}
+        <div bf-region="content">{children}</div>
         {/* Emits a <script> for every manifest entry unconditionally (not
             usage-tracked) — a usage-tracking collector can miss components
             that are only ever mounted client-side (e.g. inside a signal-
             driven `.map()` that starts empty), since they're never present
             in the initial SSR output. */}
         <BfScripts base={componentsBase} manifest={manifest} />
+        {/* Boots the partial-navigation router (client/router-entry.ts). After
+            BfScripts so the island runtime/import map is in place first. */}
+        <script type="module" src={`${componentsBase}/router-entry.js`} />
       </body>
     </html>
   )

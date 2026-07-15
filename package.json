@@ -13,6 +13,7 @@
     "@barefootjs/client": "^0.20.0",
     "@barefootjs/hono": "^0.20.0",
     "@barefootjs/jsx": "^0.20.0",
+    "@barefootjs/router": "^0.20.0",
     "@barefootjs/shared": "^0.20.0",
     "hono": "^4.6.0"
   },

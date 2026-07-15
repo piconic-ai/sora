@@ -13,6 +13,12 @@ export default createConfig({
   components: ['components'],
   outDir: 'public',
   scriptBasePath: '/components/',
+  // Bundle the client router bootstrap (client/router-entry.ts) to
+  // public/components/router-entry.js — @barefootjs/router + its @barefootjs/
+  // shared dep are bundled in; @barefootjs/client* stays external (resolved
+  // via the page import map to barefoot.js). Loaded as a module <script> in
+  // renderer.tsx.
+  bundleEntries: [{ entry: 'client/router-entry.ts', outfile: 'router-entry.js' }],
   adapterOptions: {
     clientJsBasePath: '/components/',
     barefootJsPath: '/components/barefoot.js',
