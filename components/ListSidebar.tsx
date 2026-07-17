@@ -45,22 +45,7 @@ export function ListSidebar(props: ListSidebarProps) {
   const t = createMemo(() => messages[(props.locale as Locale) ?? 'ja'])
 
   return (
-    // A single `display: contents` root, not a Fragment: the reopen button
-    // and scrim are siblings of <aside>, not descendants of it, and
-    // insert()'s branch-swap path (updateFragmentConditional) only searched
-    // the scope element's own *descendants* for a branch's comment markers —
-    // a marker that sits as the scope's *sibling* was never found, so the
-    // conditional silently never updated after the first render. Confirmed
-    // in-browser: closing the sidebar correctly flipped every other piece of
-    // state this component owns except this one conditional, which stayed
-    // frozen on its initial (empty) branch forever. Fixed upstream in
-    // piconic-ai/barefootjs#2313 (targeting #2312) — not yet released.
-    // Revert to a plain Fragment once a release containing #2313 ships.
-    // `display: contents` keeps <aside> a direct flex child of .workspace
-    // (needed for its `flex: 0 0 220px` sizing) — unlike AppHeader's plain
-    // <div> wrapper, a normal block box here would swallow that flex item
-    // into a single wrapper box instead.
-    <div style="display: contents">
+    <>
       <aside id="list-sidebar" className="list-sidebar" aria-label={t().listsLabel}>
         <button
           type="button"
@@ -160,6 +145,6 @@ export function ListSidebar(props: ListSidebarProps) {
       {props.sidebarOpen && (
         <div className="sidebar-scrim" aria-hidden="true" onClick={() => props.setSidebarOpen(false)} />
       )}
-    </div>
+    </>
   )
 }
