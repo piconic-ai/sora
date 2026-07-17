@@ -37,6 +37,18 @@ interface WordTableProps {
   loadRequest?: { pairs: Pair[]; nonce: number } | null
 }
 
+const inputClass =
+  'w-full box-border py-[7px] px-0.5 text-[15px] font-[inherit] text-inherit bg-transparent border-0 border-b border-b-hairline outline-none transition-colors duration-150 focus:border-b-brand'
+
+const thClass = 'pt-1.5 pb-2 px-2 text-left text-[11px] text-ink-3 font-medium tracking-[0.08em]'
+
+// Page boundary: a dashed cut line, like the trim marks on a paper pattern —
+// quieter than a solid rule but unmistakably "the sheet ends here". Applied
+// per-cell (not via a .wt-page-break ancestor selector) so it stays a plain
+// reactive className, matching every other per-row style here.
+const tdClass = 'py-1.5 px-2 text-left'
+const tdPageBreakClass = 'pt-1.5 pb-3 px-2 text-left border-b border-dashed border-b-[#a3a3a3]'
+
 let nextRowId = 1
 
 function emptyRow(): Row {
@@ -263,33 +275,36 @@ export function WordTable(props: WordTableProps) {
   }
 
   return (
-    <div className="word-table-wrap">
-      {pasteError() && <p className="input-error">{pasteError()}</p>}
-      <table className="word-table">
+    <div className="overflow-x-auto">
+      {pasteError() && <p className="text-[#b23a2e] text-[13px] m-0">{pasteError()}</p>}
+      {/* "word-table" kept as a bare hook class (no styling of its own) —
+          see App.tsx's focusEditorInput(), which selects '.editor-main
+          .word-table input' to focus the first cell after creating/
+          switching lists. */}
+      <table className="word-table border-collapse w-full text-[15px]">
         <thead>
           <tr>
-            <th>{t().front}</th>
-            <th>{t().back}</th>
+            <th className={thClass}>{t().front}</th>
+            <th className={thClass}>{t().back}</th>
           </tr>
         </thead>
         <tbody>
           {rows().map((row, i) => (
-            <tr
-              key={row.id}
-              className={props.breakIndices.includes(pairIndexByRow()[i]) ? 'wt-row wt-page-break' : 'wt-row'}
-            >
-              <td>
+            <tr key={row.id}>
+              <td className={props.breakIndices.includes(pairIndexByRow()[i]) ? tdPageBreakClass : tdClass}>
                 <input
                   type="text"
+                  className={inputClass}
                   value={row.front}
                   onInput={(e) => editCell(row.id, 'front', (e.target as HTMLInputElement).value)}
                   onPaste={(e) => handlePaste(row.id, e as ClipboardEvent)}
                   onKeyDown={(e) => handleKeyDown(row.id, e as KeyboardEvent)}
                 />
               </td>
-              <td>
+              <td className={props.breakIndices.includes(pairIndexByRow()[i]) ? tdPageBreakClass : tdClass}>
                 <input
                   type="text"
+                  className={inputClass}
                   value={row.back}
                   onInput={(e) => editCell(row.id, 'back', (e.target as HTMLInputElement).value)}
                   onKeyDown={(e) => handleKeyDown(row.id, e as KeyboardEvent)}
