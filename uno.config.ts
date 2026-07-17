@@ -30,6 +30,13 @@ export default defineConfig({
       border: 'var(--border)',
       input: 'var(--input)',
       ring: 'var(--ring)',
+      // Sora's own quiet-stationery palette (tokens defined in app.css's
+      // :root) — separate from the shadcn-style tokens above, which the
+      // app doesn't otherwise use.
+      ink: { DEFAULT: 'var(--ink)', 2: 'var(--ink-2)', 3: 'var(--ink-3)' },
+      hairline: { DEFAULT: 'var(--hairline)', soft: 'var(--hairline-soft)' },
+      brand: 'var(--brand)',
+      paper: { DEFAULT: 'var(--paper)', tint: 'var(--paper-tint)' },
     },
     radius: {
       lg: 'var(--radius)',

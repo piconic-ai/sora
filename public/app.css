@@ -41,21 +41,18 @@
   gap: 20px;
 }
 
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Reopens the list sidebar. Two renderings share this class (see
-   components/App.tsx), switched by the 720px media query below:
-   - .sidebar-open--inline: the workspace's first column, landing on the
-     exact screen position of the sidebar's own .sidebar-collapse button —
-     the two toggles share one spot, so open/close never requires moving
-     the mouse. Wide layouts only.
-   - .sidebar-open--header: sits in the header row (where the hidden logo
-     would be) on narrow layouts, where the sidebar is an overlay drawer
-     and the workspace column would waste width. */
+/* Reopens the list sidebar. Two renderings, switched by the 720px media
+   query below:
+   - .sidebar-open--inline (components/ListSidebar.tsx): the workspace's
+     first column, landing on the exact screen position of the sidebar's
+     own .sidebar-collapse button — the two toggles share one spot, so
+     open/close never requires moving the mouse. Wide layouts only.
+   - .sidebar-open--header (components/AppHeader.tsx, migrated to UnoCSS
+     utilities — this base rule now styles only ListSidebar's
+     .sidebar-open--inline, pending that component's own migration): sits
+     in the header row (where the hidden logo would be) on narrow layouts,
+     where the sidebar is an overlay drawer and the workspace column would
+     waste width. */
 .sidebar-open {
   flex-shrink: 0;
   width: 24px;
@@ -87,142 +84,6 @@
 /* Wide layouts: the toggle lives in the workspace column. */
 .sidebar-open--header {
   display: none;
-}
-
-/* "piconic sora" wordmark: the green piconic logo mark followed by the
-   lowercase product name, mirroring piconic koma's header. */
-.app-title {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 16px;
-  font-weight: 450;
-}
-
-.app-logo {
-  display: block;
-  flex-shrink: 0;
-  height: 18px;
-  width: auto;
-}
-
-.app-wordmark {
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: rgba(31, 35, 40, 0.55);
-  /* Measured against the logo's glyph geometry (see docs/og.html): the
-     wordmark's x-height body renders 0.123em below the logo's, so lift
-     it by the same amount. em-based so it holds at any size. */
-  transform: translateY(-0.123em);
-}
-
-/* Tagline: no divider glyph — scale and tone alone separate it from the
-   wordmark (a vertical rule here would repeat the sidebar's structural
-   divider). Just a wider breath of whitespace and a lighter gray. */
-.app-tagline {
-  color: #9a9a9a;
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  margin: 0 0 0 6px;
-}
-
-/* While the sidebar is closed the header shows only the toggle button (plus
-   the right-aligned lang/info/help controls) — the "Sora" wordmark and
-   tagline are dropped at any screen width, since the name already lives in
-   the info popover. App.tsx toggles .logo-hidden from !sidebarOpen(). */
-.app-header.logo-hidden .app-title,
-.app-header.logo-hidden .app-tagline {
-  display: none;
-}
-
-.lang-select {
-  margin-left: auto;
-  height: 24px;
-  padding: 0 6px;
-  font-size: 12px;
-  font-family: inherit;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.lang-select:hover {
-  color: var(--ink);
-  border-color: #ccc;
-}
-
-.lang-select:focus {
-  outline: none;
-  border-color: var(--brand);
-}
-
-.info-button {
-  margin-left: 6px;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.info-button:hover {
-  color: var(--ink);
-  border-color: #ccc;
-}
-
-.info-button:focus-visible {
-  outline: none;
-  border-color: var(--brand);
-}
-
-/* "?" link to the standalone /how-to page — same tone as .info-button, just
-   an <a> (real navigation, not a popover) so it needs no popover attrs. */
-.help-button {
-  margin-left: 6px;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: 50%;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.help-button:hover {
-  color: var(--ink);
-  border-color: #ccc;
-}
-
-.help-button:focus-visible {
-  outline: none;
-  border-color: var(--brand);
-}
-
-.info-privacy {
-  color: #888;
 }
 
 /* Collapses the sidebar. Sits at the sidebar's top-LEFT edge, above "New",
@@ -277,14 +138,23 @@
   mask-repeat: no-repeat;
 }
 
-/* Closed → the "expand" glyph (chevron pointing right, into the panel). */
-.sidebar-open .sidebar-toggle-icon {
+/* Closed → the "expand" glyph (chevron pointing right, into the panel).
+   `.sidebar-toggle-icon--expand` (components/AppHeader.tsx) is the
+   self-contained UnoCSS-era spelling; `.sidebar-open .sidebar-toggle-icon`
+   still styles ListSidebar's not-yet-migrated .sidebar-open--inline icon —
+   drop it once that component switches to the modifier class too. */
+.sidebar-open .sidebar-toggle-icon,
+.sidebar-toggle-icon--expand {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cpolyline points%3D%222.5%2C4 5.5%2C8 2.5%2C12%22%2F%3E%3Cline x1%3D%228%22 y1%3D%224%22 x2%3D%2214%22 y2%3D%224%22%2F%3E%3Cline x1%3D%228%22 y1%3D%228%22 x2%3D%2214%22 y2%3D%228%22%2F%3E%3Cline x1%3D%228%22 y1%3D%2212%22 x2%3D%2214%22 y2%3D%2212%22%2F%3E%3C%2Fsvg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cpolyline points%3D%222.5%2C4 5.5%2C8 2.5%2C12%22%2F%3E%3Cline x1%3D%228%22 y1%3D%224%22 x2%3D%2214%22 y2%3D%224%22%2F%3E%3Cline x1%3D%228%22 y1%3D%228%22 x2%3D%2214%22 y2%3D%228%22%2F%3E%3Cline x1%3D%228%22 y1%3D%2212%22 x2%3D%2214%22 y2%3D%2212%22%2F%3E%3C%2Fsvg%3E");
 }
 
-/* Open → the "collapse" glyph (chevron pointing left, back toward the edge). */
-.sidebar-collapse .sidebar-toggle-icon {
+/* Open → the "collapse" glyph (chevron pointing left, back toward the
+   edge). `.sidebar-toggle-icon--collapse` is unused until ListSidebar.tsx
+   migrates (kept here now so both icon directions get the modifier-class
+   treatment in the same edit). */
+.sidebar-collapse .sidebar-toggle-icon,
+.sidebar-toggle-icon--collapse {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cline x1%3D%222%22 y1%3D%224%22 x2%3D%228%22 y2%3D%224%22%2F%3E%3Cline x1%3D%222%22 y1%3D%228%22 x2%3D%228%22 y2%3D%228%22%2F%3E%3Cline x1%3D%222%22 y1%3D%2212%22 x2%3D%228%22 y2%3D%2212%22%2F%3E%3Cpolyline points%3D%2213.5%2C4 10.5%2C8 13.5%2C12%22%2F%3E%3C%2Fsvg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cline x1%3D%222%22 y1%3D%224%22 x2%3D%228%22 y2%3D%224%22%2F%3E%3Cline x1%3D%222%22 y1%3D%228%22 x2%3D%228%22 y2%3D%228%22%2F%3E%3Cline x1%3D%222%22 y1%3D%2212%22 x2%3D%228%22 y2%3D%2212%22%2F%3E%3Cpolyline points%3D%2213.5%2C4 10.5%2C8 13.5%2C12%22%2F%3E%3C%2Fsvg%3E");
 }
@@ -316,75 +186,6 @@
 .new-button:focus-visible {
   outline: none;
   border-color: var(--brand);
-}
-
-/* Native Popover API (popover/popovertarget) handles open/close, ESC, and
-   light-dismiss — this is purely presentational. The UA stylesheet gives
-   [popover] elements `inset: 0; margin: auto; border: solid; ...`, so
-   top/right are overridden here and bottom/left are pinned to `auto` to
-   avoid inheriting a full-viewport-height box from that shorthand. */
-.info-popover {
-  position: fixed;
-  top: 64px;
-  right: 24px;
-  bottom: auto;
-  left: auto;
-  margin: 0;
-  padding: 20px 22px;
-  width: min(320px, calc(100vw - 48px));
-  border: 1px solid #f0f0f0;
-  border-radius: 12px;
-  background: #fff;
-  color: #333;
-  font-size: 13px;
-  line-height: 1.7;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-}
-
-.info-popover p {
-  margin: 0 0 10px;
-}
-
-.info-popover p:last-child {
-  margin-bottom: 0;
-}
-
-.info-popover a {
-  color: #111;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.info-popover hr {
-  margin: 14px 0;
-  border: none;
-  border-top: 1px solid #eee;
-}
-
-.info-contact-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-top: 4px;
-}
-
-/* "Clear all history" — a shared-device privacy control, so it lives in the
-   info popover rather than the sidebar itself. */
-.info-clear-all {
-  width: 100%;
-  margin: 4px 0 10px;
-  padding: 8px;
-  font-size: 12px;
-  font-family: inherit;
-  color: #b23a2e;
-  background: transparent;
-  border: 1px solid #f0d9d6;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.info-clear-all:hover {
-  background: #fdf2f1;
 }
 
 /* ---- Saved-list sidebar + editor -------------------------------------
