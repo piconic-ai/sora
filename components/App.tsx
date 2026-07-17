@@ -3,10 +3,11 @@
 import { createEffect, createMemo, createSignal, onCleanup, onMount } from '@barefootjs/client'
 import { AppHeader } from './AppHeader'
 import { EditorMain } from './EditorMain'
+import { ListSidebar } from './ListSidebar'
 import { PrintSheets } from './PrintSheets'
 import { computeLayout } from '../src/lib/layout'
 import { DEFAULTS } from '../src/lib/constants'
-import { displayListTitle, historyItemTitle, messages } from '../src/lib/i18n'
+import { messages } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
 import { adjustIndexAfterRemoval, buildListPath, parseListIdFromPath, shouldConfirmBeforeNewList } from '../src/lib/listnav'
@@ -690,105 +691,19 @@ export function App(props: AppProps) {
         onClearAllLists={() => void handleClearAllLists()}
       />
       <div className={sidebarOpen() ? 'workspace no-print' : 'workspace no-print sidebar-closed'}>
-        {/* Reopen button, rendered where the sidebar's own collapse button
-            sits while open (workspace top-left) — the two toggles share one
-            screen position, so opening and closing never requires moving
-            the mouse. */}
-        {!sidebarOpen() ? (
-          <button
-            type="button"
-            className="sidebar-open sidebar-open--inline"
-            aria-expanded={sidebarOpen()}
-            aria-controls="list-sidebar"
-            aria-label={t().sidebarToggleLabel}
-            onClick={() => setSidebarOpen(true)}
-          >
-            <span className="sidebar-toggle-icon" aria-hidden="true" />
-          </button>
-        ) : null}
-        {sidebarOpen() && (
-          <div className="sidebar-scrim" aria-hidden="true" onClick={() => setSidebarOpen(false)} />
-        )}
-        <aside id="list-sidebar" className="list-sidebar" aria-label={t().listsLabel}>
-          <button
-            type="button"
-            className="sidebar-collapse"
-            aria-expanded={sidebarOpen()}
-            aria-controls="list-sidebar"
-            aria-label={t().sidebarToggleLabel}
-            onClick={() => setSidebarOpen(false)}
-          >
-            <span className="sidebar-toggle-icon" aria-hidden="true" />
-          </button>
-          <button type="button" className="new-button" onClick={createNewList}>
-            <span className="new-button-plus" aria-hidden="true">+</span>
-            {t().newList}
-          </button>
-          <div className="list-items" role="list">
-            {sidebarLists().map((entry) => (
-              <div
-                className={
-                  entry.renaming
-                    ? entry.active
-                      ? 'list-item is-active is-renaming'
-                      : 'list-item is-renaming'
-                    : entry.active
-                      ? 'list-item is-active'
-                      : 'list-item'
-                }
-                role="listitem"
-                key={entry.item.id}
-              >
-                <button
-                  type="button"
-                  className="list-item-select"
-                  aria-current={entry.active ? 'true' : undefined}
-                  onClick={() => selectList(entry.item.id)}
-                >
-                  {displayListTitle(locale(), entry.item)}
-                </button>
-                <input
-                  type="text"
-                  className="list-item-rename-input"
-                  aria-label={t().renameListLabel}
-                  placeholder={historyItemTitle(locale(), entry.item.pairs, entry.item.createdAt)}
-                  onKeyDown={(e) => handleRenameKeyDown(entry.item.id, e as KeyboardEvent)}
-                  onBlur={(e) => commitRename(entry.item.id, (e.target as HTMLInputElement).value)}
-                />
-                <div className="list-item-menu-wrap">
-                  <button
-                    type="button"
-                    className="list-item-menu-btn"
-                    aria-haspopup="menu"
-                    aria-expanded={entry.menuOpen}
-                    aria-label={t().listItemMenu}
-                    onClick={() => toggleMenu(entry.item.id)}
-                  >
-                    <span aria-hidden="true">⋮</span>
-                  </button>
-                  <div className={entry.menuOpen ? 'list-item-menu is-open' : 'list-item-menu'} role="menu">
-                    <button
-                      type="button"
-                      className="list-item-menu-item"
-                      role="menuitem"
-                      onClick={() => startRename(entry.item.id)}
-                    >
-                      {t().renameListLabel}
-                    </button>
-                    <button
-                      type="button"
-                      className="list-item-menu-item is-danger"
-                      role="menuitem"
-                      onClick={() => deleteListById(entry.item.id)}
-                    >
-                      {t().deleteThisList}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </aside>
+        <ListSidebar
+          sidebarOpen={sidebarOpen()}
+          setSidebarOpen={setSidebarOpen}
+          locale={locale()}
+          sidebarLists={sidebarLists()}
+          onCreateNewList={createNewList}
+          onSelectList={selectList}
+          onRenameKeyDown={handleRenameKeyDown}
+          onCommitRename={commitRename}
+          onToggleMenu={toggleMenu}
+          onStartRename={startRename}
+          onDeleteListById={deleteListById}
+        />
 
         <EditorMain
           breakIndices={breakIndices()}

@@ -19,6 +19,12 @@ interface EditorMainProps {
 
 export function EditorMain(props: EditorMainProps) {
   const t = createMemo(() => messages[(props.locale as Locale) ?? 'ja'])
+  // Computed outside JSX: an inline `as Locale` cast on a JSX-embedded call
+  // argument doesn't survive the compiler's SSR-mirror re-serialization
+  // (drops back to the untyped `string` prop, failing tsc on the generated
+  // public/components/*.tsx — same class of gap as the null-typed-let and
+  // updater-fn quirks in the framework notes).
+  const pageCaption = createMemo(() => pageMeterCaption((props.locale as Locale) ?? 'ja', props.pageFill))
 
   return (
     <section className="editor-main">
@@ -39,7 +45,7 @@ export function EditorMain(props: EditorMainProps) {
                 style={`width:${Math.round(props.pageFill.ratio * 100)}%`}
               />
             </div>
-            <p className="page-meter-caption">{pageMeterCaption(props.locale as Locale, props.pageFill)}</p>
+            <p className="page-meter-caption">{pageCaption()}</p>
           </div>
         )}
         <button type="button" className="print-button no-print" disabled={props.printDisabled} onClick={() => window.print()}>
