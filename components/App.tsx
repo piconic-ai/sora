@@ -2,11 +2,11 @@
 
 import { createEffect, createMemo, createSignal, onCleanup, onMount } from '@barefootjs/client'
 import { AppHeader } from './AppHeader'
+import { EditorMain } from './EditorMain'
 import { PrintSheets } from './PrintSheets'
-import { WordTable } from './WordTable'
 import { computeLayout } from '../src/lib/layout'
 import { DEFAULTS } from '../src/lib/constants'
-import { displayListTitle, historyItemTitle, messages, pageMeterCaption } from '../src/lib/i18n'
+import { displayListTitle, historyItemTitle, messages } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
 import { adjustIndexAfterRemoval, buildListPath, parseListIdFromPath, shouldConfirmBeforeNewList } from '../src/lib/listnav'
@@ -790,32 +790,15 @@ export function App(props: AppProps) {
           </div>
         </aside>
 
-        <section className="editor-main">
-          <div className="editor-body">
-            <WordTable breakIndices={breakIndices()} onChange={handleTableChange} locale={locale()} loadRequest={loadRequest()} />
-            {pairs().length === 0 ? (
-              <p className="hint no-print">{t().hint}</p>
-            ) : (
-              <div className="page-meter no-print">
-                <div className="page-meter-track">
-                  <div
-                    className={pageFill().isFull ? 'page-meter-fill is-full' : 'page-meter-fill'}
-                    style={`width:${Math.round(pageFill().ratio * 100)}%`}
-                  />
-                </div>
-                <p className="page-meter-caption">{pageMeterCaption(locale(), pageFill())}</p>
-              </div>
-            )}
-            <button
-              type="button"
-              className="print-button no-print"
-              disabled={layout().pages.length === 0}
-              onClick={() => window.print()}
-            >
-              {t().print}
-            </button>
-          </div>
-        </section>
+        <EditorMain
+          breakIndices={breakIndices()}
+          onChange={handleTableChange}
+          locale={locale()}
+          loadRequest={loadRequest()}
+          pairsCount={pairs().length}
+          pageFill={pageFill()}
+          printDisabled={layout().pages.length === 0}
+        />
       </div>
       <PrintSheets layout={layout()} settings={DEFAULTS} />
     </div>
