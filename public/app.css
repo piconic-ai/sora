@@ -17,6 +17,15 @@
   --paper-tint: #fafafa;
 }
 
+/* Kept as plain CSS rather than UnoCSS utilities: every property here
+   exists to override styles.css's scaffold `main` rule (display:grid,
+   place-items:center, min-height:100vh, padding:2rem, text-align:center —
+   built for the sample Counter's centered layout), and that rule is plain
+   unlayered CSS. UnoCSS's outputToCssLayers puts utility classes in a
+   named layer, and unlayered CSS always outranks layered CSS regardless
+   of specificity — so a `block`/`text-left`/etc. utility here would
+   silently lose to styles.css's `main` selector. Only a plain (also
+   unlayered) rule can reliably win. */
 .print-root {
   display: block;
   min-height: auto;
@@ -33,12 +42,6 @@
     sans-serif;
   font-size: 15px;
   color: #111;
-}
-
-.app {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
 /* Panel-toggle glyph shared by both toggle buttons (AppHeader's
@@ -84,24 +87,9 @@
    A two-column workspace: a fixed-width list sidebar on the left, the
    editor filling the rest. The sidebar renders a newest-first view of the
    saved lists (see components/App.tsx's sidebarLists) as a single-level
-   list; the editor shows the active one. */
-.workspace {
-  display: flex;
-  /* Keep the editor column top-aligned even once the sidebar below is
-     stretched to the workspace's full (viewport-derived) height — without
-     this, flex's default 'stretch' would grow .editor-main to match the
-     sidebar instead of letting it size to its own content. */
-  align-items: flex-start;
-  gap: 24px;
-  /* Lets a short list's sidebar divider (.list-sidebar's border-right)
-     run down the page even when the sidebar's own content is much shorter.
-     The offset is everything vertical outside the workspace, so the page
-     fits the viewport without forcing a scrollbar: .print-root's padding-top
-     (56px) + the header (~26px) + the .app flex gap above the workspace
-     (20px) + .print-root's padding-bottom (96px) ≈ 200px. (Reset to 0 on the
-     narrow drawer layout below, where the sidebar isn't a flex column.) */
-  min-height: calc(100vh - 200px);
-}
+   list; the editor shows the active one. Screen layout (flex/gap/
+   min-height) is inlined as UnoCSS utilities on App.tsx's own element —
+   kept here as a bare hook class for the two rules below. */
 
 /* Sidebar open/close (the sidebar's own .sidebar-collapse button while
    open, the header's .sidebar-open--header button while closed). On a wide

@@ -682,7 +682,7 @@ export function App(props: AppProps) {
   })
 
   return (
-    <div className="app">
+    <div className="app flex flex-col gap-5">
       <AppHeader
         locale={locale()}
         setLocale={setLocale}
@@ -690,7 +690,22 @@ export function App(props: AppProps) {
         setSidebarOpen={setSidebarOpen}
         onClearAllLists={() => void handleClearAllLists()}
       />
-      <div className={sidebarOpen() ? 'workspace no-print' : 'workspace no-print sidebar-closed'}>
+      {/* min-h keeps a short list's sidebar divider running down the page
+          even when the sidebar's own content is much shorter, without
+          forcing a scrollbar: 200px is everything vertical outside the
+          workspace — server.tsx's .print-root padding-top (56px) + the
+          header (~26px) + this .app flex gap above the workspace (20px) +
+          .print-root's padding-bottom (96px). align-items:flex-start keeps
+          the editor column top-aligned instead of stretching to match.
+          (min-h resets to 0 on the narrow drawer layout — see app.css's
+          720px media query.) */}
+      <div
+        className={
+          sidebarOpen()
+            ? 'workspace no-print flex items-start gap-6 min-h-[calc(100vh-200px)]'
+            : 'workspace no-print sidebar-closed flex items-start gap-6 min-h-[calc(100vh-200px)]'
+        }
+      >
         <ListSidebar
           sidebarOpen={sidebarOpen()}
           setSidebarOpen={setSidebarOpen}
