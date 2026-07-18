@@ -41,90 +41,12 @@
   gap: 20px;
 }
 
-/* Reopens the list sidebar. Two renderings, switched by the 720px media
-   query below:
-   - .sidebar-open--inline (components/ListSidebar.tsx): the workspace's
-     first column, landing on the exact screen position of the sidebar's
-     own .sidebar-collapse button — the two toggles share one spot, so
-     open/close never requires moving the mouse. Wide layouts only.
-   - .sidebar-open--header (components/AppHeader.tsx, migrated to UnoCSS
-     utilities — this base rule now styles only ListSidebar's
-     .sidebar-open--inline, pending that component's own migration): sits
-     in the header row (where the hidden logo would be) on narrow layouts,
-     where the sidebar is an overlay drawer and the workspace column would
-     waste width. */
-.sidebar-open {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
-}
-
-.sidebar-open:hover {
-  color: var(--ink);
-  border-color: #ccc;
-}
-
-.sidebar-open:focus-visible {
-  outline: none;
-  border-color: var(--brand);
-}
-
-/* Wide layouts: the toggle lives in the workspace column. */
-.sidebar-open--header {
-  display: none;
-}
-
-/* Collapses the sidebar. Sits at the sidebar's top-LEFT edge, above "New",
-   so it occupies the same screen position as .sidebar-open (the workspace-
-   left reopen button shown while closed) — toggling back and forth keeps
-   the cursor in one place. Icon-sized so it reads as a subtle affordance
-   rather than a second primary action competing with "New" below it; the
-   sidebar's own flex `gap` (10px) already spaces it from .new-button. */
-.sidebar-collapse {
-  align-self: flex-start;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.sidebar-collapse:hover {
-  color: var(--ink);
-  border-color: #ccc;
-}
-
-.sidebar-collapse:focus-visible {
-  outline: none;
-  border-color: var(--brand);
-}
-
-/* Panel-toggle glyph shared by both toggle buttons (.sidebar-open in the
-   header, .sidebar-collapse in the sidebar). Drawn as a CSS mask over a
-   currentColor fill — kept in the stylesheet rather than as inline <svg> so
-   it inherits the button's hover color for free and sidesteps BarefootJS's
-   SVG-namespace gap for markup created/destroyed by conditional rendering. */
+/* Panel-toggle glyph shared by both toggle buttons (AppHeader's
+   .sidebar-open--header, ListSidebar's .sidebar-collapse /
+   .sidebar-open--inline). Drawn as a CSS mask over a currentColor fill —
+   kept in the stylesheet rather than as inline <svg> so it inherits the
+   button's hover color for free and sidesteps BarefootJS's SVG-namespace
+   gap for markup created/destroyed by conditional rendering. */
 .sidebar-toggle-icon {
   display: block;
   width: 16px;
@@ -138,54 +60,24 @@
   mask-repeat: no-repeat;
 }
 
-/* Closed → the "expand" glyph (chevron pointing right, into the panel).
-   `.sidebar-toggle-icon--expand` (components/AppHeader.tsx) is the
-   self-contained UnoCSS-era spelling; `.sidebar-open .sidebar-toggle-icon`
-   still styles ListSidebar's not-yet-migrated .sidebar-open--inline icon —
-   drop it once that component switches to the modifier class too. */
-.sidebar-open .sidebar-toggle-icon,
+/* Closed → the "expand" glyph (chevron pointing right, into the panel). */
 .sidebar-toggle-icon--expand {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cpolyline points%3D%222.5%2C4 5.5%2C8 2.5%2C12%22%2F%3E%3Cline x1%3D%228%22 y1%3D%224%22 x2%3D%2214%22 y2%3D%224%22%2F%3E%3Cline x1%3D%228%22 y1%3D%228%22 x2%3D%2214%22 y2%3D%228%22%2F%3E%3Cline x1%3D%228%22 y1%3D%2212%22 x2%3D%2214%22 y2%3D%2212%22%2F%3E%3C%2Fsvg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cpolyline points%3D%222.5%2C4 5.5%2C8 2.5%2C12%22%2F%3E%3Cline x1%3D%228%22 y1%3D%224%22 x2%3D%2214%22 y2%3D%224%22%2F%3E%3Cline x1%3D%228%22 y1%3D%228%22 x2%3D%2214%22 y2%3D%228%22%2F%3E%3Cline x1%3D%228%22 y1%3D%2212%22 x2%3D%2214%22 y2%3D%2212%22%2F%3E%3C%2Fsvg%3E");
 }
 
 /* Open → the "collapse" glyph (chevron pointing left, back toward the
-   edge). `.sidebar-toggle-icon--collapse` is unused until ListSidebar.tsx
-   migrates (kept here now so both icon directions get the modifier-class
-   treatment in the same edit). */
-.sidebar-collapse .sidebar-toggle-icon,
+   edge). */
 .sidebar-toggle-icon--collapse {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cline x1%3D%222%22 y1%3D%224%22 x2%3D%228%22 y2%3D%224%22%2F%3E%3Cline x1%3D%222%22 y1%3D%228%22 x2%3D%228%22 y2%3D%228%22%2F%3E%3Cline x1%3D%222%22 y1%3D%2212%22 x2%3D%228%22 y2%3D%2212%22%2F%3E%3Cpolyline points%3D%2213.5%2C4 10.5%2C8 13.5%2C12%22%2F%3E%3C%2Fsvg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 16 16%22 fill%3D%22none%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cline x1%3D%222%22 y1%3D%224%22 x2%3D%228%22 y2%3D%224%22%2F%3E%3Cline x1%3D%222%22 y1%3D%228%22 x2%3D%228%22 y2%3D%228%22%2F%3E%3Cline x1%3D%222%22 y1%3D%2212%22 x2%3D%228%22 y2%3D%2212%22%2F%3E%3Cpolyline points%3D%2213.5%2C4 10.5%2C8 13.5%2C12%22%2F%3E%3C%2Fsvg%3E");
 }
 
-.new-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 13px;
-  font-family: inherit;
-  line-height: 1.4;
-  color: #444;
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
-}
-
-.new-button:hover {
-  color: var(--ink);
-  border-color: #ccc;
-  background: var(--paper-tint);
-}
-
-.new-button:focus-visible {
-  outline: none;
-  border-color: var(--brand);
+/* Wide layouts: the toggle lives in the workspace column (ListSidebar's
+   .sidebar-open--inline). Narrow layouts flip this in the 720px media
+   query below. */
+.sidebar-open--header {
+  display: none;
 }
 
 /* ---- Saved-list sidebar + editor -------------------------------------
@@ -211,218 +103,13 @@
   min-height: calc(100vh - 200px);
 }
 
-.list-sidebar {
-  flex: 0 0 220px;
-  width: 220px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-right: 1px solid #eee;
-  padding-right: 20px;
-  box-sizing: border-box;
-  /* Opts out of the default flex 'stretch' being blocked by .workspace's
-     align-items: flex-start, so the sidebar (and its border-right divider)
-     still grows to the workspace's full min-height even though the editor
-     column next to it stays top-aligned at its own natural height. */
-  align-self: stretch;
-}
-
 /* Sidebar open/close (the sidebar's own .sidebar-collapse button while
-   open, the header's .sidebar-open button while closed). On a wide layout
-   this just drops the sidebar out of the flex row; on a narrow one (see
-   the max-width:720px block below, where .list-sidebar becomes a
+   open, the header's .sidebar-open--header button while closed). On a wide
+   layout this just drops the sidebar out of the flex row; on a narrow one
+   (see the max-width:720px block below, where .list-sidebar becomes a
    fixed-position drawer) it's what keeps the drawer off-screen by default. */
 .workspace.sidebar-closed .list-sidebar {
   display: none;
-}
-
-/* Backdrop behind the narrow-viewport drawer, dismissing it on click.
-   Invisible/inert on wide layouts — only the max-width:720px block below
-   turns it into a visible, fixed full-screen scrim. */
-.sidebar-scrim {
-  display: none;
-}
-
-/* Cap the scroll region to the viewport so a long list scrolls inside the
-   sidebar rather than growing the page. */
-.list-items {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  overflow-y: auto;
-  max-height: calc(100vh - 180px);
-}
-
-.list-item {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  border-radius: 6px;
-  transition: background-color 0.15s;
-}
-
-/* Active list: background + ink-weight text only. Which list is open is
-   already told by the editor's content, so the marker stays quiet — no
-   accent color needed. */
-.list-item.is-active {
-  background: #f2f2f2;
-}
-
-.list-item-select {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 7px 8px;
-  font-size: 13px;
-  font-family: inherit;
-  text-align: left;
-  color: #666;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.list-item:hover {
-  background: #f6f6f6;
-}
-
-.list-item.is-active .list-item-select {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.list-item-select:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 1px var(--brand);
-}
-
-/* Per-item ⋮ (more-actions) button. Stays hidden until the row is
-   hovered/focused — or its menu is open — so the sidebar reads as a clean
-   list rather than a wall of buttons. */
-.list-item-menu-wrap {
-  position: relative;
-  flex-shrink: 0;
-  margin-right: 4px;
-}
-
-.list-item-menu-btn {
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 1;
-  color: #999;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  opacity: 0;
-}
-
-.list-item:hover .list-item-menu-btn,
-.list-item-menu-btn:focus-visible,
-.list-item-menu-btn[aria-expanded='true'] {
-  opacity: 1;
-}
-
-.list-item-menu-btn:hover,
-.list-item-menu-btn[aria-expanded='true'] {
-  color: #111;
-  background: #ececec;
-}
-
-.list-item-menu-btn:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 1px #111;
-}
-
-/* Dropdown menu (Rename / Delete) for the open row. Positioned `fixed` and
-   placed under its ⋮ button by JS (App's positionMenu) rather than absolutely
-   inside the row: the sidebar's `.list-items` is an `overflow-y: auto` scroll
-   container, which would clip an absolutely-positioned dropdown on the lower
-   rows. The off-screen default keeps it from flashing at 0,0 before JS sets
-   the real coordinates. */
-.list-item-menu {
-  display: none;
-  position: fixed;
-  top: -9999px;
-  left: -9999px;
-  z-index: 30;
-  min-width: 148px;
-  padding: 4px;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-}
-
-.list-item-menu.is-open {
-  display: block;
-}
-
-.list-item-menu-item {
-  display: block;
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 13px;
-  font-family: inherit;
-  text-align: left;
-  color: #333;
-  background: transparent;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.list-item-menu-item:hover {
-  background: #f4f4f4;
-}
-
-.list-item-menu-item.is-danger {
-  color: #b23a2e;
-}
-
-.list-item-menu-item.is-danger:hover {
-  background: #fdf2f1;
-}
-
-/* Inline rename editor: shares the row with the select button, which is
-   swapped out for it while `is-renaming` is set (App's renamingId). Kept in
-   the DOM at all times so toggling rename never changes the row's structure
-   inside the reactive .map(). */
-.list-item-rename-input {
-  display: none;
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 6px 7px;
-  font-size: 13px;
-  font-family: inherit;
-  color: var(--ink);
-  background: #fff;
-  border: 1px solid var(--brand);
-  border-radius: 6px;
-  outline: none;
-}
-
-.list-item.is-renaming .list-item-select,
-.list-item.is-renaming .list-item-menu-wrap {
-  display: none;
-}
-
-.list-item.is-renaming .list-item-rename-input {
-  display: block;
-}
-
-.new-button-plus {
-  margin-right: 6px;
-  font-size: 15px;
-  line-height: 1;
 }
 
 /* Narrow screens: the sidebar becomes a fixed-position overlay drawer
