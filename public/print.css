@@ -80,7 +80,16 @@
 }
 
 @media print {
-  body > *:not(.print-root) {
+  /* Hides everything at the body level except .print-root itself, any
+     wrapper that merely *contains* it (renderer.tsx's `[bf-region]`
+     partial-navigation wrapper sits between <body> and <main
+     class="print-root">, so .print-root is no longer body's direct
+     child), and .print-root's own descendants. `:has()` is what makes
+     this robust to that wrapper (or any future one) instead of assuming
+     a fixed nesting depth — a plain `body > *:not(.print-root)` matches
+     the wrapper *itself* (it lacks the class too) and blanks the whole
+     printed page, wrapper and all. */
+  body *:not(.print-root):not(.print-root *):not(:has(.print-root)) {
     display: none !important;
   }
   /* Anything not meant for paper (input table, buttons) opts in via
