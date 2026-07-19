@@ -8,6 +8,12 @@ public/.dev/
 # Wrangler local state (dev session, worker logs)
 .wrangler/
 
+# Playwright e2e output
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Dependencies
 node_modules/
 

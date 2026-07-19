@@ -7,7 +7,9 @@
     "build": "bf build --minify && unocss",
     "deploy": "bf build --minify && unocss && wrangler deploy",
     "watch": "concurrently -k -n build,uno -c blue,magenta \"bf build --watch\" \"unocss --watch\"",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@barefootjs/client": "^0.21.3",
@@ -21,6 +23,7 @@
     "@barefootjs/cli": "^0.21.3",
     "@barefootjs/test": "^0.21.3",
     "@cloudflare/workers-types": "^4.20260702.1",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^22.0.0",
     "@unocss/cli": "^66.0.0",
     "@unocss/preset-wind4": "^66.0.0",
