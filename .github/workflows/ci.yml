@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast feedback: type check + the pure-logic unit suite (tests/*.test.ts,
+  # vitest). No browser, no build — this is the layer that's fast enough to
+  # run on every keystroke locally too.
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+  # Slower: builds the app (bf build + unocss) and drives it in real
+  # chromium/firefox/webkit via Playwright — see tests/e2e/. This is the
+  # layer that would have caught the print-preview-renders-blank
+  # regression the e2e suite itself was written in response to; tsc and
+  # vitest alone did not.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: E2E tests (playwright.config.ts builds the app and starts wrangler dev itself)
+        run: npm run test:e2e
+        env:
+          CI: true
+          # Wrangler prompts for telemetry consent on its very first
+          # invocation; CI's non-interactive shell should skip it
+          # automatically, but pin this explicitly so a version/behavior
+          # change can't turn that into a hang instead of a skip.
+          WRANGLER_SEND_METRICS: false
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
