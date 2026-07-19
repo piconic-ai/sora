@@ -26,6 +26,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Build (generates public/components/manifest.json, imported by renderer.tsx)
+        run: npm run build
+
       - name: Type check
         run: npx tsc --noEmit
 
