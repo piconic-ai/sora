@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from '@playwright/test'
+import { test as base, expect, type Page, type Locator } from '@playwright/test'
 
 // Shared e2e helpers for Sora (components/App.tsx's IndexedDB-backed saved
 // lists + WordTable editor + print pipeline). See the "Test infra
@@ -43,9 +43,17 @@ export async function gotoReady(page: Page, path = '/'): Promise<void> {
  * so the next navigation starts from a genuinely empty history (no
  * auto-seeded sample list). Must be registered via addInitScript *before*
  * calling page.goto().
+ *
+ * Guarded by a sessionStorage flag so it fires exactly once per page/
+ * context: addInitScript re-runs on *every* document load in the page,
+ * including a test's own `page.reload()` — without the guard, a reload
+ * after the app has written real data (e.g. an autosave) would wipe it
+ * right back out from under the very test trying to verify it persisted.
  */
 export async function clearSoraDb(page: Page): Promise<void> {
   await page.addInitScript(() => {
+    if (sessionStorage.getItem('__e2e_db_cleared')) return
+    sessionStorage.setItem('__e2e_db_cleared', '1')
     indexedDB.deleteDatabase('sora')
   })
 }
@@ -65,10 +73,18 @@ export interface SeedList {
  * active.ts), before the app boots. Mirrors serializeList's shape by hand
  * rather than importing app code, since this runs inside
  * page.addInitScript's isolated browser-context closure.
+ *
+ * Guarded by a sessionStorage flag, same reasoning as clearSoraDb: without
+ * it, any test that reloads after seeding would re-seed on every reload
+ * too, silently overwriting whatever the app itself had written since —
+ * exactly the failure mode a "does it survive a reload" test exists to
+ * catch, so this guard is not optional for those tests to be meaningful.
  */
 export async function seedLists(page: Page, lists: SeedList[], activeListId?: string): Promise<void> {
   await page.addInitScript((args) => {
     const { lists, activeListId } = args as { lists: SeedList[]; activeListId?: string }
+    if (sessionStorage.getItem('__e2e_db_seeded')) return
+    sessionStorage.setItem('__e2e_db_seeded', '1')
     const openReq = indexedDB.open('sora', 2)
     openReq.onupgradeneeded = (event) => {
       const db = openReq.result
@@ -124,12 +140,11 @@ export async function printCallCount(page: Page): Promise<number> {
  * an actual conversion UI.
  */
 export async function dispatchComposingKey(
-  page: Page,
-  selector: string,
+  locator: Locator,
   key: string,
   opts: { legacyKeyCode?: boolean } = {},
 ): Promise<void> {
-  await page.locator(selector).evaluate(
+  await locator.evaluate(
     (el, { key, legacyKeyCode }) => {
       const event = new KeyboardEvent('keydown', {
         key,
@@ -146,6 +161,22 @@ export async function dispatchComposingKey(
     },
     { key, legacyKeyCode: opts.legacyKeyCode ?? false },
   )
+}
+
+/**
+ * Dispatches a synthetic `paste` ClipboardEvent carrying `text`, matching
+ * exactly what WordTable's handlePaste listens for. Real OS-clipboard
+ * paste needs per-browser permission grants and is flaky in headless CI;
+ * this targets the same event/API the handler reads
+ * (`e.clipboardData.getData('text')`) directly.
+ */
+export async function pasteText(locator: Locator, text: string): Promise<void> {
+  await locator.evaluate((el, text) => {
+    const dt = new DataTransfer()
+    dt.setData('text', text)
+    const event = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })
+    el.dispatchEvent(event)
+  }, text)
 }
 
 export { expect }
