@@ -12,16 +12,16 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@barefootjs/client": "^0.21.3",
-    "@barefootjs/hono": "^0.21.3",
-    "@barefootjs/jsx": "^0.21.3",
-    "@barefootjs/router": "^0.21.3",
-    "@barefootjs/shared": "^0.21.3",
+    "@barefootjs/client": "^0.23.0",
+    "@barefootjs/hono": "^0.23.0",
+    "@barefootjs/jsx": "^0.23.0",
+    "@barefootjs/router": "^0.23.0",
+    "@barefootjs/shared": "^0.23.0",
     "hono": "^4.6.0"
   },
   "devDependencies": {
-    "@barefootjs/cli": "^0.21.3",
-    "@barefootjs/test": "^0.21.3",
+    "@barefootjs/cli": "^0.23.0",
+    "@barefootjs/test": "^0.23.0",
     "@cloudflare/workers-types": "^4.20260702.1",
     "@playwright/test": "^1.61.1",
     "@types/node": "^22.0.0",
