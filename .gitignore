@@ -13,6 +13,7 @@ public/.dev/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/.playwright-mcp/
 
 # Dependencies
 node_modules/
