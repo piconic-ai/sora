@@ -11,10 +11,6 @@ import { messages } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
 import { useListStore } from '../src/lib/useListStore'
-// Looks unused: SavedList never appears in this file's own code. It's needed
-// anyway — the compiler inlines useListStore's body here, and that body still
-// references SavedList in type position, which the compiler doesn't re-provision.
-import type { SavedList } from '../src/lib/storage/schema'
 import type { Pair } from '../src/lib/types'
 
 interface AppProps {
