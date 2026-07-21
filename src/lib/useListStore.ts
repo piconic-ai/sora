@@ -28,15 +28,22 @@ import type { Pair } from './types'
  * cross-file factory referencing any of storage/lists.ts's exports
  * triggered a spurious BF112).
  *
- * `pairs`/`t`/`closeMenus`/`setSidebarOpen`/`isNarrowViewport` are App.tsx's
- * own reactive state/helpers — genuinely cross-cutting (editor content,
- * locale messages, sidebar UI), so they're threaded through as parameters
- * rather than duplicated here.
+ * `pairs`/`t`/`setSidebarOpen`/`isNarrowViewport` are App.tsx's own
+ * reactive state/helpers — genuinely cross-cutting (editor content, locale
+ * messages, sidebar open/closed) — so they're threaded through as
+ * parameters rather than duplicated here. The sidebar's per-item ⋮-menu/
+ * rename UI state lives in ListSidebar.tsx, not here: every action below
+ * that used to dismiss it (closeMenus()) is only ever triggered from a
+ * ListSidebar-owned click, so ListSidebar closes its own menu locally
+ * before calling in, and this store no longer needs to know that state
+ * exists at all. The one action NOT triggered from ListSidebar —
+ * handleClearAllLists, from AppHeader's info popover — replaces every list
+ * wholesale with freshly generated ids, so a stale menuOpenId/renamingId
+ * left over in ListSidebar simply never matches any new item's id.
  */
 export function useListStore(
   pairs: () => Pair[],
   t: () => Messages,
-  closeMenus: () => void,
   setSidebarOpen: (open: boolean) => void,
   isNarrowViewport: () => boolean,
 ) {
@@ -222,7 +229,6 @@ export function useListStore(
   // unsaved), clamp into bounds (recreating a single empty list if none
   // remain), then switch.
   const navigate = (toIndex: number) => {
-    closeMenus()
     const fromIndex = activeIndex()
     const fromId = activeList()?.id ?? null
 
@@ -256,7 +262,6 @@ export function useListStore(
   // (evaporating an empty current card) can never itself land back on the
   // cap and prompt a confirm the user didn't expect.
   const createNewList = () => {
-    closeMenus()
     userInteracted = true
     let ls = commitActiveEdits()
     setLists(ls)
@@ -308,10 +313,7 @@ export function useListStore(
     // already-active item (a common "go back to the editor" gesture), so it
     // runs before the same-id early return below.
     if (isNarrowViewport()) setSidebarOpen(false)
-    if (id === activeList()?.id) {
-      closeMenus()
-      return
-    }
+    if (id === activeList()?.id) return
     const idx = lists().findIndex((l) => l.id === id)
     if (idx < 0) return
     navigate(idx)
@@ -323,7 +325,6 @@ export function useListStore(
   // tombstone + delete it, and shift activeIndex left if the removed item sat
   // before the active one so the same list stays active.
   const deleteListById = (id: string) => {
-    closeMenus()
     const current = activeList()
     if (id === current?.id) {
       deleteCurrentList()
@@ -346,7 +347,6 @@ export function useListStore(
   // whatever it contains, then moves the editor to the next (newer) list if
   // there is one, else the previous (older) one, else a fresh empty list.
   const deleteCurrentList = () => {
-    closeMenus()
     const current = activeList()
     if (!current) return
     // Confirm only when there's content to lose — deleting an untouched empty
@@ -402,7 +402,6 @@ export function useListStore(
   // Wipes every saved list and reseeds the "Sample" list, same as a
   // first-ever visit — never leave the sidebar with nothing to open.
   const handleClearAllLists = async () => {
-    closeMenus()
     // Destructive and irreversible (every list, not just the current one), so
     // confirm — mirroring the per-item delete.
     if (!window.confirm(t().confirmClearAll)) return
