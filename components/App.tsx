@@ -11,11 +11,9 @@ import { messages } from '../src/lib/i18n'
 import type { Locale } from '../src/lib/i18n'
 import { computePageFill } from '../src/lib/pageMeter'
 import { useListStore } from '../src/lib/useListStore'
-// #2332's import re-provisioning only covers VALUE bindings a factory body
-// references (extractFreeIdentifiersFromNode stops at type nodes) — a type
-// used only in annotations inside the inlined body, like SavedList here,
-// isn't detected or re-provisioned, so it needs its own explicit import at
-// the call site.
+// Looks unused: SavedList never appears in this file's own code. It's needed
+// anyway — the compiler inlines useListStore's body here, and that body still
+// references SavedList in type position, which the compiler doesn't re-provision.
 import type { SavedList } from '../src/lib/storage/schema'
 import type { Pair } from '../src/lib/types'
 
@@ -27,30 +25,20 @@ export function App(props: AppProps) {
   const [pairs, setPairs] = createSignal<Pair[]>([])
   const [locale, setLocale] = createSignal<Locale>((props.locale as Locale) ?? 'ja')
 
-  // Whether the list sidebar is shown. Starts `true` on both SSR and the
-  // first client render (a wide-viewport assumption, matching what SSR always
-  // renders regardless of the real device) so hydration never mismatches;
-  // onMount below corrects it to `false` on an actually-narrow viewport
-  // (matchMedia is a client-only API, so it can't run before mount). Not
-  // persisted — every load re-derives it from the current viewport.
+  // Starts `true` (a wide-viewport assumption) even off wide viewports so SSR
+  // and the first client render always match; onMount corrects it once
+  // matchMedia — client-only — is available. Not persisted: every load
+  // re-derives it from the current viewport.
   const [sidebarOpen, setSidebarOpen] = createSignal(true)
   const isNarrowViewport = () => window.matchMedia('(max-width: 720px)').matches
 
   const t = createMemo(() => messages[locale()])
 
-  // The list-CRUD + debounced-autosave state machine (piconic-ai/sora, see
-  // src/lib/useListStore.ts for the full doc comments this used to carry
-  // inline) — pairs/t/setSidebarOpen/isNarrowViewport are this component's
-  // own reactive state, threaded through since the store can't hold them
-  // itself. Destructured (not `const store = ...`) because the compiler's
-  // cross-file reactive-factory inlining (#2325/#2332) only recognizes an
-  // object-destructure call site — that's what lets `lists`/`activeList`
-  // below be seen as ordinary signals/memos post-inlining, exactly as if
-  // they were declared directly in this file. A plain
-  // `const store = useListStore(...)` would compile, but every signal this
-  // store creates would be invisible to the reactivity analysis (no DOM
-  // update bindings), since analysis only recognizes directly-named
-  // createSignal/createMemo declarations at this scope.
+  // Destructured, not `const store = useListStore(...)`: the compiler's
+  // cross-file reactive-factory inlining only recognizes an object-destructure
+  // call site. A plain assignment would compile, but every signal the store
+  // creates would stay invisible to reactivity analysis — no DOM update
+  // bindings.
   const {
     lists,
     activeList,
@@ -70,19 +58,16 @@ export function App(props: AppProps) {
 
   const layout = createMemo(() => computeLayout(pairs(), DEFAULTS))
   const pageFill = createMemo(() => computePageFill(pairs().length, layout().capacity.pairsPerPage))
-  // Every element of pageBreakAfterPairIndex marks the last pair of a
-  // page, including the very last pair overall — but there's no line to
-  // draw after the final row, so that last entry is dropped.
+  // pageBreakAfterPairIndex includes the very last pair too, but there's no
+  // line to draw after the final row — drop that last entry.
   const breakIndices = createMemo(() => {
     const all = layout().pageBreakAfterPairIndex
     return all.length > 1 ? all.slice(0, -1) : []
   })
 
-  // WordTable's onChange: the live editor content becomes the source of
-  // truth for both the `pairs` signal (rendering) and, synced immediately,
-  // the active entry inside the store's `lists` (so a preview card / the URL
-  // / a concurrent navigate always sees up-to-date content instead of
-  // whatever was last persisted).
+  // Synced into `lists` immediately, not just scheduled for debounced save —
+  // a concurrent navigate/URL/preview must see live content, not whatever
+  // was last persisted.
   const handleTableChange = (newPairs: Pair[]) => {
     markUserInteracted()
     setPairs(newPairs)
@@ -93,10 +78,9 @@ export function App(props: AppProps) {
   }
 
   onMount(() => {
-    // Mark that client JS is live. The narrow-viewport CSS keeps the drawer +
-    // scrim hidden until this class is present, so a phone-width first paint
-    // doesn't flash an open drawer over a dark scrim before hydration corrects
-    // sidebarOpen to false below. Set on <html> (outside the island) so it
+    // The narrow-viewport CSS keeps the drawer + scrim hidden until this
+    // class is present, avoiding a flash of an open drawer before hydration
+    // corrects sidebarOpen below. Set on <html>, outside the island, so it
     // doesn't perturb hydration reconciliation.
     document.documentElement.classList.add('js-ready')
     if (isNarrowViewport()) setSidebarOpen(false)
@@ -116,11 +100,9 @@ export function App(props: AppProps) {
     void initialize()
   })
 
-  // Keeps document.title / html lang in sync with the client-side locale
-  // signal (SSR already sets both on first paint; this is what makes them
-  // update on a language switch without a full reload) and persists the
-  // choice in a cookie so the next SSR request (server.tsx's resolveLocale)
-  // picks the same locale.
+  // SSR already sets title/lang on first paint; this is what updates them on
+  // a language switch without a full reload. The cookie lets the next SSR
+  // request (server.tsx's resolveLocale) pick the same locale.
   createEffect(() => {
     const loc = locale()
     document.title = messages[loc].title
