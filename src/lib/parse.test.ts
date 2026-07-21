@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { parseInput } from '../src/lib/parse'
+import { parseInput } from './parse'
 
 describe('parseInput', () => {
   test('comma-delimited pairs', () => {

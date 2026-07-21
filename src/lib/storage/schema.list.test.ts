@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { LIST_VERSION, deserializeList, normalizeTitle, pairsEqual, serializeList } from '../src/lib/storage/schema'
+import { LIST_VERSION, deserializeList, normalizeTitle, pairsEqual, serializeList } from './schema'
 
 describe('serializeList / deserializeList round trip', () => {
   test('round-trips id, pairs, createdAt and updatedAt', () => {

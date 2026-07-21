@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest'
-import { generateId } from '../src/lib/storage/id'
+import { generateId } from './id'
 
 const URL_SAFE = /^[A-Za-z0-9_-]+$/
 

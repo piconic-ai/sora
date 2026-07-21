@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { DEFAULTS } from '../src/lib/constants'
-import { computeSheetGeometry } from '../src/lib/sheetGeometry'
+import { DEFAULTS } from './constants'
+import { computeSheetGeometry } from './sheetGeometry'
 
 describe('computeSheetGeometry', () => {
   // DEFAULTS: bands=4, panelHeightMm=20, marginMm=0.

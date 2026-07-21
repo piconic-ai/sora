@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { DEFAULTS } from '../src/lib/constants'
-import { computeCapacity, computeLayout } from '../src/lib/layout'
-import type { Pair, Settings } from '../src/lib/types'
+import { DEFAULTS } from './constants'
+import { computeCapacity, computeLayout } from './layout'
+import type { Pair, Settings } from './types'
 
 function makePairs(n: number): Pair[] {
   return Array.from({ length: n }, (_, i) => ({ front: `f${i}`, back: `b${i}` }))

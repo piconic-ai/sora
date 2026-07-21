@@ -10,7 +10,7 @@
 // database) is exercised via db.ts's public idb* helpers.
 import 'fake-indexeddb/auto'
 import { describe, expect, test } from 'vitest'
-import { idbGet, idbGetAll, idbPut } from '../src/lib/storage/db'
+import { idbGet, idbGetAll, idbPut } from './db'
 
 function seedV1Database(): Promise<void> {
   return new Promise((resolve, reject) => {

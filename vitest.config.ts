@@ -6,6 +6,6 @@ export default defineConfig({
     // glob (`**/*.{test,spec}.*`) would otherwise also match Playwright's
     // specs under tests/e2e/*.spec.ts and try to run them with the wrong
     // test runner.
-    include: ['tests/*.test.ts'],
+    include: ['src/**/*.test.ts'],
   },
 })

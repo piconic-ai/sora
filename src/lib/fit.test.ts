@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { fitFontSizePt } from '../src/lib/fit'
+import { fitFontSizePt } from './fit'
 
 describe('fitFontSizePt', () => {
   test('short text fits at base size', () => {

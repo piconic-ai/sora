@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { DRAFT_VERSION, deserializeDraft, serializeDraft } from '../src/lib/storage/schema'
+import { DRAFT_VERSION, deserializeDraft, serializeDraft } from './schema'
 
 describe('serializeDraft / deserializeDraft round trip', () => {
   test('round-trips pairs and updatedAt', () => {

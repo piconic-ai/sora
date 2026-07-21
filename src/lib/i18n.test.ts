@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import { displayListTitle, historyItemTitle, pageMeterCaption, pickLocale, resolveLocale } from '../src/lib/i18n'
-import { computePageFill } from '../src/lib/pageMeter'
-import type { SavedList } from '../src/lib/storage/schema'
-import type { Pair } from '../src/lib/types'
+import { displayListTitle, historyItemTitle, pageMeterCaption, pickLocale, resolveLocale } from './i18n'
+import { computePageFill } from './pageMeter'
+import type { SavedList } from './storage/schema'
+import type { Pair } from './types'
 
 describe('pickLocale', () => {
   test('ja,en-US;q=0.9 -> ja', () => {

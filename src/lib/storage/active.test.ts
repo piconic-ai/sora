@@ -4,7 +4,7 @@
 // 'active' key, alongside the pre-carousel 'current' draft key.
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test } from 'vitest'
-import { clearActiveListId, getActiveListId, setActiveListId } from '../src/lib/storage/active'
+import { clearActiveListId, getActiveListId, setActiveListId } from './active'
 
 afterEach(async () => {
   await clearActiveListId()

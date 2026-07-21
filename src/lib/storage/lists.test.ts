@@ -20,8 +20,8 @@ import {
   putListDirect,
   renameList,
   updateList,
-} from '../src/lib/storage/lists'
-import { serializeList } from '../src/lib/storage/schema'
+} from './lists'
+import { serializeList } from './schema'
 
 afterEach(async () => {
   // Clear the store so tests don't leak state into each other.

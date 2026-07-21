@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { resolveKeyAction } from '../src/lib/tableNav'
-import type { KeyActionInput } from '../src/lib/tableNav'
+import { resolveKeyAction } from './tableNav'
+import type { KeyActionInput } from './tableNav'
 
 // A "middle" row: not first, not last, with content in both cells and the
 // caret sitting mid-value (neither at start nor end). Tests override only

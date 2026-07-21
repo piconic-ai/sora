@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { computePageFill } from '../src/lib/pageMeter'
+import { computePageFill } from './pageMeter'
 
 describe('computePageFill', () => {
   test('0 pairs -> empty first page', () => {

@@ -7,10 +7,10 @@
 // deserialize logic is covered exhaustively in draftSchema.test.ts.
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test } from 'vitest'
-import { loadDraft } from '../src/lib/storage/drafts'
-import { idbDel, idbPut } from '../src/lib/storage/db'
-import { serializeDraft } from '../src/lib/storage/schema'
-import type { Pair } from '../src/lib/types'
+import { loadDraft } from './drafts'
+import { idbDel, idbPut } from './db'
+import { serializeDraft } from './schema'
+import type { Pair } from '../types'
 
 const STORE = 'drafts'
 const KEY = 'current'
