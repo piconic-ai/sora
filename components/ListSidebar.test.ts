@@ -18,6 +18,16 @@
 // `renderToTest` compiles the source text directly (no adapter, no DOM) —
 // see @barefootjs/test's README/switch|checkbox|badge index.test.tsx in the
 // barefootjs repo for the reference pattern this follows.
+//
+// `classes` resolves to real CSS class strings as of @barefootjs/test
+// 0.26.2 (piconic-ai/barefootjs#2360/#2361) — this file's per-item class
+// ternaries are keyed off the `.map()` loop variable and compose shared
+// base constants via template literals, which 0.26.1 and earlier couldn't
+// resolve (silently degraded to `[]`). `aria`, by contrast, still carries
+// the unresolved expression text for the same kind of per-item ternary —
+// see the "the ⋮ button advertises..." test below, which pins the
+// binding's existence rather than a resolved value for exactly that
+// reason.
 import { readFileSync } from 'fs'
 import { describe, expect, test } from 'vitest'
 import { renderToTest } from '@barefootjs/test'
@@ -101,10 +111,11 @@ describe('accessibility', () => {
   test('the ⋮ button advertises its popup and open state', () => {
     const menuToggleButton = result.findAll({ tag: 'button' }).find((b) => b.aria.haspopup === 'menu')!
     expect(menuToggleButton.aria.haspopup).toBe('menu')
-    // The bound expression, not its resolved value (see the file-header note
-    // on why classes/aria carry unresolved per-item expressions here) — this
-    // still pins that aria-expanded is bound to the per-item state at all,
-    // catching a regression that dropped the binding entirely.
+    // The bound expression, not its resolved value — unlike `classes` (see
+    // the "resolved classes" block below), `aria` for a per-item ternary
+    // still carries the unresolved expression text. This still pins that
+    // aria-expanded is bound to the per-item state at all, catching a
+    // regression that dropped the binding entirely.
     expect(menuToggleButton.aria.expanded).toBe('entry.menuOpen')
   })
 
@@ -112,5 +123,54 @@ describe('accessibility', () => {
     const listItemRow = result.find({ role: 'listitem' })!
     const [selectButton] = listItemRow.children
     expect(selectButton.aria.current).toContain('entry.active')
+  })
+})
+
+describe('resolved classes', () => {
+  // Every className here is a 2-4-way ternary keyed off the `.map()` loop
+  // variable (entry.active/entry.renaming/entry.menuOpen) — `classes`
+  // resolves to the UNION of every branch (the IR can't pick a concrete
+  // one without the runtime value), so these pin that the underlying
+  // CSS/hook-class tokens are still present after any refactor, not that
+  // a specific state is showing. Several of the bare (non-utility) hook
+  // classes pinned below are load-bearing: real DOM code queries them
+  // directly (see ListSidebar.tsx's own comments), so silently losing one
+  // in a className refactor would break that JS with zero diagnostic —
+  // exactly what this layer exists to catch.
+  const listItemRow = result.find({ role: 'listitem' })!
+  const [selectButton, renameInput, menuWrap] = listItemRow.children
+  const menuToggleButton = menuWrap.children.find((c) => c.aria.haspopup === 'menu')!
+  const menuDiv = menuWrap.children.find((c) => c.role === 'menu')!
+
+  test('the row carries its state hook classes (is-active/is-renaming) alongside the utility classes', () => {
+    expect(listItemRow.classes).toEqual(
+      expect.arrayContaining(['list-item', 'is-active', 'is-renaming', 'group', 'flex', 'rounded-md']),
+    )
+  })
+
+  test('the select button carries its hidden-while-renaming and active-text hook classes', () => {
+    expect(selectButton.classes).toEqual(
+      expect.arrayContaining(['list-item-select', 'hidden', 'text-ink', 'font-semibold', 'text-[#666]']),
+    )
+  })
+
+  test('the rename input carries the hook class App used to query (`.list-item.is-renaming .list-item-rename-input`)', () => {
+    expect(renameInput.classes).toEqual(
+      expect.arrayContaining(['list-item-rename-input', 'block', 'hidden']),
+    )
+  })
+
+  test('the menu-wrap div carries the hook class onDocClick closest()-checks', () => {
+    expect(menuWrap.classes).toEqual(expect.arrayContaining(['list-item-menu-wrap', 'hidden']))
+  })
+
+  test('the dropdown carries the `is-open` hook class positionMenu queries (`.list-item-menu.is-open`)', () => {
+    expect(menuDiv.classes).toEqual(expect.arrayContaining(['list-item-menu', 'is-open', 'hidden']))
+  })
+
+  test('the ⋮ button itself has no per-item ternary, so it resolves to a plain flat class list', () => {
+    expect(menuToggleButton.classes).toContain('list-item-menu-btn')
+    expect(menuToggleButton.classes).not.toContain('?')
+    expect(menuToggleButton.classes).not.toContain(':')
   })
 })
