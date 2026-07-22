@@ -209,7 +209,12 @@ describe('resolveKeyAction: Backspace', () => {
     ).toBe('movePrevCell')
   })
 
-  test('does nothing on an empty front cell that is the first row (no previous row to move into)', () => {
+  // There's no previous row to step back into, so this mirrors Delete's own
+  // empty-first-row handling: delete it and focus the row that shifts up
+  // (the new first row) instead of leaving it behind — the same outcome an
+  // empty middle/last-but-one row gets via deleteRowFocusPrev, just focused
+  // from the other direction since there's nothing "previous" here.
+  test('deletes an empty first row (not the only row) and focuses the row that shifts up', () => {
     expect(
       resolveKeyAction(
         baseInput({
@@ -219,6 +224,26 @@ describe('resolveKeyAction: Backspace', () => {
           cellEmpty: true,
           rowEmpty: true,
           isFirstRow: true,
+          isLastRow: false,
+        }),
+      ),
+    ).toBe('deleteRowFocusNext')
+  })
+
+  // The only row in the table (isFirstRow && isLastRow) is also the
+  // trailing ghost row — never deletable, same guard as the isLastRow test
+  // below.
+  test('does nothing on an empty front cell that is the only row', () => {
+    expect(
+      resolveKeyAction(
+        baseInput({
+          key: 'Backspace',
+          col: 0,
+          caretAtStart: true,
+          cellEmpty: true,
+          rowEmpty: true,
+          isFirstRow: true,
+          isLastRow: true,
         }),
       ),
     ).toBe('none')

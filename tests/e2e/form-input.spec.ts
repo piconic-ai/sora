@@ -221,6 +221,25 @@ test.describe('WordTable: row deletion wiring', () => {
     await expect(frontInput(page, 0)).toBeFocused()
   })
 
+  test('12b: Backspace in an empty first row (with rows below) also deletes it and refocuses the new first row front cell', async ({ page }) => {
+    // Mirrors #12 for Backspace: there's no previous row to step back into,
+    // so this used to be the one asymmetry in an otherwise Enter/Backspace-
+    // mirrored grid — Delete already deleted an empty first row, Backspace
+    // silently did nothing on the exact same row. Backspace now matches
+    // Delete's own deleteRowFocusNext behavior here.
+    await gotoWithPairs(page, [
+      { front: 'A', back: 'a' },
+      { front: 'B', back: 'b' },
+    ])
+    await frontInput(page, 0).fill('')
+    await backInput(page, 0).fill('')
+    await frontInput(page, 0).click()
+    await page.keyboard.press('Backspace')
+    await expect(rows(page)).toHaveCount(2) // B, ghost
+    await expect(frontInput(page, 0)).toHaveValue('B')
+    await expect(frontInput(page, 0)).toBeFocused()
+  })
+
   test('13: Backspace from the ghost row front cell moves to previous row back cell and the ghost row survives', async ({ page }) => {
     await gotoWithPairs(page, [{ front: 'A', back: 'a' }])
     const ghostIndex = (await rows(page).count()) - 1
@@ -241,11 +260,7 @@ test.describe('WordTable: row deletion wiring', () => {
     await frontInput(page, 0).fill('')
     await backInput(page, 0).fill('')
     await frontInput(page, 0).click()
-    await page.keyboard.press('Backspace') // isFirstRow -> movePrevCell is 'none' here; use Delete instead
-    // isFirstRow with nothing before it: Backspace resolves to 'none'
-    // (isFirstRow guard). Use Delete's deleteRowFocusNext path instead,
-    // which does apply to an empty first row with a row after it.
-    await page.keyboard.press('Delete')
+    await page.keyboard.press('Backspace') // empty first row — see #12b
     await expect(page.getByText(/1\/28語/)).toBeVisible()
     await page.waitForTimeout(600) // clear the 500ms autosave debounce
     await page.reload()

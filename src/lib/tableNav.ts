@@ -108,9 +108,13 @@ export function resolveKeyAction(input: KeyActionInput): Action {
       if (!(caretAtStart && cellEmpty)) return 'none'
       if (col === 1) return 'moveToFrontCell'
       // col === 0 (front cell): on an otherwise-empty row, Backspace removes
-      // the row entirely and steps back into the previous row's back cell —
-      // never the trailing ghost row (isLastRow), which must always remain.
-      if (rowEmpty && !isFirstRow && !isLastRow) return 'deleteRowFocusPrev'
+      // the row entirely — never the trailing ghost row (isLastRow), which
+      // must always remain (isFirstRow && isLastRow: the only row, also
+      // covered by this guard). It steps back into the previous row's back
+      // cell, or, when there is no previous row (isFirstRow), forward into
+      // the row that shifts up to take its place instead — the same target
+      // Delete already focuses for an empty first row.
+      if (rowEmpty && !isLastRow) return isFirstRow ? 'deleteRowFocusNext' : 'deleteRowFocusPrev'
       // Otherwise mirror Enter's forward move (front -> back -> next-row-
       // front) in reverse: Backspace on an empty front cell steps back into
       // the previous row's back cell. isFirstRow: no previous row to move
