@@ -1,6 +1,7 @@
 {
   "name": "sora",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n build,uno,server -c blue,magenta,green \"bf build --watch\" \"unocss --watch\" \"wrangler dev --live-reload\"",
