@@ -66,10 +66,37 @@
   font-size: 3mm;
 }
 
-/* ---- 画面上では印刷用シートを隠す ---- */
+/* ---- 画面上：印刷シートを縮小してライブプレビューとして見せる ----
+   .sheet は実寸(mm)のまま zoom で縮小するだけ。印刷時(@media print)は
+   このブロックが効かず原寸で出るので、印刷結果はこれまでと完全に同一。 */
 @media screen {
   .print-sheets {
-    display: none;
+    zoom: 0.42;
+  }
+
+  .print-sheets .sheet {
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .print-sheets .sheet + .sheet {
+    margin-top: 16mm;
+  }
+
+  /* 折れて見える表現：パネル1段(20mm)おきに薄い陰影を敷き、蛇腹(アコー
+     ディオン)だと一目で伝える。「山折り/谷折り」等の文言を不要にするのが
+     狙い。画面のみ — 印刷される紙は白地に黒のまま。content-box 基準なので
+     .bands の padding-top(=--grid-top) ぶん下、最初のパネル境界から始まる。 */
+  .sheet .bands {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent var(--panel-h, 20mm),
+      rgba(0, 0, 0, 0.045) var(--panel-h, 20mm),
+      rgba(0, 0, 0, 0.045) calc(var(--panel-h, 20mm) * 2)
+    );
+    background-origin: content-box;
+    background-clip: content-box;
   }
 }
 

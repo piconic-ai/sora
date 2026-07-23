@@ -3,9 +3,9 @@ import { test, expect, gotoReady, setLocale, clearSoraDb, seedLists } from './fi
 
 // components/PrintSheets.tsx + public/print.css — the pairs -> pages ->
 // bands -> panels -> physical mm-sized sheet pipeline. computeLayout/
-// computeSheetGeometry/computePageFill/fitFontSizePt are unit-tested
-// (tests/layout.test.ts, sheetGeometry.test.ts, pageMeter.test.ts,
-// fit.test.ts) — these own the CSS-under-@media-print reality and the DOM
+// computeSheetGeometry/fitFontSizePt are unit-tested (tests/layout.test.ts,
+// sheetGeometry.test.ts, fit.test.ts) — these own the
+// CSS-under-@media-print reality and the DOM
 // structure PrintSheets.tsx produces, including the exact regression this
 // session shipped and then had to fix: print.css's `body > *:not(.print-
 // root)` rule matched renderer.tsx's `[bf-region]` router wrapper (since
@@ -71,9 +71,19 @@ test.describe('The regression that shipped', () => {
     await page.emulateMedia({ media: 'screen' })
   })
 
-  test('64: under screen media, .print-sheets stays hidden (the inverse leak)', async ({ page }) => {
+  test('64: the print sheets double as the on-screen live preview — shown on screen, with fold shading applied ONLY on screen', async ({ page }) => {
     await gotoWithPairs(page, makePairs(1))
-    await expect(page.locator('.print-sheets')).toBeHidden()
+    const bandsBg = () =>
+      page.locator('.sheet .bands').first().evaluate((el) => getComputedStyle(el).backgroundImage)
+    // The print DOM is now the live preview: visible on screen, with the
+    // accordion fold shading applied as a screen-only background.
+    await expect(page.locator('.print-sheets')).toBeVisible()
+    expect(await bandsBg()).toContain('gradient')
+    // That shading is decoration for the screen only — it must never reach
+    // the printed sheet, which stays clean black-on-white.
+    await page.emulateMedia({ media: 'print' })
+    expect(await bandsBg()).toBe('none')
+    await page.emulateMedia({ media: 'screen' })
   })
 })
 
@@ -87,19 +97,16 @@ test.describe('Sheet structure & counts', () => {
   test('65a: 28 pairs (one full page) -> exactly 1 sheet', async ({ page }) => {
     await gotoWithPairs(page, makePairs(28))
     await expect(page.locator('.sheet')).toHaveCount(1)
-    await expect(page.getByText('1ページ目')).toBeVisible()
   })
 
   test('65b: 29 pairs (one over) -> exactly 2 sheets', async ({ page }) => {
     await gotoWithPairs(page, makePairs(29))
     await expect(page.locator('.sheet')).toHaveCount(2)
-    await expect(page.getByText('2ページ目')).toBeVisible()
   })
 
   test('65c: 57 pairs (two over two pages) -> exactly 3 sheets', async ({ page }) => {
     await gotoWithPairs(page, makePairs(57))
     await expect(page.locator('.sheet')).toHaveCount(3)
-    await expect(page.getByText('3ページ目')).toBeVisible()
   })
 
   test('66: panel content order — band 1 holds pairs 0-6 interleaved front/back, band 2 starts at pair 7', async ({ page }) => {
