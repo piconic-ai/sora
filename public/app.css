@@ -83,6 +83,44 @@
   display: none;
 }
 
+/* ---- Screen: input workspace + live preview, side by side -----------
+   Both selectors are screen-only so the print pipeline (print.css's
+   @media print) is completely untouched — on paper .main-row / .preview-col
+   fall back to plain block flow and only the full-size .print-sheets shows.
+   .preview-col is deliberately NOT .no-print: it carries the print sheets,
+   so it must survive printing while the .no-print workspace drops out. */
+@media screen {
+  .main-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+  }
+
+  .preview-col {
+    flex: 0 0 auto;
+    width: 360px;
+    position: sticky;
+    top: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+}
+
+/* Narrow screens: drop the preview below the editor instead of beside it. */
+@media screen and (max-width: 900px) {
+  .main-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .preview-col {
+    position: static;
+    width: 100%;
+  }
+}
+
 /* ---- Saved-list sidebar + editor -------------------------------------
    A two-column workspace: a fixed-width list sidebar on the left, the
    editor filling the rest. The sidebar renders a newest-first view of the

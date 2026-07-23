@@ -1,4 +1,3 @@
-import type { PageFill } from './pageMeter'
 import type { SavedList } from './storage/schema'
 import type { Pair } from './types'
 
@@ -6,11 +5,21 @@ export type Locale = 'ja' | 'en'
 
 export interface Messages {
   title: string
-  tagline: string
   metaDescription: string
   front: string
   back: string
   print: string
+  // One-line, always-visible description of what Sora makes (header area).
+  // The functional counterpart to the poetic wordmark — a first-time
+  // visitor learns what the tool does without opening the info popover or
+  // the how-to page. `lead` is the sentence; `howToLink` is the trailing
+  // inline link to the /how-to page appended after it.
+  lead: string
+  howToLink: string
+  // Persistent note under the print button: the one browser print setting
+  // that ruins the layout if left on (page numbers/URL printed onto the
+  // sheet). Shown to every user, every print — not a one-time tip.
+  printTip: string
   hint: string
   pasteError: string
   // "作り方 / How to make it" — the standalone /how-to page's heading and
@@ -88,12 +97,14 @@ export function resolveLocale(
 export const messages: Record<Locale, Messages> = {
   ja: {
     title: 'Sora — そらで覚える',
-    tagline: 'そらで覚える',
     metaDescription:
       '単語（表面）と訳（裏面）を入力するだけで、切って蛇腹に折る単語帳の印刷レイアウトを作れます。ログイン不要・保存不要。',
     front: '表面',
     back: '裏面',
     print: '印刷',
+    lead: '単語を入力して印刷。切って折るだけの、めくって覚える単語帳ができます。',
+    howToLink: '作り方はこちら',
+    printTip: '印刷設定の「ヘッダーとフッター」をオフにしてください。',
     hint: '表面と裏面を入力すると、切って折るだけの単語帳になります。',
     pasteError: '貼り付けた行数が奇数のため、ペアを作れませんでした',
     howTo: '作り方',
@@ -122,11 +133,13 @@ export const messages: Record<Locale, Messages> = {
   },
   en: {
     title: 'Sora — Learn by heart',
-    tagline: 'Learn by heart',
     metaDescription: 'Type word pairs and print a fold-and-cut flashcard booklet. No login, nothing saved.',
     front: 'Front',
     back: 'Back',
     print: 'Print',
+    lead: 'Type your words and print — cut and fold into a flip-through flashcard booklet.',
+    howToLink: 'How to make it',
+    printTip: 'Turn off “Headers and footers” in the print settings.',
     hint: 'Enter fronts and backs to make a cut-and-fold flashcard booklet.',
     pasteError: "Odd number of lines — couldn't form pairs",
     howTo: 'How to make it',
@@ -153,23 +166,6 @@ export const messages: Record<Locale, Messages> = {
     howToStep5: 'Flip to check the answer — learn by heart',
     howToBackLabel: 'Back to Sora',
   },
-}
-
-// Caption for the page-capacity progress bar (FB4): communicates which page
-// is currently being filled and how many words are still needed to fill it
-// completely (28 pairs per page by default — see DEFAULTS/computeCapacity).
-export function pageMeterCaption(locale: Locale, fill: PageFill): string {
-  const { page, filled, capacity, isFull } = fill
-
-  if (locale === 'ja') {
-    if (isFull) return `${page}ページ目 ・ ${filled}/${capacity}語 ・ ちょうど1ページ分`
-    return `${page}ページ目 ・ ${filled}/${capacity}語 ・ あと${capacity - filled}語で1ページ`
-  }
-
-  if (isFull) return `Page ${page} · ${filled}/${capacity} words · Fills the page exactly`
-  const remaining = capacity - filled
-  const wordLabel = remaining === 1 ? 'word' : 'words'
-  return `Page ${page} · ${filled}/${capacity} words · ${remaining} more ${wordLabel} to fill the page`
 }
 
 // Auto-generated display title for a history entry: saved lists carry no

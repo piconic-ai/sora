@@ -89,7 +89,7 @@ test.describe('Router partial navigation', () => {
       ;(window as unknown as { __noFullReload: boolean }).__noFullReload = true
     })
 
-    await page.getByRole('link', { name: '作り方' }).click()
+    await page.getByRole('link', { name: '作り方', exact: true }).click()
     await expect(page).toHaveURL(/\/how-to$/)
     await expect(page.getByRole('heading', { name: '作り方' })).toBeVisible()
     expect(await page.evaluate(() => (window as unknown as { __noFullReload?: boolean }).__noFullReload)).toBe(true)
@@ -116,7 +116,7 @@ test.describe('Router partial navigation', () => {
     await seedLists(page, [{ id: 'seed', pairs: [{ front: 'A', back: 'a' }], createdAt: 1000 }], 'seed')
     await gotoReady(page, '/')
 
-    await page.getByRole('link', { name: '作り方' }).click()
+    await page.getByRole('link', { name: '作り方', exact: true }).click()
     await expect(page).toHaveURL(/\/how-to$/)
     await page.getByRole('link', { name: 'Soraに戻る' }).click()
     await expect(page.locator('html.js-ready')).toHaveCount(1)

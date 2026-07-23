@@ -73,13 +73,6 @@ export function AppHeader(props: AppHeaderProps) {
               size. */}
           <span className="font-medium tracking-[0.01em] text-[rgba(31,35,40,0.55)] translate-y-[-0.123em]">sora</span>
         </h1>
-        {/* Tagline: no divider glyph — scale and tone alone separate it
-            from the wordmark (a vertical rule here would repeat the
-            sidebar's structural divider). Just a wider breath of
-            whitespace and a lighter gray. */}
-        <p className={props.sidebarOpen ? 'text-[#9a9a9a] text-xs tracking-[0.02em] mt-0 mr-0 mb-0 ml-1.5' : 'hidden'}>
-          {t().tagline}
-        </p>
         <select
           className="ml-auto h-6 px-1.5 py-0 text-xs font-[inherit] text-ink-3 bg-transparent border border-hairline rounded-md cursor-pointer transition-colors duration-150 hover:text-ink hover:border-[#ccc] focus:outline-none focus:border-brand"
           aria-label="Language"
@@ -96,6 +89,27 @@ export function AppHeader(props: AppHeaderProps) {
           <span aria-hidden="true">?</span>
         </a>
       </header>
+      {/* Always-visible, one-line description of what Sora makes — the
+          functional counterpart to the wordmark, so a first-time visitor
+          (whose table is pre-seeded with the sample, hiding EditorMain's
+          empty hint) still learns what the tool does. The trailing link is
+          the in-context entry to the full how-to page. Lives here in the
+          header island (not App) deliberately: App is WordTable's DOM
+          ancestor, and adding reactive elements to App ahead of the
+          workspace shifts its compiler-assigned `bf` ids — one collided
+          with WordTable's front-input id and broke that island's event
+          delegation (which resolves handlers via an unscoped
+          `closest('[bf="s7"]')`). AppHeader is a sibling island, so its ids
+          can never collide with WordTable's. */}
+      <p className="lead no-print m-0 text-[13px] leading-[1.6] text-ink-2">
+        {t().lead}{' '}
+        <a
+          href="/how-to"
+          className="whitespace-nowrap text-ink underline decoration-hairline underline-offset-2 hover:decoration-brand hover:text-brand"
+        >
+          {t().howToLink} →
+        </a>
+      </p>
       <div
         id="sora-info"
         role="note"

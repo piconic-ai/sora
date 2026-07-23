@@ -57,9 +57,10 @@ test.describe('WordTable: typing & the trailing-blank-row invariant', () => {
     await frontInput(page, 1).fill('')
     await backInput(page, 1).fill('')
     // Row is not removed by clearing (only the trailing-row rule adds/
-    // removes rows) — still 3 rows, but the page meter now counts 1 pair.
+    // removes rows) — still 3 rows, but only 1 pair is emitted, which the
+    // live preview reflects as 2 filled panels (1 front + 1 back).
     await expect(rows(page)).toHaveCount(3)
-    await expect(page.getByText(/1\/28語/)).toBeVisible()
+    await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(2)
   })
 
   test('4: a blank row above the page break does not shift where the dashed border lands', async ({ page }) => {
@@ -78,7 +79,7 @@ test.describe('WordTable: typing & the trailing-blank-row invariant', () => {
       ...Array.from({ length: 24 }, (_, i) => ({ front: `W${i + 5}`, back: `M${i + 5}` })),
     ]
     await gotoWithPairs(page, pairs)
-    await expect(page.getByText(/2ページ目/)).toBeVisible() // 29 pairs -> confirms the break exists
+    await expect(page.locator('.print-sheets .sheet')).toHaveCount(2) // 29 pairs -> confirms the break exists
     // 30 seeded rows (29 real + 1 deliberately blank) + a fresh trailing
     // ghost (the last seeded row, W28, is non-blank, so ensureTrailingBlank
     // appends one more) = 31.
@@ -256,16 +257,16 @@ test.describe('WordTable: row deletion wiring', () => {
       { front: 'A', back: 'a' },
       { front: 'B', back: 'b' },
     ])
-    await expect(page.getByText(/2\/28語/)).toBeVisible()
+    await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(4) // 2 pairs -> 4 filled panels
     await frontInput(page, 0).fill('')
     await backInput(page, 0).fill('')
     await frontInput(page, 0).click()
     await page.keyboard.press('Backspace') // empty first row — see #12b
-    await expect(page.getByText(/1\/28語/)).toBeVisible()
+    await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(2) // now 1 pair -> 2 panels
     await page.waitForTimeout(600) // clear the 500ms autosave debounce
     await page.reload()
     await page.waitForSelector('html.js-ready')
-    await expect(page.getByText(/1\/28語/)).toBeVisible()
+    await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(2)
     await expect(frontInput(page, 0)).toHaveValue('B')
   })
 })
@@ -291,7 +292,7 @@ test.describe('WordTable: paste', () => {
     await expect(frontInput(page, 1)).toHaveValue('Goodbye')
     await expect(backInput(page, 1)).toHaveValue('さようなら')
     await expect(frontInput(page, 2)).toHaveValue('')
-    await expect(page.getByText(/2\/28語/)).toBeVisible()
+    await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(4) // 2 pairs -> 4 filled panels
   })
 
   test('16: pasting comma-separated multi-line text populates rows the same way', async ({ page }) => {
@@ -372,39 +373,34 @@ test.describe('WordTable: IME composition guard', () => {
   })
 })
 
-test.describe('EditorMain: hint / page meter / print button reactivity', () => {
-  test('22: 0 pairs shows hint text, no meter, print disabled', async ({ page }) => {
+test.describe('EditorMain: hint / live preview / print button reactivity', () => {
+  test('22: 0 pairs shows hint text, empty preview, print disabled', async ({ page }) => {
     await gotoWithPairs(page)
     await expect(page.getByText('表面と裏面を入力すると、切って折るだけの単語帳になります。')).toBeVisible()
-    await expect(page.getByText(/語 ・/)).not.toBeVisible()
+    // No pairs -> no sheet rendered in the preview, and print is unavailable.
+    await expect(page.locator('.print-sheets .sheet')).toHaveCount(0)
     await expect(page.getByRole('button', { name: '印刷' })).toBeDisabled()
   })
 
-  test('23: 1 pair swaps hint for the meter+caption and enables print', async ({ page }) => {
+  test('23: 1 pair hides the hint, renders the preview, and enables print', async ({ page }) => {
     await gotoWithPairs(page, [{ front: 'A', back: 'a' }])
     await expect(page.getByText('表面と裏面を入力すると、切って折るだけの単語帳になります。')).not.toBeVisible()
-    await expect(page.getByText('1ページ目 ・ 1/28語 ・ あと27語で1ページ')).toBeVisible()
+    await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(2)
     await expect(page.getByRole('button', { name: '印刷' })).toBeEnabled()
   })
 
-  test('24: exactly 28 pairs (one full page) shows the full brand-green meter and the exact-fit caption', async ({ page }) => {
+  test('24: exactly 28 pairs fill one preview sheet (56 panels) with no page break', async ({ page }) => {
     const pairs = Array.from({ length: 28 }, (_, i) => ({ front: `W${i}`, back: `M${i}` }))
     await gotoWithPairs(page, pairs)
-    await expect(page.getByText('1ページ目 ・ 28/28語 ・ ちょうど1ページ分')).toBeVisible()
-    const fill = page.locator('[class*="bg-brand"]')
-    await expect(fill).toBeVisible()
-    await expect(fill).toHaveCSS('width', /.+/)
-    const box = await fill.boundingBox()
-    const track = await page.locator('.bg-hairline-soft').boundingBox()
-    expect(box).not.toBeNull()
-    expect(track).not.toBeNull()
-    if (box && track) expect(Math.abs(box.width - track.width)).toBeLessThan(1)
+    await expect(page.locator('.print-sheets .sheet')).toHaveCount(1)
+    await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(56)
+    await expect(page.locator('td.border-dashed')).toHaveCount(0)
   })
 
-  test('25: 29 pairs reports page 2 in the caption and puts the dashed break after pair 28 only', async ({ page }) => {
+  test('25: 29 pairs render a second preview sheet and put the dashed break after pair 28 only', async ({ page }) => {
     const pairs = Array.from({ length: 29 }, (_, i) => ({ front: `W${i}`, back: `M${i}` }))
     await gotoWithPairs(page, pairs)
-    await expect(page.getByText('2ページ目 ・ 1/28語 ・ あと27語で1ページ')).toBeVisible()
+    await expect(page.locator('.print-sheets .sheet')).toHaveCount(2)
     await expect(row(page, 27).locator('td').first()).toHaveClass(/border-dashed/)
     await expect(row(page, 28).locator('td').first()).not.toHaveClass(/border-dashed/)
   })
