@@ -58,7 +58,7 @@ test.describe('WordTable: typing & the trailing-blank-row invariant', () => {
     await backInput(page, 1).fill('')
     // Row is not removed by clearing (only the trailing-row rule adds/
     // removes rows) — still 3 rows, but only 1 pair is emitted, which the
-    // live preview reflects as 2 filled panels (1 front + 1 back).
+    // print sheet reflects as 2 filled panels (1 front + 1 back).
     await expect(rows(page)).toHaveCount(3)
     await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(2)
   })
@@ -373,23 +373,23 @@ test.describe('WordTable: IME composition guard', () => {
   })
 })
 
-test.describe('EditorMain: hint / live preview / print button reactivity', () => {
-  test('22: 0 pairs shows hint text, empty preview, print disabled', async ({ page }) => {
+test.describe('EditorMain: hint / print-sheet reactivity / print button', () => {
+  test('22: 0 pairs shows hint text, no print sheet, print disabled', async ({ page }) => {
     await gotoWithPairs(page)
     await expect(page.getByText('表面と裏面を入力すると、切って折るだけの単語帳になります。')).toBeVisible()
-    // No pairs -> no sheet rendered in the preview, and print is unavailable.
+    // No pairs -> no sheet in the print DOM, and print is unavailable.
     await expect(page.locator('.print-sheets .sheet')).toHaveCount(0)
     await expect(page.getByRole('button', { name: '印刷' })).toBeDisabled()
   })
 
-  test('23: 1 pair hides the hint, renders the preview, and enables print', async ({ page }) => {
+  test('23: 1 pair hides the hint, fills the print sheet, and enables print', async ({ page }) => {
     await gotoWithPairs(page, [{ front: 'A', back: 'a' }])
     await expect(page.getByText('表面と裏面を入力すると、切って折るだけの単語帳になります。')).not.toBeVisible()
     await expect(page.locator('.print-sheets .panel:not(.empty)')).toHaveCount(2)
     await expect(page.getByRole('button', { name: '印刷' })).toBeEnabled()
   })
 
-  test('24: exactly 28 pairs fill one preview sheet (56 panels) with no page break', async ({ page }) => {
+  test('24: exactly 28 pairs fill one print sheet (56 panels) with no page break', async ({ page }) => {
     const pairs = Array.from({ length: 28 }, (_, i) => ({ front: `W${i}`, back: `M${i}` }))
     await gotoWithPairs(page, pairs)
     await expect(page.locator('.print-sheets .sheet')).toHaveCount(1)
@@ -397,7 +397,7 @@ test.describe('EditorMain: hint / live preview / print button reactivity', () =>
     await expect(page.locator('td.border-dashed')).toHaveCount(0)
   })
 
-  test('25: 29 pairs render a second preview sheet and put the dashed break after pair 28 only', async ({ page }) => {
+  test('25: 29 pairs render a second print sheet and put the dashed break after pair 28 only', async ({ page }) => {
     const pairs = Array.from({ length: 29 }, (_, i) => ({ front: `W${i}`, back: `M${i}` }))
     await gotoWithPairs(page, pairs)
     await expect(page.locator('.print-sheets .sheet')).toHaveCount(2)
