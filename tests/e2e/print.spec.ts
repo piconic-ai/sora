@@ -71,19 +71,9 @@ test.describe('The regression that shipped', () => {
     await page.emulateMedia({ media: 'screen' })
   })
 
-  test('64: the print sheets double as the on-screen live preview — shown on screen, with fold shading applied ONLY on screen', async ({ page }) => {
+  test('64: under screen media, .print-sheets stays hidden (the inverse leak)', async ({ page }) => {
     await gotoWithPairs(page, makePairs(1))
-    const bandsBg = () =>
-      page.locator('.sheet .bands').first().evaluate((el) => getComputedStyle(el).backgroundImage)
-    // The print DOM is now the live preview: visible on screen, with the
-    // accordion fold shading applied as a screen-only background.
-    await expect(page.locator('.print-sheets')).toBeVisible()
-    expect(await bandsBg()).toContain('gradient')
-    // That shading is decoration for the screen only — it must never reach
-    // the printed sheet, which stays clean black-on-white.
-    await page.emulateMedia({ media: 'print' })
-    expect(await bandsBg()).toBe('none')
-    await page.emulateMedia({ media: 'screen' })
+    await expect(page.locator('.print-sheets')).toBeHidden()
   })
 })
 

@@ -122,62 +122,37 @@ export function App(props: AppProps) {
           the editor column top-aligned instead of stretching to match.
           (min-h resets to 0 on the narrow drawer layout — see app.css's
           720px media query.) */}
-      {/* Screen: a two-part row — the input workspace (sidebar + editor) on
-          the left, and the live print preview + print controls on the right
-          (see app.css's .main-row / .preview-col, both screen-only so the
-          print pipeline in print.css is untouched). The preview IS the
-          real print DOM (<PrintSheets>), shown scaled on screen and at full
-          size on paper — never a separate mock. Because .preview-col is NOT
-          .no-print, it survives printing while the workspace (which is)
-          drops out. */}
-      <div className="main-row">
-        <div
-          className={
-            sidebarOpen()
-              ? 'workspace no-print flex-1 min-w-0 flex items-start gap-6 min-h-[calc(100vh-200px)]'
-              : 'workspace no-print sidebar-closed flex-1 min-w-0 flex items-start gap-6 min-h-[calc(100vh-200px)]'
-          }
-        >
-          <ListSidebar
-            sidebarOpen={sidebarOpen()}
-            setSidebarOpen={setSidebarOpen}
-            locale={locale()}
-            lists={lists()}
-            activeListId={activeList()?.id ?? null}
-            onCreateNewList={createNewList}
-            onSelectList={selectList}
-            onDeleteListById={deleteListById}
-            onRenameCommit={persistRename}
-          />
+      <div
+        className={
+          sidebarOpen()
+            ? 'workspace no-print flex items-start gap-6 min-h-[calc(100vh-200px)]'
+            : 'workspace no-print sidebar-closed flex items-start gap-6 min-h-[calc(100vh-200px)]'
+        }
+      >
+        <ListSidebar
+          sidebarOpen={sidebarOpen()}
+          setSidebarOpen={setSidebarOpen}
+          locale={locale()}
+          lists={lists()}
+          activeListId={activeList()?.id ?? null}
+          onCreateNewList={createNewList}
+          onSelectList={selectList}
+          onDeleteListById={deleteListById}
+          onRenameCommit={persistRename}
+        />
 
-          <EditorMain
-            breakIndices={breakIndices()}
-            onChange={handleTableChange}
-            locale={locale()}
-            loadRequest={loadRequest()}
-            pairsCount={pairs().length}
-          />
-        </div>
-
-        <div className="preview-col">
-          {/* Print action lives with the result (not the input) and stays at
-              the top of the sticky preview column, so it never gets pushed
-              out of view as the word list grows. The tip is the one browser
-              setting that ruins the sheet — shown every time, not once. */}
-          <div className="preview-controls no-print flex flex-col items-center gap-2">
-            <button
-              type="button"
-              className="py-2.5 px-9 text-sm font-semibold tracking-[0.02em] text-white bg-ink border-0 rounded-lg cursor-pointer transition-[background-color,box-shadow] duration-150 enabled:hover:bg-black enabled:hover:shadow-[0_2px_10px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 disabled:bg-[#d6d6d6] disabled:cursor-not-allowed"
-              disabled={layout().pages.length === 0}
-              onClick={() => window.print()}
-            >
-              {t().print}
-            </button>
-            <p className="max-w-[280px] text-center text-[12px] leading-[1.45] text-ink-2 m-0">{t().printTip}</p>
-          </div>
-          <PrintSheets layout={layout()} settings={DEFAULTS} />
-        </div>
+        <EditorMain
+          breakIndices={breakIndices()}
+          onChange={handleTableChange}
+          locale={locale()}
+          loadRequest={loadRequest()}
+          pairsCount={pairs().length}
+          printDisabled={layout().pages.length === 0}
+        />
       </div>
+      {/* Rendered off-screen (print.css hides .print-sheets under @media
+          screen) — this is the real print DOM, shown only when printing. */}
+      <PrintSheets layout={layout()} settings={DEFAULTS} />
     </div>
   )
 }
