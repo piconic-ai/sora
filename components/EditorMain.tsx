@@ -47,7 +47,9 @@ export function EditorMain(props: EditorMainProps) {
           >
             {t().print}
           </button>
-          <p className="max-w-[300px] text-center text-[12px] leading-[1.45] text-ink-2 m-0">{t().printTip}</p>
+          {/* Wide enough for the tip to sit on one line in either locale;
+              text-balance keeps the split even when a narrow viewport wraps it. */}
+          <p className="max-w-[32em] text-balance text-center text-[12px] leading-[1.45] text-ink-2 m-0">{t().printTip}</p>
         </div>
       </div>
     </section>
