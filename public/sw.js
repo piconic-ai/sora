@@ -25,7 +25,7 @@
  *   and the query opts out of the localhost fallback).
  */
 
-const VERSION = '20aa63ae139a'
+const VERSION = 'ca38e17dd25d'
 const CACHE = `sora-${VERSION}`
 
 const FORCED_CACHE_FIRST = self.location.search.includes('cache-first')

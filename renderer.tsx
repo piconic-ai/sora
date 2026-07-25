@@ -69,6 +69,11 @@ export const renderer = jsxRenderer(({ children, title, locale, path }) => {
             Dock") — offline behavior itself lives in public/sw.js. */}
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* The installed-app name must be the bare wordmark: the manifest
+            name and this Safari-specific meta are what the Dock / menu bar
+            show, and the page <title>'s "— そらで覚える" catch reads as
+            clutter there. The <title> keeps the catch for search results. */}
+        <meta name="apple-mobile-web-app-title" content="Sora" />
         <meta name="theme-color" content="#ffffff" />
         {/* Service-worker boot. Inline in <head>, not in router-entry.js:
             it must read location.search at parse time — App's initialize()
