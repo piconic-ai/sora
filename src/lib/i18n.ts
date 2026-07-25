@@ -12,8 +12,8 @@ export interface Messages {
   // One-line, always-visible description of what Sora makes (header area).
   // The functional counterpart to the poetic wordmark — a first-time
   // visitor learns what the tool does without opening the info popover or
-  // the how-to page. `lead` is the sentence; `howToLink` is the trailing
-  // inline link to the /how-to page appended after it.
+  // the how-to modal. `lead` is the sentence; `howToLink` is the trailing
+  // inline trigger of the how-to modal appended after it.
   lead: string
   howToLink: string
   // Persistent note under the print button: the one browser print setting
@@ -22,9 +22,9 @@ export interface Messages {
   printTip: string
   hint: string
   pasteError: string
-  // "作り方 / How to make it" — the standalone /how-to page's heading and
-  // <title>, and doubles as the aria-label for the header's "?" link to
-  // that page (components/HowToPage.tsx, components/App.tsx).
+  // "作り方 / How to make it" — the how-to modal's heading, and doubles as
+  // the aria-label for the header's "?" button that opens it
+  // (components/AppHeader.tsx).
   howTo: string
   // Info popover (FB5) — the "Sora" bit of the lead sentence is hard-coded
   // as <strong>Sora</strong> in App.tsx, so infoLead is just the remainder
@@ -65,16 +65,16 @@ export interface Messages {
   clearAllLists: string
   // aria-label for the header's sidebar open/close toggle button.
   sidebarToggleLabel: string
-  // The five steps on the standalone /how-to page, matching the beats of
-  // the how-to video embedded there (docs/DESIGN.md §2 is the reference
-  // procedure). Deliberately paper-size-agnostic — no A4 wording.
+  // The five steps in the how-to modal, matching the beats of the how-to
+  // video embedded there (docs/DESIGN.md §2 is the reference procedure).
+  // Deliberately paper-size-agnostic — no A4 wording.
   howToStep1: string
   howToStep2: string
   howToStep3: string
   howToStep4: string
   howToStep5: string
-  // aria-label for the "← Sora" link back to the app from /how-to.
-  howToBackLabel: string
+  // aria-label for the how-to modal's "×" close button.
+  closeLabel: string
 }
 
 export function pickLocale(acceptLanguage: string | null | undefined): Locale {
@@ -97,8 +97,7 @@ export function resolveLocale(
 export const messages: Record<Locale, Messages> = {
   ja: {
     title: 'Sora — そらで覚える',
-    metaDescription:
-      '単語（表面）と訳（裏面）を入力するだけで、切って蛇腹に折る単語帳の印刷レイアウトを作れます。ログイン不要・保存不要。',
+    metaDescription: '単語を入力して印刷。切って折るだけの、めくって覚える単語帳ができます。',
     front: '表面',
     back: '裏面',
     print: '印刷',
@@ -129,11 +128,11 @@ export const messages: Record<Locale, Messages> = {
     howToStep3: '横の折り線に沿って蛇腹（アコーディオン）に折ります。',
     howToStep4: '縦の線に沿って切り、細い帯に分けます。',
     howToStep5: 'めくって答えを確認 — そらでおぼえましょう。',
-    howToBackLabel: 'Soraに戻る',
+    closeLabel: '閉じる',
   },
   en: {
     title: 'Sora — Learn by heart',
-    metaDescription: 'Type word pairs and print a fold-and-cut flashcard booklet. No login, nothing saved.',
+    metaDescription: 'Type your words and print — cut and fold into a flip-through flashcard booklet.',
     front: 'Front',
     back: 'Back',
     print: 'Print',
@@ -164,7 +163,7 @@ export const messages: Record<Locale, Messages> = {
     howToStep3: 'Accordion-fold along the horizontal lines',
     howToStep4: 'Cut along the vertical lines into strips',
     howToStep5: 'Flip to check the answer — learn by heart',
-    howToBackLabel: 'Back to Sora',
+    closeLabel: 'Close',
   },
 }
 

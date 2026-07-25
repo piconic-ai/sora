@@ -160,3 +160,10 @@
   }
 }
 
+
+/* Scrim behind the how-to modal (AppHeader.tsx's #sora-howto popover) —
+   same ink tone as the sidebar scrim, a touch lighter since the modal
+   already carries a strong shadow. */
+#sora-howto::backdrop {
+  background: rgba(17, 17, 17, 0.28);
+}
