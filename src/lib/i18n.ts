@@ -21,7 +21,19 @@ export interface Messages {
   // sheet). Shown to every user, every print — not a one-time tip.
   printTip: string
   hint: string
+  // Shown with `hint` on an empty table: the bulk-input path (paste from a
+  // spreadsheet / TSV / CSV) is invisible from the UI itself, so the empty
+  // state is the one moment to teach it.
+  pasteHint: string
   pasteError: string
+  // The quiet "copy the table" action under the print button — copies the
+  // active list as TSV (src/lib/parse.ts's serializePairs), which is the
+  // device-to-device transfer story: copy on one device, send it to
+  // yourself, paste into the table on the other. Worded after what the
+  // user sees on screen (the table), not the app-internal "list" concept.
+  copyList: string
+  // Transient button label right after a successful copy.
+  copiedFeedback: string
   // "作り方 / How to make it" — the how-to modal's heading, and doubles as
   // the aria-label for the header's "?" button that opens it
   // (components/AppHeader.tsx).
@@ -105,7 +117,10 @@ export const messages: Record<Locale, Messages> = {
     howToLink: '作り方はこちら',
     printTip: '印刷設定の「ヘッダーとフッター」をオフにしてください。',
     hint: '表面と裏面を入力すると、切って折るだけの単語帳になります。',
+    pasteHint: 'スプレッドシートやCSV・TSVからの貼り付けでも、まとめて入力できます。',
     pasteError: '貼り付けた行数が奇数のため、ペアを作れませんでした',
+    copyList: '表の内容をコピー',
+    copiedFeedback: '表の内容をコピーしました',
     howTo: '作り方',
     infoLabel: 'Soraについて',
     infoLead: 'は、単語（表面）と訳（裏面）を入力するだけで、切って蛇腹に折る単語帳の印刷レイアウトをつくります。',
@@ -140,7 +155,10 @@ export const messages: Record<Locale, Messages> = {
     howToLink: 'How to make it',
     printTip: 'Turn off “Headers and footers” in the print settings.',
     hint: 'Enter fronts and backs to make a cut-and-fold flashcard booklet.',
+    pasteHint: 'You can also paste from a spreadsheet, CSV, or TSV to fill the table at once.',
     pasteError: "Odd number of lines — couldn't form pairs",
+    copyList: 'Copy the table',
+    copiedFeedback: 'Copied the table',
     howTo: 'How to make it',
     infoLabel: 'About Sora',
     infoLead: ' turns your word pairs into a print-and-fold accordion flashcard booklet.',

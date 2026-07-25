@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { test, expect, gotoReady, setLocale, clearSoraDb, seedLists, pasteText, dispatchComposingKey, stubPrint, printCallCount } from './fixtures'
+import { test, expect, gotoReady, setLocale, clearSoraDb, seedLists, pasteText, dispatchComposingKey, stubPrint, printCallCount, stubClipboard, clipboardText } from './fixtures'
 
 // components/WordTable.tsx's front/back editing grid. resolveKeyAction
 // (src/lib/tableNav.ts) — the pure keyboard-decision table — is already
@@ -413,5 +413,47 @@ test.describe('EditorMain: hint / print-sheet reactivity / print button', () => 
     await gotoReady(page, '/')
     await page.getByRole('button', { name: '印刷' }).click()
     expect(await printCallCount(page)).toBe(1)
+  })
+})
+
+test.describe('Copy list as text (EditorMain)', () => {
+  test('84: copy button writes the list as TSV and shows transient feedback', async ({ page }) => {
+    await stubClipboard(page)
+    await gotoWithPairs(page, [
+      { front: 'Apple', back: 'りんご' },
+      { front: 'Banana', back: 'ばなな' },
+    ])
+    await page.getByRole('button', { name: '表の内容をコピー' }).click()
+    expect(await clipboardText(page)).toBe('Apple\tりんご\nBanana\tばなな')
+    // Label flips to the feedback text, then reverts.
+    await expect(page.getByRole('button', { name: '表の内容をコピーしました' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '表の内容をコピー' })).toBeVisible({ timeout: 5000 })
+  })
+
+  test('85: empty list disables copy and shows the paste-import hint', async ({ page }) => {
+    await gotoWithPairs(page)
+    await expect(page.getByRole('button', { name: '表の内容をコピー' })).toBeDisabled()
+    await expect(page.getByText('CSV・TSVからの貼り付け')).toBeVisible()
+  })
+
+  test('86: copied TSV round-trips through paste on another list', async ({ page, browserName }) => {
+    // Same limitation as the paste-parsing suite above (line ~284).
+    test.skip(browserName === 'firefox', 'Firefox ignores ClipboardEvent constructor clipboardData')
+    await stubClipboard(page)
+    await gotoWithPairs(page, [{ front: 'Hello, world', back: '挨拶' }])
+    await page.getByRole('button', { name: '表の内容をコピー' }).click()
+    const text = await clipboardText(page)
+    expect(text).toBe('Hello, world\t挨拶')
+
+    // Paste what was copied into a fresh list — the round trip must land
+    // the exact same pair (comma intact, no quote mangling).
+    await page.getByRole('button', { name: '新規作成' }).click()
+    // The switch to the fresh list is async (loadRequest) — pasting before
+    // it settles gets overwritten by the incoming empty list. The old list
+    // showed 2 rows (1 pair + trailing blank); the fresh one shows exactly 1.
+    await expect(rows(page)).toHaveCount(1)
+    await pasteText(frontInput(page, 0), text!)
+    await expect(frontInput(page, 0)).toHaveValue('Hello, world')
+    await expect(backInput(page, 0)).toHaveValue('挨拶')
   })
 })
