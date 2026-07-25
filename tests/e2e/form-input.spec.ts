@@ -433,7 +433,7 @@ test.describe('Copy list as text (EditorMain)', () => {
   test('85: empty list disables copy and shows the paste-import hint', async ({ page }) => {
     await gotoWithPairs(page)
     await expect(page.getByRole('button', { name: '表の内容をコピー' })).toBeDisabled()
-    await expect(page.getByText('CSV・TSVからの貼り付け')).toBeVisible()
+    await expect(page.getByText('コピーしてそのまま貼り付ける')).toBeVisible()
   })
 
   test('86: copied TSV round-trips through paste on another list', async ({ page, browserName }) => {

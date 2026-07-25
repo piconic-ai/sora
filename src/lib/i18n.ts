@@ -23,7 +23,9 @@ export interface Messages {
   hint: string
   // Shown with `hint` on an empty table: the bulk-input path (paste from a
   // spreadsheet / TSV / CSV) is invisible from the UI itself, so the empty
-  // state is the one moment to teach it.
+  // state is the one moment to teach it. Worded around Excel / Google
+  // Sheets by product name — Sora's audience (students, parents) doesn't
+  // know "CSV/TSV", and those formats still work without being named.
   pasteHint: string
   pasteError: string
   // The quiet "copy the table" action under the print button — copies the
@@ -117,7 +119,7 @@ export const messages: Record<Locale, Messages> = {
     howToLink: '作り方はこちら',
     printTip: '印刷設定の「ヘッダーとフッター」をオフにしてください。',
     hint: '表面と裏面を入力すると、切って折るだけの単語帳になります。',
-    pasteHint: 'スプレッドシートやCSV・TSVからの貼り付けでも、まとめて入力できます。',
+    pasteHint: 'Excel やスプレッドシートで作った表（表面・裏面の2列）を、コピーしてそのまま貼り付けることもできます。',
     pasteError: '貼り付けた行数が奇数のため、ペアを作れませんでした',
     copyList: '表の内容をコピー',
     copiedFeedback: '表の内容をコピーしました',
@@ -155,7 +157,7 @@ export const messages: Record<Locale, Messages> = {
     howToLink: 'How to make it',
     printTip: 'Turn off “Headers and footers” in the print settings.',
     hint: 'Enter fronts and backs to make a cut-and-fold flashcard booklet.',
-    pasteHint: 'You can also paste from a spreadsheet, CSV, or TSV to fill the table at once.',
+    pasteHint: 'You can also copy a two-column table (front and back) from Excel or Google Sheets and paste it right in.',
     pasteError: "Odd number of lines — couldn't form pairs",
     copyList: 'Copy the table',
     copiedFeedback: 'Copied the table',
