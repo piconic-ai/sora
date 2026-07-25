@@ -7,9 +7,9 @@
  *      re-hydrates / disposes regions through (window.__bf_hydrate_within /
  *      __bf_dispose_within).
  *   2. startRouter() intercepts same-origin <a> clicks, fetches the ordinary
- *      full-page HTML, and swaps only the [bf-region] content — so `/` ↔
- *      `/how-to` transitions keep the shell, stylesheets, and scroll, with no
- *      full reload.
+ *      full-page HTML, and swaps only the [bf-region] content — page
+ *      transitions keep the shell, stylesheets, and scroll, with no full
+ *      reload.
  *
  * @barefootjs/client* is left external in the bundle and resolved through the
  * page's import map to the SAME barefoot.js the compiled islands use, so there

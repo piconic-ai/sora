@@ -12,15 +12,22 @@ import type { Locale } from '../src/lib/i18n'
 // left dynamic and drops out of the client template.
 const popoverTarget: Record<string, string> = { popover: 'auto' }
 const popoverTrigger: Record<string, string> = { popovertarget: 'sora-info' }
+const howToTrigger: Record<string, string> = { popovertarget: 'sora-howto' }
+const howToClose: Record<string, string> = { popovertarget: 'sora-howto', popovertargetaction: 'hide' }
+// `loading` defers the YouTube embed until the modal actually opens (the
+// popover is display:none until then); `allowfullscreen` is a bare boolean
+// attribute not in @barefootjs/jsx's iframe types, same story as `popover`.
+const howToIframeAttrs = { allowfullscreen: true, loading: 'lazy' } as const
 
-// Shared with .info-button/.help-button below — the two circular icon
-// buttons at the header's right edge. Two full consts (not one + a JSX-side
-// template literal): a template-literal className with interpolation isn't
-// reactive in BarefootJS's compiler, and while these two never change, a
-// plain string constant sidesteps the question entirely.
+// Shared by the circular icon buttons at the header's right edge and the
+// how-to modal's close button.
 const iconButton =
   'ml-1.5 w-6 h-6 p-0 inline-flex items-center justify-center text-xs font-semibold leading-none text-ink-3 bg-transparent border border-hairline rounded-full cursor-pointer transition-colors duration-150 hover:text-ink hover:border-[#ccc] focus-visible:outline-none focus-visible:border-brand'
-const iconButtonLink = `${iconButton} no-underline`
+// Module-scope template literal (evaluated once at load) so the JSX side
+// stays a plain identifier — a template-literal className with interpolation
+// inside JSX isn't reactive in BarefootJS's compiler, and a plain string
+// constant sidesteps the question entirely.
+const howToCloseButton = `${iconButton} absolute top-4 right-4 ml-0`
 
 // Every direct child of .info-popover is a <p> (see app.css's former
 // `.info-popover p` rule) — same vertical rhythm on all of them.
@@ -85,9 +92,9 @@ export function AppHeader(props: AppHeaderProps) {
         <button type="button" className={iconButton} aria-label={t().infoLabel} {...popoverTrigger}>
           <span aria-hidden="true">i</span>
         </button>
-        <a href="/how-to" className={iconButtonLink} aria-label={t().howTo}>
+        <button type="button" className={iconButton} aria-label={t().howTo} {...howToTrigger}>
           <span aria-hidden="true">?</span>
-        </a>
+        </button>
       </header>
       {/* Always-visible, one-line description of what Sora makes — the
           functional counterpart to the wordmark, so a first-time visitor
@@ -103,12 +110,13 @@ export function AppHeader(props: AppHeaderProps) {
           can never collide with WordTable's. */}
       <p className="lead no-print m-0 text-[13px] leading-[1.6] text-ink-2">
         {t().lead}{' '}
-        <a
-          href="/how-to"
-          className="whitespace-nowrap text-ink underline decoration-hairline underline-offset-2 hover:decoration-brand hover:text-brand"
+        <button
+          type="button"
+          className="whitespace-nowrap p-0 bg-transparent border-0 cursor-pointer font-[inherit] text-[13px] leading-[1.6] text-ink underline decoration-hairline underline-offset-2 hover:decoration-brand hover:text-brand"
+          {...howToTrigger}
         >
           {t().howToLink} →
-        </a>
+        </button>
       </p>
       <div
         id="sora-info"
@@ -161,6 +169,41 @@ export function AppHeader(props: AppHeaderProps) {
             <a href="mailto:kentafly88@gmail.com" className={infoLink}>kentafly88@gmail.com</a>
           </span>
         </p>
+      </div>
+      {/* How-to modal — the former standalone /how-to page, inlined so the
+          steps are part of the top page's server-rendered HTML (they count
+          toward what search engines index even while display:none). Popover
+          API like #sora-info above: light dismiss + Esc for free, no JS.
+          The scrim lives in app.css (#sora-howto::backdrop). */}
+      <div
+        id="sora-howto"
+        role="dialog"
+        aria-label={t().howTo}
+        className="no-print fixed inset-0 m-auto py-6 px-7 w-[min(560px,calc(100vw-48px))] max-h-[min(80vh,640px)] overflow-y-auto box-border border border-[#f0f0f0] rounded-xl bg-white text-[#333] text-[15px] leading-[1.7] shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+        {...popoverTarget}
+      >
+        <button type="button" className={howToCloseButton} aria-label={t().closeLabel} {...howToClose}>
+          <span aria-hidden="true">×</span>
+        </button>
+        <h2 className="text-xl font-semibold m-0 mb-4 text-[#111]">{t().howTo}</h2>
+        {/* No `allow` attribute (YouTube's stock embed list): every feature
+            name in it draws console warnings in Chrome or Firefox, and the
+            multi-tab regression test (83) asserts a warning-free console.
+            A click-to-play tutorial needs none of them — fullscreen comes
+            from `allowfullscreen`. */}
+        <iframe
+          className="block w-full aspect-video border-0 outline outline-1 outline-[#eee] mb-6"
+          src="https://www.youtube-nocookie.com/embed/WBR2XpbVRKk"
+          title={t().howTo}
+          {...howToIframeAttrs}
+        />
+        <ol className="m-0 pl-[22px] text-[15px] leading-[1.7] text-[#333] list-decimal">
+          <li>{t().howToStep1}</li>
+          <li className="mt-2.5">{t().howToStep2}</li>
+          <li className="mt-2.5">{t().howToStep3}</li>
+          <li className="mt-2.5">{t().howToStep4}</li>
+          <li className="mt-2.5">{t().howToStep5}</li>
+        </ol>
       </div>
     </>
   )

@@ -96,12 +96,19 @@ export function App(props: AppProps) {
 
   // SSR already sets title/lang on first paint; this is what updates them on
   // a language switch without a full reload. The cookie lets the next SSR
-  // request (server.tsx's resolveLocale) pick the same locale.
+  // request (server.tsx's resolveLocale) pick the same locale. On the
+  // locale-prefixed pages (`/ja`, `/en`) the path is part of the locale
+  // state too, so a switch rewrites it in place — list URLs (`/l/:id`)
+  // carry no prefix and are left alone.
   createEffect(() => {
     const loc = locale()
     document.title = messages[loc].title
     document.documentElement.lang = loc
     document.cookie = `locale=${loc}; path=/; max-age=31536000; samesite=lax`
+    const path = location.pathname
+    if ((path === '/ja' || path === '/en') && path !== `/${loc}`) {
+      history.replaceState(null, '', `/${loc}`)
+    }
   })
 
   return (

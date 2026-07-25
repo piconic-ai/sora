@@ -77,48 +77,45 @@ test.describe('Stylesheet load order', () => {
   })
 })
 
-test.describe('Router partial navigation', () => {
-  test('80: navigating to /how-to and back re-hydrates the app island', async ({ page }) => {
+test.describe('How-to modal', () => {
+  test('80: the how-to modal opens from the header and the lead, and closes', async ({ page }) => {
     await setLocale(page, 'ja')
     await clearSoraDb(page)
     await gotoReady(page, '/')
 
-    // A marker that only survives a *partial* navigation (the router
-    // swapping [bf-region]'s content in place), not a full page load.
-    await page.evaluate(() => {
-      ;(window as unknown as { __noFullReload: boolean }).__noFullReload = true
-    })
+    // `/` is a locale redirect now (server.tsx) — a ja visitor lands on /ja.
+    // Checked via the request API (sharing the page's cookies) because the
+    // app itself replaceStates the address bar to /l/:id once the active
+    // list loads, so page.url() no longer shows the redirect target.
+    const redirected = await page.request.get('/')
+    expect(redirected.url()).toMatch(/\/ja$/)
 
-    await page.getByRole('link', { name: '作り方', exact: true }).click()
-    await expect(page).toHaveURL(/\/how-to$/)
+    // Header "?" button (aria-label 作り方; exact:true keeps it distinct
+    // from the lead's 作り方はこちら trigger).
+    await page.getByRole('button', { name: '作り方', exact: true }).click()
     await expect(page.getByRole('heading', { name: '作り方' })).toBeVisible()
-    expect(await page.evaluate(() => (window as unknown as { __noFullReload?: boolean }).__noFullReload)).toBe(true)
+    await expect(page.locator('#sora-howto li').first()).toBeVisible()
 
-    await page.getByRole('link', { name: 'Soraに戻る' }).click()
-    await expect(page).toHaveURL(/\/(l\/.+)?$/)
-    expect(await page.evaluate(() => (window as unknown as { __noFullReload?: boolean }).__noFullReload)).toBe(true)
+    // Popover light dismiss: Esc closes it.
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('heading', { name: '作り方' })).toBeHidden()
 
-    // The app island must still be alive and interactive after the round
-    // trip — the router re-mounting [bf-region]'s content is exactly the
-    // machinery whose wrapper caused the print-blank-page regression.
-    await expect(page.locator('html.js-ready')).toHaveCount(1)
-    const front = page.locator('.word-table tbody tr').first().locator('input').first()
-    await front.fill('StillAlive')
-    await expect(front).toHaveValue('StillAlive')
-    await expect(page.locator('.list-item')).toHaveCount(1)
-    await page.getByRole('button', { name: 'サイドバーの開閉' }).first().click()
-    await expect(page.locator('#list-sidebar')).toBeHidden()
+    // The lead's inline trigger opens the same modal; × closes it.
+    await page.getByRole('button', { name: /作り方はこちら/ }).click()
+    await expect(page.getByRole('heading', { name: '作り方' })).toBeVisible()
+    await page.getByRole('button', { name: '閉じる' }).click()
+    await expect(page.getByRole('heading', { name: '作り方' })).toBeHidden()
   })
 
-  test('81: print still works after a router round trip through /how-to', async ({ page }) => {
+  test('81: print still works after opening and closing the how-to modal', async ({ page }) => {
     await setLocale(page, 'ja')
     await clearSoraDb(page)
     await seedLists(page, [{ id: 'seed', pairs: [{ front: 'A', back: 'a' }], createdAt: 1000 }], 'seed')
     await gotoReady(page, '/')
 
-    await page.getByRole('link', { name: '作り方', exact: true }).click()
-    await expect(page).toHaveURL(/\/how-to$/)
-    await page.getByRole('link', { name: 'Soraに戻る' }).click()
+    await page.getByRole('button', { name: '作り方', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '作り方' })).toBeVisible()
+    await page.keyboard.press('Escape')
     await expect(page.locator('html.js-ready')).toHaveCount(1)
     await expect(page.locator('.word-table tbody tr').first().locator('input').first()).toHaveValue('A')
 
