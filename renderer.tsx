@@ -65,6 +65,35 @@ export const renderer = jsxRenderer(({ children, title, locale, path }) => {
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        {/* PWA installability (Chrome/Edge "install app", Safari "Add to
+            Dock") — offline behavior itself lives in public/sw.js. */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#ffffff" />
+        {/* Service-worker boot. Inline in <head>, not in router-entry.js:
+            it must read location.search at parse time — App's initialize()
+            replaceStates the URL to /l/:id soon after hydration, which
+            would strip the ?sw=cache-first debug flag before a body-end
+            module ever saw it. The controllerchange reload heals the
+            post-deploy window where a page rendered from the old snapshot
+            is taken over by the new worker (skipWaiting + claim in sw.js);
+            the hadController guard keeps a first-ever install (claim on a
+            previously uncontrolled page) from reloading a first visit. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: [
+              "if ('serviceWorker' in navigator) {",
+              "  var swUrl = location.search.indexOf('sw=cache-first') !== -1 ? '/sw.js?cache-first' : '/sw.js'",
+              '  navigator.serviceWorker.register(swUrl)["catch"](function () {})',
+              '  var hadController = Boolean(navigator.serviceWorker.controller)',
+              "  navigator.serviceWorker.addEventListener('controllerchange', function () {",
+              '    if (hadController) location.reload()',
+              '    hadController = true',
+              '  })',
+              '}',
+            ].join('\n'),
+          }}
+        />
         {/* Link every sheet directly so the browser fetches them in
             parallel — chaining via styles.css @import would defer
             tokens/uno to a second round-trip and flash unstyled DOM.
