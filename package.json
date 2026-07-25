@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n build,uno,server -c blue,magenta,green \"bf build --watch\" \"unocss --watch\" \"wrangler dev --live-reload\"",
-    "build": "bf build --minify && unocss",
-    "deploy": "bf build --minify && unocss && wrangler deploy",
+    "build": "bf build --minify && unocss && node scripts/stamp-sw.mjs",
+    "deploy": "bf build --minify && unocss && node scripts/stamp-sw.mjs && wrangler deploy",
     "watch": "concurrently -k -n build,uno -c blue,magenta \"bf build --watch\" \"unocss --watch\"",
     "test": "vitest run",
     "test:e2e": "playwright test",

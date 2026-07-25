@@ -20,3 +20,9 @@ import { startRouter } from '@barefootjs/router'
 
 setupStreaming()
 startRouter()
+
+// Service-worker registration deliberately does NOT live here: this module
+// runs after the island scripts, and App's initialize() may have already
+// replaceState'd the URL (dropping the ?sw=cache-first debug flag) by
+// then. It's an inline <head> script in renderer.tsx instead, which runs
+// at parse time, before any island touches the URL.
