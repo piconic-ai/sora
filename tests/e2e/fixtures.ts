@@ -132,6 +132,30 @@ export async function printCallCount(page: Page): Promise<number> {
 }
 
 /**
+ * Captures navigator.clipboard.writeText into `window.__clipboardText`
+ * instead of the real clipboard — real clipboard access needs per-browser
+ * permission grants (and isn't supported at all in Playwright's Firefox/
+ * WebKit), while the stub works identically in all three engines.
+ */
+export async function stubClipboard(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: (text: string) => {
+          ;(window as unknown as { __clipboardText: string }).__clipboardText = text
+          return Promise.resolve()
+        },
+      },
+      configurable: true,
+    })
+  })
+}
+
+export async function clipboardText(page: Page): Promise<string | null> {
+  return page.evaluate(() => (window as unknown as { __clipboardText?: string }).__clipboardText ?? null)
+}
+
+/**
  * Dispatches synthetic KeyboardEvents that exercise WordTable's/App's IME
  * composition guards (`e.isComposing || (e as {keyCode?: number}).keyCode
  * === 229`) without relying on CDP. Real IME input isn't natively

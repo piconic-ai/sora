@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { parseInput } from './parse'
+import { parseInput, serializePairs } from './parse'
 
 describe('parseInput', () => {
   test('comma-delimited pairs', () => {
@@ -60,5 +60,53 @@ describe('parseInput', () => {
       { front: 'Apple', back: 'りんご' },
       { front: 'Banana', back: '' },
     ])
+  })
+
+  test('CSV: a quoted field keeps its embedded comma', () => {
+    const { pairs, error } = parseInput('"Hello, world",挨拶\nBanana,ばなな')
+    expect(error).toBeNull()
+    expect(pairs).toEqual([
+      { front: 'Hello, world', back: '挨拶' },
+      { front: 'Banana', back: 'ばなな' },
+    ])
+  })
+
+  test('CSV: doubled quotes inside a quoted field unescape to one', () => {
+    const { pairs, error } = parseInput('"He said ""hi""",彼は言った')
+    expect(error).toBeNull()
+    expect(pairs).toEqual([{ front: 'He said "hi"', back: '彼は言った' }])
+  })
+
+  test('CSV: back field may be quoted too', () => {
+    const { pairs, error } = parseInput('greeting,"Hello, world"')
+    expect(error).toBeNull()
+    expect(pairs).toEqual([{ front: 'greeting', back: 'Hello, world' }])
+  })
+})
+
+describe('serializePairs', () => {
+  test('produces one tab-separated line per pair', () => {
+    const text = serializePairs([
+      { front: 'Apple', back: 'りんご' },
+      { front: 'Banana', back: 'ばなな' },
+    ])
+    expect(text).toBe('Apple\tりんご\nBanana\tばなな')
+  })
+
+  test('round-trips through parseInput', () => {
+    const pairs = [
+      { front: 'Hello, world', back: '挨拶' },
+      { front: 'Circle', back: '円' },
+    ]
+    expect(parseInput(serializePairs(pairs)).pairs).toEqual(pairs)
+  })
+
+  test('flattens tabs and newlines inside a cell to spaces', () => {
+    const text = serializePairs([{ front: 'a\tb', back: 'c\nd' }])
+    expect(text).toBe('a b\tc d')
+  })
+
+  test('empty list serializes to an empty string', () => {
+    expect(serializePairs([])).toBe('')
   })
 })

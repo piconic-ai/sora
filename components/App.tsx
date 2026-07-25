@@ -153,7 +153,7 @@ export function App(props: AppProps) {
           onChange={handleTableChange}
           locale={locale()}
           loadRequest={loadRequest()}
-          pairsCount={pairs().length}
+          pairs={pairs()}
           printDisabled={layout().pages.length === 0}
         />
       </div>
