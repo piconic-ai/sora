@@ -4,25 +4,26 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n build,uno,server -c blue,magenta,green \"bf build --watch\" \"unocss --watch\" \"wrangler dev --live-reload\"",
-    "build": "bf build --minify && unocss && node scripts/stamp-sw.mjs",
-    "deploy": "bf build --minify && unocss && node scripts/stamp-sw.mjs && wrangler deploy",
-    "watch": "concurrently -k -n build,uno -c blue,magenta \"bf build --watch\" \"unocss --watch\"",
+    "dev": "vite build && unocss && concurrently -k -n vite,uno,server -c blue,magenta,green \"vite dev\" \"unocss --watch\" \"wrangler dev --live-reload\"",
+    "build": "vite build && unocss && node scripts/stamp-sw.mjs",
+    "deploy": "vite build && unocss && node scripts/stamp-sw.mjs && wrangler deploy",
+    "watch": "concurrently -k -n vite,uno -c blue,magenta \"vite build --watch\" \"unocss --watch\"",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@barefootjs/client": "^0.26.2",
-    "@barefootjs/hono": "^0.26.2",
-    "@barefootjs/jsx": "^0.26.2",
-    "@barefootjs/router": "^0.26.2",
-    "@barefootjs/shared": "^0.26.2",
+    "@barefootjs/client": "^0.31.1",
+    "@barefootjs/hono": "^0.31.1",
+    "@barefootjs/jsx": "^0.31.1",
+    "@barefootjs/router": "^0.31.1",
+    "@barefootjs/shared": "^0.31.1",
     "hono": "^4.6.0"
   },
   "devDependencies": {
-    "@barefootjs/cli": "^0.26.2",
-    "@barefootjs/test": "^0.26.2",
+    "@barefootjs/cli": "^0.31.1",
+    "@barefootjs/test": "^0.31.1",
+    "@barefootjs/vite": "^0.31.1",
     "@cloudflare/workers-types": "^4.20260702.1",
     "@playwright/test": "^1.61.1",
     "@types/node": "^22.0.0",
@@ -32,6 +33,7 @@
     "fake-indexeddb": "^6.2.5",
     "typescript": "^5.6.0",
     "unocss": "^66.0.0",
+    "vite": "^6.0.0",
     "vitest": "^4.0.0",
     "wrangler": "^4.0.0"
   }

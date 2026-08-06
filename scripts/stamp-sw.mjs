@@ -3,7 +3,7 @@
  * deploy that changes an asset also changes the service worker's bytes —
  * which is what triggers browsers to install the new worker and rebuild
  * its cache snapshot (see public/sw.js). Runs from `npm run build` and
- * `npm run deploy`, after bf build + unocss have written their outputs.
+ * `npm run deploy`, after vite build + unocss have written their outputs.
  *
  * The hash is deterministic over file paths + contents, so rebuilding
  * unchanged sources leaves sw.js untouched.
@@ -19,7 +19,7 @@ const swPath = join(publicDir, 'sw.js')
 function collect(dir) {
   const files = []
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.')) continue // build caches, .dev/, .assetsignore
+    if (entry.name.startsWith('.')) continue // .assetsignore, components/.vite/ (build manifest)
     const path = join(dir, entry.name)
     if (entry.isDirectory()) {
       files.push(...collect(path))
@@ -27,7 +27,6 @@ function collect(dir) {
     }
     const rel = relative(publicDir, path)
     if (rel === 'sw.js') continue // the file being stamped
-    if (rel.endsWith('.tsx')) continue // server-side marked templates, not browser-served
     files.push(rel)
   }
   return files.sort()

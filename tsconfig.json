@@ -19,9 +19,9 @@
       // Build output first so wrangler resolves the compiled SSR
       // template (with hydration markers + script collection).
       // Source is the fallback for files not yet built.
-      "@/components/*": ["./public/components/*", "./components/*"]
+      "@/components/*": ["./dist/components/*", "./components/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "public/components"]
+  "exclude": ["node_modules", "dist/components"]
 }

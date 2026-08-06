@@ -1,0 +1,3 @@
+# Vite's build manifest (used by the barefoot plugin at build time to
+# resolve hashed chunk URLs) — server/build-only, not browser-served.
+components/.vite/

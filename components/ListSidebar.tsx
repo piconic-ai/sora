@@ -9,7 +9,7 @@ import type { Pair } from '../src/lib/types'
 // Plain `string` param, cast internal to the function body: an inline
 // `as Locale` cast on a JSX-embedded call argument doesn't survive the
 // compiler's SSR-mirror re-serialization (drops back to the untyped
-// `string` prop, failing tsc on the generated public/components/*.tsx —
+// `string` prop, failing tsc on the generated dist/components/*.tsx —
 // same class of gap as the null-typed-let and updater-fn quirks in the
 // framework notes). Keeping the cast inside a normal function body sidesteps
 // the re-serialization entirely.

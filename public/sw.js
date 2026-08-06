@@ -25,7 +25,7 @@
  *   and the query opts out of the localhost fallback).
  */
 
-const VERSION = 'ca38e17dd25d'
+const VERSION = 'c264655b2289'
 const CACHE = `sora-${VERSION}`
 
 const FORCED_CACHE_FIRST = self.location.search.includes('cache-first')
@@ -35,9 +35,10 @@ const DEV =
 
 // The app shell: both locale pages plus every static asset the shell
 // links (renderer.tsx). Component client JS is NOT listed here — the
-// build manifest (components/manifest.json) is server-only (.assetsignore),
-// so the install step extracts the /components/*.js URLs from the /ja
-// HTML itself, which BfScripts emits a <script> tag per component into.
+// chunk names are content-hashed by Vite, so the install step extracts
+// the /components/*.js URLs from the /ja HTML itself: BfScripts emits a
+// <script> tag per rendered entry plus a <link rel="modulepreload"> per
+// transitive shared chunk, so the full module graph is in the HTML.
 const PRECACHE = [
   '/ja',
   '/en',
@@ -58,7 +59,7 @@ self.addEventListener('install', (event) => {
       try {
         const res = await fetch('/ja')
         const html = await res.text()
-        const scripts = [...new Set(html.match(/\/components\/[\w.-]+\.js/g) || [])]
+        const scripts = [...new Set(html.match(/\/components\/[\w./-]+\.js/g) || [])]
         files = PRECACHE.concat(scripts)
       } catch {
         // Shell HTML unreachable mid-install — precache the static list

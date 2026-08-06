@@ -1,6 +1,6 @@
 import { jsxRenderer } from 'hono/jsx-renderer'
-import { BfImportMap, BfScripts } from '@barefootjs/hono/app'
-import manifest from './public/components/manifest.json' with { type: 'json' }
+import { BfScripts } from '@barefootjs/hono/scripts'
+import { Assets } from './dist/bf-assets'
 import { messages } from './src/lib/i18n'
 import type { Locale } from './src/lib/i18n'
 
@@ -10,7 +10,6 @@ declare module 'hono' {
   }
 }
 
-const componentsBase = '/components'
 const origin = 'https://sora.piconic.ai'
 
 // `hreflang` isn't in hono/jsx's <link> attribute types — spread it from a
@@ -109,7 +108,6 @@ export const renderer = jsxRenderer(({ children, title, locale, path }) => {
         <link rel="stylesheet" href="/uno.css" />
         <link rel="stylesheet" href="/app.css" />
         <link rel="stylesheet" href="/print.css" />
-        <BfImportMap base={componentsBase} />
       </head>
       <body>
         {/* The single [bf-region] the client router swaps between routes
@@ -118,15 +116,21 @@ export const renderer = jsxRenderer(({ children, title, locale, path }) => {
             navigation. Hand-written as a plain attribute because this Hono
             template isn't bf-compiled, so <Region> wouldn't lower here. */}
         <div bf-region="content">{children}</div>
-        {/* Emits a <script> for every manifest entry unconditionally (not
-            usage-tracked) — a usage-tracking collector can miss components
-            that are only ever mounted client-side (e.g. inside a signal-
-            driven `.map()` that starts empty), since they're never present
-            in the initial SSR output. */}
-        <BfScripts base={componentsBase} manifest={manifest} />
-        {/* Boots the partial-navigation router (client/router-entry.ts). After
-            BfScripts so the island runtime/import map is in place first. */}
-        <script type="module" src={`${componentsBase}/router-entry.js`} />
+        {/* No `manifest`/`base` props (and no import map above): under the
+            Vite build each SSR'd component's compiled template bakes in its
+            own bundled entry URL, and that entry statically imports every
+            child island's chunk — Rollup output is self-contained, so a
+            component only ever mounted client-side (e.g. inside a signal-
+            driven `.map()` that starts empty) still ships via its parent's
+            import graph. BfScripts also emits `<link rel="modulepreload">`
+            for the transitive shared chunks (sw.js's precache reads those
+            URLs out of this HTML). */}
+        <BfScripts />
+        {/* Boots the partial-navigation router (client/router-entry.ts),
+            bundled by Vite as its own entry (vite.config.ts) — Assets maps
+            it to the content-hashed (dev: vite-origin) URL. After BfScripts
+            so the island runtime is in place first. */}
+        <script type="module" src={Assets.routerEntry} />
       </body>
     </html>
   )

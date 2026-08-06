@@ -30,19 +30,20 @@ npm install
 npm run dev
 ```
 
-`npm run dev` runs three watchers in parallel (`bf build --watch` /
-`unocss --watch` / `wrangler dev --live-reload`). Open http://localhost:8787.
+`npm run dev` builds once (`vite build` + `unocss`), then runs three
+watchers in parallel (`vite dev` / `unocss --watch` /
+`wrangler dev --live-reload`). Open http://localhost:8787.
 
 ```sh
 npm run test        # Vitest (parser + layout logic in src/lib)
 npx tsc --noEmit    # type check
-npm run build       # production build (bf build --minify && unocss)
+npm run build       # production build (vite build && unocss)
 ```
 
 ## Deploy
 
 ```sh
-npm run deploy   # bf build --minify && unocss && wrangler deploy
+npm run deploy   # vite build && unocss && wrangler deploy
 ```
 
 Adjust `name` / `compatibility_date` in `wrangler.jsonc` as needed.
