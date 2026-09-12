@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.1.2](https://github.com/piconic-ai/sora/compare/v0.1.1...v0.1.2) - 2026-09-12
+
+- Fix release branch push failing on the second+ release by @kfly8 in https://github.com/piconic-ai/sora/pull/35
+- Advance the release branch via GitHub API, not git push by @kfly8 in https://github.com/piconic-ai/sora/pull/38
+- Document production + per-branch preview URLs in the README by @kfly8 in https://github.com/piconic-ai/sora/pull/37
+
 ## [v0.1.1](https://github.com/piconic-ai/sora/compare/v0.1.0...v0.1.1) - 2026-09-12
 
 - Migrate from npm to bun, matching koma/tate by @kfly8 in https://github.com/piconic-ai/sora/pull/32
