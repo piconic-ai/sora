@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.1.1](https://github.com/piconic-ai/sora/compare/v0.1.0...v0.1.1) - 2026-09-12
+
+- Migrate from npm to bun, matching koma/tate by @kfly8 in https://github.com/piconic-ai/sora/pull/32
+- Add Renovate config, matching koma by @kfly8 in https://github.com/piconic-ai/sora/pull/34
+
 ## [v0.1.0](https://github.com/piconic-ai/sora/commits/v0.1.0) - 2026-09-12
 
 - 単語プリント: 仕様・設計とレイアウト図 by @kfly8 in https://github.com/piconic-ai/sora/pull/2
