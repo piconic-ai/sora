@@ -26,24 +26,24 @@ something by heart.
 ## Development
 
 ```sh
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
-`npm run dev` builds once (`vite build` + `unocss`), then runs three
+`bun run dev` builds once (`vite build` + `unocss`), then runs three
 watchers in parallel (`vite dev` / `unocss --watch` /
 `wrangler dev --live-reload`). Open http://localhost:8787.
 
 ```sh
-npm run test        # Vitest (parser + layout logic in src/lib)
-npx tsc --noEmit    # type check
-npm run build       # production build (vite build && unocss)
+bun run test      # Vitest (parser + layout logic in src/lib)
+bunx tsc --noEmit # type check
+bun run build     # production build (vite build && unocss)
 ```
 
 ## Deploy
 
 ```sh
-npm run deploy   # vite build && unocss && wrangler deploy
+bun run deploy   # vite build && unocss && wrangler deploy
 ```
 
 Adjust `name` / `compatibility_date` in `wrangler.jsonc` as needed.
