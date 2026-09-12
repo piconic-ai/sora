@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 // Dedicated port, distinct from the ad-hoc dev-server ports used during
-// manual testing, so a leftover `npm run dev` process never collides with
+// manual testing, so a leftover `bun run dev` process never collides with
 // a test run.
 const port = 8793
 const baseURL = `http://localhost:${port}`
@@ -40,10 +40,10 @@ export default defineConfig({
   ],
   webServer: {
     // Assets must be prebuilt before wrangler dev serves them (unlike
-    // `npm run dev`, which watches — not needed for a one-shot test run).
+    // `bun run dev`, which watches — not needed for a one-shot test run).
     // `--live-reload` off: its injected websocket is noise here and could
     // perturb the pagehide-flush timing tests.
-    command: `npm run build && wrangler dev --port ${port}`,
+    command: `bun run build && wrangler dev --port ${port}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
