@@ -1,5 +1,7 @@
 # Sora
 
+**https://sora.piconic.ai**
+
 A web app that generates a print layout for making paper flashcards: print on a
 single A4 sheet, cut into vertical strips, and accordion-fold.
 
@@ -42,8 +44,26 @@ bun run build     # production build (vite build && unocss)
 
 ## Deploy
 
+Production and preview deploys are both handled by Cloudflare Workers
+Builds (Cloudflare's own Git integration) — no Cloudflare credential
+lives in this repo or in GitHub.
+
+- **Production** (`sora.piconic.ai`): deploys automatically when a
+  [tagpr](https://github.com/Songmu/tagpr) release PR is merged — that
+  cuts a tag and advances a dedicated `release` branch to it (see
+  `.github/workflows/tagpr.yml`), which is what Cloudflare Workers
+  Builds actually watches.
+- **Preview** (try your own branch): every other branch gets its own
+  automatic preview on push, at
+  `https://<branch-name>-sora.<subdomain>.workers.dev` (dots in the
+  branch name become dashes, e.g. a branch named `fix/foo` becomes
+  `fix-foo-sora...`). After pushing, check the "Workers Builds: sora"
+  check run on your commit (or Cloudflare dashboard → sora Worker →
+  Deployments) for the exact URL — it's also printed as
+  `Preview Alias URL` in that check's summary.
+
 ```sh
-bun run deploy   # vite build && unocss && wrangler deploy
+bun run deploy   # vite build && unocss && wrangler deploy — manual/local fallback
 ```
 
 Adjust `name` / `compatibility_date` in `wrangler.jsonc` as needed.
