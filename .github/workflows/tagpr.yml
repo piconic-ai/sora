@@ -18,9 +18,10 @@ name: tagpr
 # push で安全弁を失うことも、fetch-depth: 0 でリポジトリが育つほど重く
 # なることもない）。
 #
-# main を含む release 以外のあらゆるブランチは、Cloudflare Build の
-# "Builds for non-production branches" が個別にプレビューする
-# （<branch>-sora.<subdomain>.workers.dev）。Actions 側では何もしない。
+# main を含む release 以外のあらゆるブランチは、Cloudflare Workers Builds の
+# Preview Builds（Worker Previews、`bunx wrangler preview`）が個別に
+# プレビューする（<branch>-sora.<subdomain>.workers.dev）。Actions 側では
+# 何もしない。
 
 on:
   push:
