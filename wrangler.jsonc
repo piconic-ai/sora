@@ -19,6 +19,10 @@
   "assets": {
     "directory": "./public"
   },
+  // Keep console.log/error and invocation logs in Workers Logs (Cloudflare
+  // dashboard → sora Worker → Observability) for production, so errors can
+  // be traced after the fact without keeping `wrangler tail` attached.
+  "observability": { "enabled": true },
   // Worker Previews: every push to a branch other than `release` makes (or
   // updates) that branch's Preview via Cloudflare Workers Builds, whose
   // Preview command runs `npx wrangler preview`. Previews never become the
