@@ -54,16 +54,18 @@ lives in this repo or in GitHub.
   `.github/workflows/tagpr.yml`), which is what Cloudflare Workers
   Builds actually watches.
 - **Preview** (try your own branch): every other branch gets its own
-  automatic preview on push, at
-  `https://<branch-name>-sora.<subdomain>.workers.dev` (dots in the
-  branch name become dashes, e.g. a branch named `fix/foo` becomes
-  `fix-foo-sora...`). After pushing, check the "Workers Builds: sora"
-  check run on your commit (or Cloudflare dashboard → sora Worker →
-  Deployments) for the exact URL — it's also printed as
-  `Preview Alias URL` in that check's summary.
+  [Worker Preview](https://developers.cloudflare.com/workers/previews/)
+  on push, at `https://<branch-name>-sora.<subdomain>.workers.dev`
+  (e.g. a branch named `fix/foo` becomes `fix-foo-sora...`). After
+  pushing, check the "Workers Builds: sora" check run on your commit
+  (or Cloudflare dashboard → sora Worker → Previews) for the exact URL.
+  Each Preview has its own logs and traces under its Observability tab.
+  Previews are configured by the `previews` block in `wrangler.jsonc`
+  and never become the production deployment.
 
 ```sh
 bun run deploy   # vite build && unocss && wrangler deploy — manual/local fallback
+bun run build && npx wrangler preview   # Preview of the current branch, from your machine
 ```
 
 Adjust `name` / `compatibility_date` in `wrangler.jsonc` as needed.
