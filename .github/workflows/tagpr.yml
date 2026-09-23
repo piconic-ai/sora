@@ -19,7 +19,7 @@ name: tagpr
 # なることもない）。
 #
 # main を含む release 以外のあらゆるブランチは、Cloudflare Workers Builds の
-# Preview Builds（Worker Previews、`npx wrangler preview`）が個別に
+# Preview Builds（Worker Previews、`bunx wrangler preview`）が個別に
 # プレビューする（<branch>-sora.<subdomain>.workers.dev）。Actions 側では
 # 何もしない。
 

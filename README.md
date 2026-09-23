@@ -65,7 +65,7 @@ lives in this repo or in GitHub.
 
 ```sh
 bun run deploy   # vite build && unocss && wrangler deploy — manual/local fallback
-bun run build && npx wrangler preview   # Preview of the current branch, from your machine
+bun run build && bunx wrangler preview   # Preview of the current branch, from your machine
 ```
 
 Adjust `name` / `compatibility_date` in `wrangler.jsonc` as needed.
