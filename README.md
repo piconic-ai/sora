@@ -70,6 +70,12 @@ bun run build && bunx wrangler preview   # Preview of the current branch, from y
 
 Adjust `name` / `compatibility_date` in `wrangler.jsonc` as needed.
 
+The `sora.piconic.ai` custom domain is declared in `wrangler.jsonc` and
+applied on deploy. The `piconic.ai` zone, its other DNS records, and
+zone settings are managed with Pulumi in
+[piconic-ai/infra](https://github.com/piconic-ai/infra)
+(`zones/piconic-ai.ts`).
+
 ## Docs
 
 - [Specification & design](docs/DESIGN.md)
